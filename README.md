@@ -1,0 +1,1 @@
+# staged-proposal-processor-plugin
