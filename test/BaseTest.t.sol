@@ -30,7 +30,7 @@ contract BaseTest is Assertions, Constants, Events, Test {
 
     // contracts
     IDAO internal dao;
-    SPP internal multiBodyPlugin;
+    SPP internal sppPlugin;
     TrustedForwarder internal trustedForwarder;
     Target internal target;
 
@@ -60,7 +60,7 @@ contract BaseTest is Assertions, Constants, Events, Test {
 
         // label contracts
         vm.label({account: address(dao), newLabel: "DAO"});
-        vm.label({account: address(multiBodyPlugin), newLabel: "SPP"});
+        vm.label({account: address(sppPlugin), newLabel: "SPP"});
         vm.label({account: address(trustedForwarder), newLabel: "Executor"});
         vm.label({account: address(target), newLabel: "Target"});
     }
@@ -85,8 +85,8 @@ contract BaseTest is Assertions, Constants, Events, Test {
             )
         );
 
-        // create multiBody plugin.
-        multiBodyPlugin = SPP(
+        // create SPP plugin.
+        sppPlugin = SPP(
             createProxyAndCall(
                 address(new SPP()),
                 abi.encodeCall(
@@ -100,49 +100,49 @@ contract BaseTest is Assertions, Constants, Events, Test {
         PermissionLib.MultiTargetPermission[]
             memory permissions = new PermissionLib.MultiTargetPermission[](5);
 
-        // grant update stage permission on multiBody plugin to the dao
+        // grant update stage permission on SPP plugin to the DAO
         permissions[0] = PermissionLib.MultiTargetPermission({
             operation: PermissionLib.Operation.Grant,
-            where: address(multiBodyPlugin),
+            where: address(sppPlugin),
             who: users.manager,
             condition: PermissionLib.NO_CONDITION,
-            permissionId: multiBodyPlugin.UPDATE_STAGES_PERMISSION_ID()
+            permissionId: sppPlugin.UPDATE_STAGES_PERMISSION_ID()
         });
 
         // grant advance proposal permission to any address
         permissions[1] = PermissionLib.MultiTargetPermission({
             operation: PermissionLib.Operation.GrantWithCondition,
-            where: address(multiBodyPlugin),
+            where: address(sppPlugin),
             who: ANY_ADDR,
             condition: address(new AlwaysTrueCondition()),
-            permissionId: multiBodyPlugin.ADVANCE_PROPOSAL_PERMISSION_ID()
+            permissionId: sppPlugin.ADVANCE_PROPOSAL_PERMISSION_ID()
         });
 
-        // grant execute permission on the dao to the multiBody plugin
+        // grant execute permission on the dao to the SPP plugin
         permissions[2] = PermissionLib.MultiTargetPermission({
             operation: PermissionLib.Operation.Grant,
             where: address(dao),
-            who: address(multiBodyPlugin),
+            who: address(sppPlugin),
             condition: PermissionLib.NO_CONDITION,
             permissionId: DAO(payable(address(dao))).EXECUTE_PERMISSION_ID()
         });
 
-        // grant update metadata permission on multiBody plugin to the manager
+        // grant update metadata permission on SPP plugin to the manager
         permissions[3] = PermissionLib.MultiTargetPermission({
             operation: PermissionLib.Operation.Grant,
-            where: address(multiBodyPlugin),
+            where: address(sppPlugin),
             who: users.manager,
             condition: PermissionLib.NO_CONDITION,
-            permissionId: multiBodyPlugin.UPDATE_METADATA_PERMISSION_ID()
+            permissionId: sppPlugin.UPDATE_METADATA_PERMISSION_ID()
         });
 
         // grant permission for creating proposals on the spp to the manager
         permissions[4] = PermissionLib.MultiTargetPermission({
             operation: PermissionLib.Operation.Grant,
-            where: address(multiBodyPlugin),
+            where: address(sppPlugin),
             who: users.manager,
             condition: PermissionLib.NO_CONDITION,
-            permissionId: multiBodyPlugin.CREATE_PROPOSAL_PERMISSION_ID()
+            permissionId: sppPlugin.CREATE_PROPOSAL_PERMISSION_ID()
         });
 
         DAO(payable(address(dao))).applyMultiTargetPermissions(permissions);

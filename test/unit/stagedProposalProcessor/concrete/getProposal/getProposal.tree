@@ -1,0 +1,5 @@
+GetProposal_SPP_UnitTest
+├── when non existent proposal
+│   └── it should return empty proposal.
+└── when existent proposal
+    └── it should return correct proposal.

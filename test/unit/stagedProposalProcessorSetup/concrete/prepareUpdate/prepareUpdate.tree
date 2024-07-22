@@ -1,0 +1,6 @@
+PrepareUpdate_SPPSetup_UnitTest
+└── when preparing update
+    └── it should return the correct preparation data.
+
+
+// todo check if somethin else needs to be tested

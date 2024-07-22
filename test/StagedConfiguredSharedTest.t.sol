@@ -10,6 +10,6 @@ abstract contract StagedConfiguredSharedTest is BaseTest {
 
         // setup stages
         SPP.Stage[] memory stages = _createDummyStages(2, false, false, false);
-        multiBodyPlugin.updateStages(stages);
+        sppPlugin.updateStages(stages);
     }
 }
