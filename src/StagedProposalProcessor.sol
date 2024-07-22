@@ -355,10 +355,10 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
     /// @dev It's a caller's responsibility not to call this in case `_stages` are empty.
     /// @param _stages The stages configuration.
     function _updateStages(Stage[] calldata _stages) internal virtual {
-        Stage[] storage stages = stages[++currentConfigIndex];
+        Stage[] storage storedStages = stages[++currentConfigIndex];
 
         for (uint256 i = 0; i < _stages.length; i++) {
-            stages.push(_stages[i]);
+            storedStages.push(_stages[i]);
         }
 
         emit StagesUpdated(_stages);

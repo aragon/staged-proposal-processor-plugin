@@ -37,6 +37,9 @@ contract TrustedForwarder {
         bytes memory callData = abi.encodePacked(_actions[0].data, msg.sender);
 
         // TODO: GIORGI might need to emit the results
-        _actions[0].to.call{value: _actions[0].value}(callData);
+        (bool success, ) = _actions[0].to.call{value: _actions[0].value}(callData);
+
+        // todo do something if success is false
+        success;
     }
 }
