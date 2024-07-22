@@ -2,8 +2,8 @@
 
 pragma solidity ^0.8.8;
 
-import {TrustedForwarder} from "./TrustedForwarder.sol";
-import {AlwaysTrueCondition} from "./AlwaysTrueCondition.sol";
+import {TrustedForwarder} from "./utils/TrustedForwarder.sol";
+import {AlwaysTrueCondition} from "./utils/AlwaysTrueCondition.sol";
 import {StagedProposalProcessor as SPP} from "./StagedProposalProcessor.sol";
 
 import {DAO} from "@aragon/osx/core/dao/DAO.sol";

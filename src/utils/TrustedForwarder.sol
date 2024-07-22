@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity ^0.8.8;
 
-import {Errors} from "./libraries/Errors.sol";
+import {Errors} from "../libraries/Errors.sol";
 
 import "@aragon/osx-commons-contracts-new/src/dao/IDAO.sol";
 
