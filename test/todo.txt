@@ -1,0 +1,2 @@
+Missing tests
+- test whit allowed bodies instead of default trusted forwarder
