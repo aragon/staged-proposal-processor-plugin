@@ -19,8 +19,8 @@ import {StagedProposalProcessor as SPP} from "../src/StagedProposalProcessor.sol
 
 import {DAO} from "@aragon/osx/core/dao/DAO.sol";
 import {IDAO} from "@aragon/osx-commons-contracts-new/src/dao/IDAO.sol";
-import {PermissionManager} from "@aragon/osx/core/permission/PermissionManager.sol";
 import {PermissionLib} from "@aragon/osx/core/permission/PermissionLib.sol";
+import {PermissionManager} from "@aragon/osx/core/permission/PermissionManager.sol";
 
 import "forge-std/console.sol";
 
