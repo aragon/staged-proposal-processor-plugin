@@ -45,7 +45,7 @@ contract Deploy is Script, Constants {
         _transferOwnershipToManagementDao();
 
         // ! 6. verify the contract on etherscan
-        // ? adding --verify when running forge script works, sill I'm having some issues with the proxies
+        // ? adding --verify when running forge script works, sill check if the proxies are linked correctly
 
         vm.stopBroadcast();
     }
@@ -75,7 +75,6 @@ contract Deploy is Script, Constants {
     }
 
     function _transferOwnershipToManagementDao() internal {
-        // todo
         PermissionLib.MultiTargetPermission[]
             memory permissions = new PermissionLib.MultiTargetPermission[](6);
 
