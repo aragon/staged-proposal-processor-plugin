@@ -472,5 +472,5 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
     /// https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
 
     /// ! adjust the reserved gap size
-    uint256[47] private __gap;
+    uint256[43] private __gap;
 }
