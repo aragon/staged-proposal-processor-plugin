@@ -1,17 +1,20 @@
-## Foundry
+## Stage Proposal Processor [![Foundry][foundry-badge]][foundry]
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+[foundry]: https://getfoundry.sh/
 
-Foundry consists of:
+## Project
 
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+The root folder of the repo includes `src` subfolder with the plugin contracts.
+
+The root-level `package.json` file contains global `dev-dependencies` for formatting and linting. After installing the dependencies with
+
+```sh
+yarn install
+```
 
 ## Documentation
 
-https://book.getfoundry.sh/
+The repo uses [Foundry](https://book.getfoundry.sh/)
 
 ## Usage
 
@@ -47,9 +50,9 @@ $ anvil
 
 ### Deploy
 
-```shell
+<!-- todo ```shell
 $ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
+``` -->
 
 ### Cast
 
