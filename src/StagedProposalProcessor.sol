@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.8;
 
 import {Errors} from "./libraries/Errors.sol";
@@ -472,5 +472,5 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
     /// https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
 
     /// ! adjust the reserved gap size
-    uint256[47] private __gap;
+    uint256[43] private __gap;
 }

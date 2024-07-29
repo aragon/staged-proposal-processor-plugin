@@ -8,10 +8,11 @@ import {IDAO} from "@aragon/osx-commons-contracts-new/src/dao/IDAO.sol";
 
 contract TrustedForwarder_FuzzyTest is BaseTest {
     function test_AnyoneCanExecute(address _randomAddress) external {
+        // it should no revert.
+
         assumeNotPrecompile(_randomAddress);
         resetPrank(_randomAddress);
 
-        // it should no revert.
         IDAO.Action[] memory actions = new IDAO.Action[](1);
         actions[0] = IDAO.Action({
             to: address(target),

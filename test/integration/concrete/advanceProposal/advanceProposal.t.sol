@@ -12,6 +12,8 @@ import {IDAO} from "@aragon/osx-commons-contracts-new/src/dao/IDAO.sol";
 
 contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
     function test_RevertWhen_CallerIsNotAllowed() external {
+        // it should revert.
+
         // revoke permission
         DAO(payable(address(dao))).revoke({
             _where: address(sppPlugin),
@@ -19,7 +21,6 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
             _permissionId: sppPlugin.ADVANCE_PROPOSAL_PERMISSION_ID()
         });
 
-        // it should revert
         vm.expectRevert(
             abi.encodeWithSelector(
                 DaoUnauthorized.selector,
@@ -41,6 +42,8 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
     }
 
     function test_WhenProposalIsInLastStage() external givenProposalExists whenProposalCanAdvance {
+        // it should execute the proposal.
+
         // configure stages
         SPP.Stage[] memory stages = _createDummyStages(2, false, false, false);
         sppPlugin.updateStages(stages);
@@ -71,10 +74,10 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         vm.warp(lastStageTransition + STAGE_DURATION + START_DATE);
         sppPlugin.advanceProposal(proposalId);
 
-        // it should execute the proposal
+        // check proposal executed
         assertTrue(sppPlugin.getProposal(proposalId).executed, "executed");
 
-        // actions should be executed
+        // check actions executed
         assertEq(target.val(), TARGET_VALUE, "targetValue");
         assertEq(target.ctrAddress(), TARGET_ADDRESS, "ctrAddress");
     }
@@ -89,6 +92,10 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         whenProposalCanAdvance
         whenProposalIsNotInLastStage
     {
+        // it should emit events.
+        // it should advance proposal.
+        // it should create sub proposals.
+
         // configure stages (one of them non-manual)
         SPP.Stage[] memory stages = _createDummyStages(2, false, true, false);
         sppPlugin.updateStages(stages);
@@ -108,7 +115,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
 
         vm.warp(STAGE_DURATION + START_DATE);
 
-        // it should emit events.
+        // check event emitted
         vm.expectEmit({emitter: address(sppPlugin)});
         emit ProposalAdvanced(proposalId, initialStage + 1);
 
@@ -116,10 +123,10 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
 
         SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
 
-        // it should advance proposal.
+        // check proposal advanced
         assertEq(proposal.currentStage, initialStage + 1, "currentStage");
 
-        // it should create sub proposals.
+        // check sub proposal created
         assertEq(
             PluginA(stages[initialStage + 1].plugins[0].pluginAddress).proposalCount(),
             1,
@@ -133,6 +140,10 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         whenProposalCanAdvance
         whenProposalIsNotInLastStage
     {
+        // it should emit events.
+        // it should advance proposal.
+        // it should not create sub proposals.
+
         // configure stages (one of them non-manual)
         SPP.Stage[] memory stages = _createDummyStages(2, false, true, true);
         sppPlugin.updateStages(stages);
@@ -152,17 +163,17 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
 
         vm.warp(STAGE_DURATION + START_DATE);
 
-        // it should emit events.
+        // check event emitted
         vm.expectEmit({emitter: address(sppPlugin)});
         emit ProposalAdvanced(proposalId, initialStage + 1);
         sppPlugin.advanceProposal(proposalId);
 
         SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
 
-        // it should advance proposal.
+        // check proposal advanced
         assertEq(proposal.currentStage, initialStage + 1, "currentStage");
 
-        // it should not create sub proposals
+        // check sub proposal not created
         assertEq(
             PluginA(stages[initialStage + 1].plugins[0].pluginAddress).proposalCount(),
             0,
@@ -178,6 +189,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
 
     function test_RevertGiven_ProposalDoesNotExist() external {
         // it should revert
+
         vm.expectRevert(abi.encodeWithSelector(Errors.ProposalNotExists.selector));
         sppPlugin.advanceProposal(NON_EXISTENT_PROPOSAL_ID);
     }
