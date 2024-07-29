@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.8;
 
+import {Stage, Plugin} from "../../../utils/Types.sol";
 import {BaseTest} from "../../../BaseTest.t.sol";
 import {StagedProposalProcessor as SPP} from "../../../../src/StagedProposalProcessor.sol";
 
@@ -56,6 +57,18 @@ contract SPP_Unit_FuzzTest is BaseTest {
         assertEq(sppPlugin.getMetadata(), _metadata, "metadata");
     }
 
-    // todo think how fuzz since it has an enum (enums are uint8 and ProposalType is 0 or 1 others values will revert)
-    // function testFuzz_updateStages(Plugin[2] memory _plugins, bytes memory _metadata) external {}
+    function testFuzz_updateStages(Stage[] memory stages, Plugin[] memory plugins) external {
+        // it should update stages.
+
+        vm.assume(stages.length > 0);
+        vm.assume(stages.length < 5);
+        vm.assume(plugins.length > 0);
+        vm.assume(plugins.length < 5);
+
+        SPP.Stage[] memory fuzzStages = fuzzSppStages(stages, plugins);
+
+        sppPlugin.updateStages(fuzzStages);
+
+        assertEq(sppPlugin.getStages(), fuzzStages);
+    }
 }

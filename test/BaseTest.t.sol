@@ -4,13 +4,11 @@ pragma solidity ^0.8.8;
 import {Test} from "forge-std/Test.sol";
 
 import {Users} from "./utils/Types.sol";
+import {Events} from "./utils/Events.sol";
+import {Target} from "./utils/Target.sol";
+import {Fuzzers} from "./utils/Fuzzers.sol";
 import {Constants} from "./utils/Constants.sol";
 import {Assertions} from "./utils/Assertions.sol";
-import {Events} from "./utils/Events.sol";
-
-import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
-
-import {Target} from "./utils/Target.sol";
 import {PluginA} from "./utils/dummy-plugins/PluginA.sol";
 import {PluginB} from "./utils/dummy-plugins/PluginB.sol";
 import {TrustedForwarder} from "../src/utils/TrustedForwarder.sol";
@@ -19,12 +17,14 @@ import {StagedProposalProcessor as SPP} from "../src/StagedProposalProcessor.sol
 
 import {DAO} from "@aragon/osx/core/dao/DAO.sol";
 import {IDAO} from "@aragon/osx-commons-contracts-new/src/dao/IDAO.sol";
-import {PermissionManager} from "@aragon/osx/core/permission/PermissionManager.sol";
 import {PermissionLib} from "@aragon/osx/core/permission/PermissionLib.sol";
+import {PermissionManager} from "@aragon/osx/core/permission/PermissionManager.sol";
+
+import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 import "forge-std/console.sol";
 
-contract BaseTest is Assertions, Constants, Events, Test {
+contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
     // variables
     Users internal users;
 
