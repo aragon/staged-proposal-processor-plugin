@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: LGPL-3.0-only
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.8;
 import "forge-std/console.sol";
 

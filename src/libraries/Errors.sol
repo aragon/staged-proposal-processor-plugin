@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.8;
 
 /// @title Errors
