@@ -8,12 +8,13 @@ import {DaoUnauthorized} from "@aragon/osx/core/utils/auth.sol";
 
 contract SPP_Unit_FuzzTest is BaseTest {
     function testFuzz_updateMetadata_RevertWhen_IsNotAllowed(address _randomAddress) external {
+        // it should revert.
+
         assumeNotPrecompile(_randomAddress);
         vm.assume(_randomAddress != users.manager);
 
         resetPrank(_randomAddress);
 
-        // it should revert.
         vm.expectRevert(
             abi.encodeWithSelector(
                 DaoUnauthorized.selector,
@@ -23,18 +24,18 @@ contract SPP_Unit_FuzzTest is BaseTest {
                 sppPlugin.UPDATE_METADATA_PERMISSION_ID()
             )
         );
-
         sppPlugin.updateMetadata(DUMMY_METADATA);
     }
 
     function testFuzz_updateStage_RevertWhen_IsNotAllowed(address _randomAddress) external {
+        // it should revert.
+
         assumeNotPrecompile(_randomAddress);
         vm.assume(_randomAddress != users.manager);
 
         resetPrank(_randomAddress);
         SPP.Stage[] memory stages = _createDummyStages(2, true, true, false);
 
-        // it should revert.
         vm.expectRevert(
             abi.encodeWithSelector(
                 DaoUnauthorized.selector,
@@ -44,11 +45,12 @@ contract SPP_Unit_FuzzTest is BaseTest {
                 sppPlugin.UPDATE_STAGES_PERMISSION_ID()
             )
         );
-
         sppPlugin.updateStages(stages);
     }
 
     function testFuzz_updateMetadata(bytes calldata _metadata) external {
+        // it should update metadata.
+
         sppPlugin.updateMetadata(_metadata);
 
         assertEq(sppPlugin.getMetadata(), _metadata, "metadata");

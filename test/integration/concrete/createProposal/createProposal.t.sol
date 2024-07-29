@@ -12,9 +12,10 @@ import {PermissionLib} from "@aragon/osx/core/permission/PermissionLib.sol";
 
 contract CreateProposal_SPP_IntegrationTest is BaseTest {
     function test_RevertWhen_CallerIsNotAllowed() external {
+        // it should revert.
+
         resetPrank(users.unauthorized);
 
-        // it should revert.
         vm.expectRevert(
             abi.encodeWithSelector(
                 DaoUnauthorized.selector,
@@ -57,10 +58,15 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         whenStagesAreConfigured
         givenSomeSubProposalsOnStageZeroAreNonManual
     {
+        // it should emit events.
+        // it should create proposal.
+        // it should create non-manual sub proposals on stage zero.
+        // it should not create sub proposals on non zero stages.
+
         // create proposal
         IDAO.Action[] memory actions = _createDummyActions();
 
-        // it should emit events.
+        // check event
         vm.expectEmit({
             checkTopic1: false,
             checkTopic2: true,
@@ -84,16 +90,15 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
             _startDate: START_DATE
         });
 
-        // it should create proposal.
+        // check proposal
         SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
-
         assertEq(proposal.currentStage, 0, "current stage");
         assertEq(proposal.creator, users.manager, "creator");
         assertEq(proposal.metadata, DUMMY_METADATA, "metadata");
         assertEq(proposal.lastStageTransition, START_DATE, "startDate");
         assertFalse(proposal.executed, "executed");
 
-        // it should create non-manual sub proposals on stage zero.
+        // check sub proposals on stage zero
         SPP.Stage[] memory stages = sppPlugin.getStages();
         SPP.Plugin memory _currentPlugin;
         uint256 _currentPluginProposalsCount;
@@ -109,7 +114,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
             }
         }
 
-        // it should not create sub proposals on non zero stages.
+        // check sub proposals on non zero stage
         for (uint256 i; i < stages[1].plugins.length; i++) {
             _currentPlugin = stages[1].plugins[i];
             assertEq(PluginA(_currentPlugin.pluginAddress).proposalCount(), 0, "proposalsCount");
@@ -117,6 +122,11 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
     }
 
     function test_GivenAllSubProposalOnStageZeroAreManual() external whenStagesAreConfigured {
+        // it should emit events.
+        // it should create proposal.
+        // it should not create sub proposals on stage zero.
+        // it should not create sub proposals on non zero stages.
+
         // configure stages
         SPP.Stage[] memory stages = _createDummyStages(2, true, true, false);
         sppPlugin.updateStages(stages);
@@ -124,7 +134,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         // create proposal
         IDAO.Action[] memory actions = _createDummyActions();
 
-        // it should emit events.
+        // check event
         vm.expectEmit({
             checkTopic1: false,
             checkTopic2: true,
@@ -149,16 +159,15 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
             _startDate: START_DATE
         });
 
-        // it should create proposal.
+        // check proposal
         SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
-
         assertEq(proposal.currentStage, 0, "current stage");
         assertEq(proposal.creator, users.manager, "creator");
         assertEq(proposal.metadata, DUMMY_METADATA, "metadata");
         assertEq(proposal.lastStageTransition, START_DATE, "startDate");
         assertFalse(proposal.executed, "executed");
 
-        // it should not create sub proposals on stage zero.
+        // check no sub proposals created
         SPP.Plugin memory _currentPlugin;
         for (uint256 i; i < stages[0].plugins.length; i++) {
             _currentPlugin = stages[0].plugins[i];
@@ -167,7 +176,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
             assertEq(PluginA(_currentPlugin.pluginAddress).proposalCount(), 0, "proposalCount");
         }
 
-        // it should not create sub proposals on non zero stages.
+        // check no sub proposals created
         for (uint256 i; i < stages[1].plugins.length; i++) {
             assertEq(
                 PluginA(stages[1].plugins[i].pluginAddress).proposalCount(),
@@ -178,6 +187,9 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
     }
 
     function test_GivenStartDateIsInThePast() external whenStagesAreConfigured {
+        // it should use block.timestamp for first stage sub proposal startDate.
+        // it should use block.timestamp for last stage transition.
+
         // block.timestamp is 3 and startDate is 1  1 < 3
         vm.warp(3);
 
@@ -190,7 +202,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         // create proposal
         IDAO.Action[] memory actions = _createDummyActions();
 
-        // it should use block.timestamp for first stage sub proposal startDate
+        // check proposal start date
         SPP.Plugin memory _currentPlugin;
         for (uint256 i; i < stages[0].plugins.length; i++) {
             _currentPlugin = stages[0].plugins[i];
@@ -212,11 +224,14 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
 
         SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
 
-        // it should use block.timestamp for last stage transition
+        // check proposal last stage transition
         assertEq(proposal.lastStageTransition, _expectedStartDate, "lastStageTransition");
     }
 
     function test_GivenStartDateInInTheFuture() external whenStagesAreConfigured {
+        // it should use block.timestamp for first stage sub proposal startDate.
+        // it should use block.timestamp for last stage transition.
+
         uint64 _expectedStartDate = START_DATE;
 
         // configure stages
@@ -226,7 +241,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         // create proposal
         IDAO.Action[] memory actions = _createDummyActions();
 
-        // it should use block.timestamp for first stage sub proposal startDate
+        // check proposal start date
         SPP.Plugin memory _currentPlugin;
         for (uint256 i; i < stages[0].plugins.length; i++) {
             _currentPlugin = stages[0].plugins[i];
@@ -248,12 +263,13 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
 
         SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
 
-        // it should use block.timestamp for last stage transition
+        // check proposal last stage transition
         assertEq(proposal.lastStageTransition, _expectedStartDate, "lastStageTransition");
     }
 
     function test_RevertWhen_StagesAreNotConfigured() external {
         // it should revert.
+
         vm.expectRevert(abi.encodeWithSelector(Errors.StageCountZero.selector));
         sppPlugin.createProposal({
             _actions: new IDAO.Action[](0),

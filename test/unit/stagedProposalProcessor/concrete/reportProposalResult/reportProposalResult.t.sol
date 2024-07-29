@@ -35,9 +35,13 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         whenStageDurationHasNotPassed
         whenTheCallerIsAnAllowedBody
     {
+        // it should make advance call.
+        // it should emit event.
+        // it should record the result.
+
         bool _tryAdvance = true;
 
-        // it should not call advanceProposal function.
+        // check function was called
         // todo this function is not working with internal functions, wait for foundry support response.
         // vm.expectCall({
         //     callee: address(sppPlugin),
@@ -45,7 +49,7 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         //     count: 1
         // });
 
-        // it should emit event.
+        // check event was emitted
         vm.expectEmit({emitter: address(sppPlugin)});
         emit ProposalResult(proposalId, users.manager);
 
@@ -55,9 +59,8 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
             _tryAdvance: _tryAdvance
         });
 
+        // check result was recorded
         SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
-
-        // it should record the result.
         assertTrue(
             sppPlugin.getPluginResult(
                 proposalId,
@@ -75,17 +78,21 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         whenStageDurationHasNotPassed
         whenTheCallerIsAnAllowedBody
     {
+        // it should not make advance call.
+        // it should emit event.
+        // it should record the result.
+
         bool _tryAdvance = false;
 
         // todo this function is not working with internal functions, wait for foundry support response.
-        // it should not call advanceProposal function.
+        // check function call was not made
         // vm.expectCall({
         //     callee: address(sppPlugin),
         //     data: abi.encodeCall(sppPlugin.advanceProposal, (proposalId)),
         //     count: 0
         // });
 
-        // it should emit event.
+        // check event
         vm.expectEmit({emitter: address(sppPlugin)});
         emit ProposalResult(proposalId, users.manager);
 
@@ -95,9 +102,8 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
             _tryAdvance: _tryAdvance
         });
 
+        // check result was recorded
         SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
-
-        // it should record the result.
         assertTrue(
             sppPlugin.getPluginResult(
                 proposalId,
@@ -120,12 +126,13 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
     }
 
     function test_RevertWhen_StageDurationHasPassed() external givenExistentProposal {
+        // it should revert.
+
         SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
 
         // pass the stage duration.
         vm.warp(proposal.lastStageTransition + STAGE_DURATION + 1);
 
-        // it should revert.
         vm.expectRevert(abi.encodeWithSelector(Errors.StageDurationAlreadyPassed.selector));
         sppPlugin.reportProposalResult({
             _proposalId: proposalId,

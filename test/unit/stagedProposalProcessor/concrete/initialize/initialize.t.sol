@@ -24,6 +24,7 @@ contract Initialize_SPP_UnitTest is BaseTest {
 
     function test_RevertWhen_Reinitializing() external whenInitialized {
         // it should revert.
+
         vm.expectRevert("Initializable: contract is already initialized");
         newSppPlugin.initialize(dao, address(trustedForwarder), new SPP.Stage[](0), EMPTY_METADATA);
     }
@@ -38,12 +39,15 @@ contract Initialize_SPP_UnitTest is BaseTest {
 
     function test_WhenInitializing() external whenNotInitialized whenInitializing {
         // it should emit events.
+        // it should initialize the contract.
+
+        // check event
         vm.expectEmit({emitter: address(newSppPlugin)});
         emit Initialized(1);
 
         newSppPlugin.initialize(dao, address(trustedForwarder), new SPP.Stage[](0), DUMMY_METADATA);
 
-        // it should initialize the contract.
+        // check initialization values are correct
         assertEq(newSppPlugin.trustedForwarder(), address(trustedForwarder));
         assertEq(address(newSppPlugin.dao()), address(dao));
         assertEq(newSppPlugin.getMetadata(), DUMMY_METADATA);
@@ -53,7 +57,6 @@ contract Initialize_SPP_UnitTest is BaseTest {
         // it should revert.
 
         vm.expectRevert(abi.encodeWithSelector(Errors.EmptyMetadata.selector));
-
         newSppPlugin.initialize(dao, address(trustedForwarder), new SPP.Stage[](0), EMPTY_DATA);
     }
 }

@@ -17,24 +17,28 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
     }
 
     function test_WhenMinAdvanceIsNotReached() external whenExistentProposal {
+        // it should return false.
+
         bool _canProposalAdvance = sppPlugin.canProposalAdvance(proposalId);
 
-        // it should return false.
         assertFalse(_canProposalAdvance, "canProposalAdvance");
     }
 
     function test_WhenMaxAdvanceIsReached() external whenExistentProposal {
+        // it should return false.
+
         uint256 lastStageTransition = sppPlugin.getProposal(proposalId).lastStageTransition;
 
         // reach max advance
         vm.warp(lastStageTransition + MAX_ADVANCE + 1);
         bool _canProposalAdvance = sppPlugin.canProposalAdvance(proposalId);
 
-        // it should return false.
         assertFalse(_canProposalAdvance, "canProposalAdvance");
     }
 
     function test_WhenProposalIsExecuted() external whenExistentProposal {
+        // it should return false.
+
         uint256 initialStage;
 
         // execute proposals on first stage
@@ -55,7 +59,6 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
 
         bool _canProposalAdvance = sppPlugin.canProposalAdvance(proposalId);
 
-        // it should return false.
         assertFalse(_canProposalAdvance, "canProposalAdvance");
     }
 
@@ -73,13 +76,14 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         whenVetoStageThresholdIsNotZero
         whenExistentProposal
     {
+        // it should return false.
+
         uint256 lastStageTransition = sppPlugin.getProposal(proposalId).lastStageTransition;
 
         // reach min advance duration but not stage duration
         vm.warp(lastStageTransition + minAdvance + 1);
         bool _canProposalAdvance = sppPlugin.canProposalAdvance(proposalId);
 
-        // it should return false.
         assertFalse(_canProposalAdvance, "canProposalAdvance");
     }
 
@@ -100,6 +104,8 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         whenStageDurationIsReached
         whenExistentProposal
     {
+        // it should return false.
+
         uint256 lastStageTransition = sppPlugin.getProposal(proposalId).lastStageTransition;
 
         // execute proposals on first stage to reach veto threshold
@@ -109,7 +115,6 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         vm.warp(lastStageTransition + stageDuration + 1);
         bool _canProposalAdvance = sppPlugin.canProposalAdvance(proposalId);
 
-        // it should return false.
         assertFalse(_canProposalAdvance, "canProposalAdvance");
     }
 
@@ -125,6 +130,8 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         whenVetoThresholdIsNotMet
         whenExistentProposal
     {
+        // it should return true.
+
         uint256 lastStageTransition = sppPlugin.getProposal(proposalId).lastStageTransition;
 
         // execute proposals on first stage to reach veto threshold
@@ -134,7 +141,6 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         vm.warp(lastStageTransition + stageDuration + 1);
         bool _canProposalAdvance = sppPlugin.canProposalAdvance(proposalId);
 
-        // it should return true.
         assertTrue(_canProposalAdvance, "canProposalAdvance");
     }
 
@@ -146,13 +152,14 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         whenVetoThresholdIsNotMet
         whenExistentProposal
     {
+        // it should return false.
+
         uint256 lastStageTransition = sppPlugin.getProposal(proposalId).lastStageTransition;
 
         // reach stage duration
         vm.warp(lastStageTransition + stageDuration + 1);
         bool _canProposalAdvance = sppPlugin.canProposalAdvance(proposalId);
 
-        // it should return false.
         assertFalse(_canProposalAdvance, "canProposalAdvance");
     }
 
@@ -167,6 +174,8 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         whenVetoStageThresholdIsZero
         whenExistentProposal
     {
+        // it should return true.
+
         uint256 lastStageTransition = sppPlugin.getProposal(proposalId).lastStageTransition;
 
         // execute proposals on first stage to reach veto threshold
@@ -176,7 +185,6 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         vm.warp(lastStageTransition + stageDuration + 1);
         bool _canProposalAdvance = sppPlugin.canProposalAdvance(proposalId);
 
-        // it should return true.
         assertTrue(_canProposalAdvance, "canProposalAdvance");
     }
 
@@ -186,13 +194,14 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         whenVetoStageThresholdIsZero
         whenExistentProposal
     {
+        // it should return false.
+
         uint256 lastStageTransition = sppPlugin.getProposal(proposalId).lastStageTransition;
 
         // reach min advance duration but not stage duration
         vm.warp(lastStageTransition + stageDuration + 1);
         bool _canProposalAdvance = sppPlugin.canProposalAdvance(proposalId);
 
-        // it should return false.
         assertFalse(_canProposalAdvance, "canProposalAdvance");
     }
 
@@ -207,13 +216,14 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         whenMinAdvanceIsBiggerThanStageDuration
         whenExistentProposal
     {
+        // it should return false.
+
         uint256 lastStageTransition = sppPlugin.getProposal(proposalId).lastStageTransition;
 
         // reach min advance duration but not stage duration
         vm.warp(lastStageTransition + stageDuration + 1);
         bool _canProposalAdvance = sppPlugin.canProposalAdvance(proposalId);
 
-        // it should return false.
         assertFalse(_canProposalAdvance, "canProposalAdvance");
     }
 
@@ -229,6 +239,8 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         whenVetoStageThresholdIsNotZero
         whenExistentProposal
     {
+        // it should return false.
+
         uint256 lastStageTransition = sppPlugin.getProposal(proposalId).lastStageTransition;
 
         // execute proposals on first stage to reach veto threshold
@@ -238,7 +250,6 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         vm.warp(lastStageTransition + minAdvance + 1);
         bool _canProposalAdvance = sppPlugin.canProposalAdvance(proposalId);
 
-        // it should return false.
         assertFalse(_canProposalAdvance, "canProposalAdvance");
     }
 
@@ -250,6 +261,8 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         whenVetoThresholdIsNotMet
         whenExistentProposal
     {
+        // it should return true.
+
         uint256 lastStageTransition = sppPlugin.getProposal(proposalId).lastStageTransition;
 
         // execute proposals on first stage to reach veto threshold
@@ -259,7 +272,6 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         vm.warp(lastStageTransition + minAdvance + 1);
         bool _canProposalAdvance = sppPlugin.canProposalAdvance(proposalId);
 
-        // it should return true.
         assertTrue(_canProposalAdvance, "canProposalAdvance");
     }
 
@@ -271,13 +283,14 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         whenVetoThresholdIsNotMet
         whenExistentProposal
     {
+        // it should return false.
+
         uint256 lastStageTransition = sppPlugin.getProposal(proposalId).lastStageTransition;
 
         // reach min advance and stage duration
         vm.warp(lastStageTransition + minAdvance + 1);
         bool _canProposalAdvance = sppPlugin.canProposalAdvance(proposalId);
 
-        // it should return false.
         assertFalse(_canProposalAdvance, "canProposalAdvance");
     }
 
@@ -288,6 +301,8 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         whenVetoStageThresholdIsZero
         whenExistentProposal
     {
+        // it should return true.
+
         uint256 lastStageTransition = sppPlugin.getProposal(proposalId).lastStageTransition;
 
         // execute proposals on first stage to reach veto threshold
@@ -297,7 +312,6 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         vm.warp(lastStageTransition + minAdvance + 1);
         bool _canProposalAdvance = sppPlugin.canProposalAdvance(proposalId);
 
-        // it should return true.
         assertTrue(_canProposalAdvance, "canProposalAdvance");
     }
 
@@ -308,13 +322,14 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         whenVetoStageThresholdIsZero
         whenExistentProposal
     {
+        // it should return false.
+
         uint256 lastStageTransition = sppPlugin.getProposal(proposalId).lastStageTransition;
 
         // reach min advance and stage duration
         vm.warp(lastStageTransition + minAdvance + 1);
         bool _canProposalAdvance = sppPlugin.canProposalAdvance(proposalId);
 
-        // it should return false.
         assertFalse(_canProposalAdvance, "canProposalAdvance");
     }
 

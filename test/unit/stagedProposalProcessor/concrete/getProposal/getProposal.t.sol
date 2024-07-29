@@ -6,15 +6,18 @@ import {StagedProposalProcessor as SPP} from "../../../../../src/StagedProposalP
 
 contract GetProposal_SPP_UnitTest is StagedConfiguredSharedTest {
     function test_WhenNonExistentProposal() external {
+        // it should return empty proposal.
+
         SPP.Proposal memory emptyProposal;
 
+        // check proposal is correct
         SPP.Proposal memory proposal = sppPlugin.getProposal(NON_EXISTENT_PROPOSAL_ID);
-
-        // it should return empty proposal.
         assertEq(proposal, emptyProposal);
     }
 
     function test_WhenExistentProposal() external {
+        // it should return correct proposal.
+
         // create proposal
         bytes32 proposalId = sppPlugin.createProposal({
             _actions: _createDummyActions(),
@@ -33,9 +36,8 @@ contract GetProposal_SPP_UnitTest is StagedConfiguredSharedTest {
             actions: _createDummyActions()
         });
 
+        // check proposal is correct
         SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
-
-        // it should return correct proposal.
         assertEq(proposal, expectedProposal);
     }
 }

@@ -9,11 +9,15 @@ import {IDAO} from "@aragon/osx-commons-contracts-new/src/dao/IDAO.sol";
 contract TrustedForwarder_UnitTest is BaseTest {
     function test_RevertWhen_MoreThanOneActionIsExecuted() external {
         // it should revert.
+
         vm.expectRevert(abi.encodeWithSelector(Errors.NotPossible.selector));
         trustedForwarder.execute(DUMMY_CALL_ID, _createDummyActions(), 0);
     }
 
     function test_WhenTheActionIsCorrect() external {
+        // it should execute correctly.
+        // it return correct data.
+
         IDAO.Action[] memory actions = new IDAO.Action[](1);
         actions[0] = IDAO.Action({
             to: address(target),
@@ -22,9 +26,7 @@ contract TrustedForwarder_UnitTest is BaseTest {
         });
         trustedForwarder.execute(DUMMY_CALL_ID, actions, 0);
 
-        // it should execute correctly.
         assertEq(target.val(), TARGET_VALUE);
-        // it return correct data.
         // todo currently the return values are not being set
     }
 
