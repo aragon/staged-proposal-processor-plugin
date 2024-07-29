@@ -2,10 +2,12 @@
 pragma solidity ^0.8.8;
 
 contract Constants {
-    string AragonOSxAsciiArt =
+    string public constant ARAGON_OSx_ASCii_ART =
         "                                          ____   _____      \n     /\\                                  / __ \\ / ____|     \n    /  \\   _ __ __ _  __ _  ___  _ __   | |  | | (_____  __ \n   / /\\ \\ | '__/ _` |/ _` |/ _ \\| '_ \\  | |  | |\\___ \\ \\/ / \n  / ____ \\| | | (_| | (_| | (_) | | | | | |__| |____) >  <  \n /_/    \\_\\_|  \\__,_|\\__, |\\___/|_| |_|  \\____/|_____/_/\\_\\ \n                      __/ |                                 \n                     |___/                                  \n";
-    string deploymentsPath = "node_modules/@aragon/osx-commons-configs/dist/deployments/json";
+    string public constant DEPLOYMENTS_PATH =
+        "node_modules/@aragon/osx-commons-configs/dist/deployments/json";
 
-    string pluginFactoryAddressKey = "PluginRepoFactory.address";
-    string managementDaoAddressKey = "ManagementDAOProxy.address";
+    string public constant PLUGIN_FACTORY_ADDRESS_KEY = "PluginRepoFactory.address";
+    string public constant MANAGEMENT_DAO_ADDRESS_KEY = "ManagementDAOProxy.address";
+    string public constant DAO_FACTORY_ADDRESS_KEY = "DAOFactory.address";
 }

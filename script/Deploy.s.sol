@@ -3,7 +3,8 @@ pragma solidity ^0.8.0;
 
 import {Script} from "forge-std/Script.sol";
 
-import {Constants} from "./utils/Constants.sol";
+import {BaseScript} from "./Base.sol";
+
 import {PluginSettings} from "../src/utils/PluginSettings.sol";
 import {StagedProposalProcessorSetup as SPPSetup} from "../src/StagedProposalProcessorSetup.sol";
 
@@ -13,25 +14,10 @@ import {PluginRepoFactory} from "@aragon/osx/framework/plugin/repo/PluginRepoFac
 
 import "forge-std/console.sol";
 
-contract Deploy is Script, Constants {
-    // core contracts
-    address internal pluginRepoFactory;
-    address internal managementDao;
-
-    SPPSetup internal sppSetup;
-    PluginRepo internal sppRepo;
-
-    uint256 internal deployerPrivateKey = vm.envUint("DEPLOYER_KEY");
-    string internal network = vm.envString("NETWORK_NAME");
-    string internal protocolVersion = vm.envString("PROTOCOL_VERSION");
-
-    address internal deployer = vm.addr(deployerPrivateKey);
-
-    error UnsupportedNetwork(string network);
-
+contract Deploy is BaseScript {
     function run() external {
         // get deployed contracts
-        (pluginRepoFactory, managementDao) = _getRepoContractAddresses(network);
+        (pluginRepoFactory, managementDao) = getRepoContractAddresses(network);
 
         // ! 3. check if ensDomain is unclaimed if it is not revert
         // ? this will revert if the ens domain is already claimed when registering, should be checked before?
@@ -128,44 +114,5 @@ contract Deploy is Script, Constants {
         });
 
         sppRepo.applyMultiTargetPermissions(permissions);
-    }
-
-    function _getRepoContractAddresses(
-        string memory _network
-    ) internal view returns (address _repoFactory, address _managementDao) {
-        string memory _json = _getOsxConfigs(_network);
-
-        string memory _repoFactoryKey = _buildKey(protocolVersion, pluginFactoryAddressKey);
-
-        if (!vm.keyExistsJson(_json, _repoFactoryKey)) {
-            revert UnsupportedNetwork(_network);
-        }
-        _repoFactory = vm.parseJsonAddress(_json, _repoFactoryKey);
-
-        string memory _managementDaoKey = _buildKey(protocolVersion, managementDaoAddressKey);
-
-        if (!vm.keyExistsJson(_json, _managementDaoKey)) {
-            revert UnsupportedNetwork(_network);
-        }
-        _managementDao = vm.parseJsonAddress(_json, _managementDaoKey);
-    }
-
-    function _getOsxConfigs(string memory _network) internal view returns (string memory) {
-        string memory osxConfigsPath = string.concat(
-            vm.projectRoot(),
-            "/",
-            deploymentsPath,
-            "/",
-            _network,
-            ".json"
-        );
-        return vm.readFile(osxConfigsPath);
-    }
-
-    function _buildKey(
-        string memory _protocolVersion,
-        string memory _contractKey
-    ) internal pure returns (string memory) {
-        return string.concat(".['", _protocolVersion, "'].", _contractKey);
     }
 }
