@@ -2,8 +2,8 @@ CreateProposal_SPP_IntegrationTest
 ├── when caller is not allowed
 │   └── it should revert.
 ├── when stages are configured
-│   ├── given some sub proposals on stage zero are non manual.
-│   │   ├── when sub proposal can not be created.
+│   ├── given some sub proposals on stage zero are non manual
+│   │   ├── when sub proposal can not be created
 │   │   │   └── it should emit an event.     // TBD
 │   │   └── when sub proposal can be created
 │   │       ├── it should emit events.
