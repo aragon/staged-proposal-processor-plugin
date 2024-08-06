@@ -13,7 +13,7 @@ contract GetMetadata_SPP_UnitTest is BaseTest {
         notInitializedSppPlugin = SPP(createProxyAndCall(address(new SPP()), EMPTY_DATA));
     }
 
-    function test_WhenNonConfiguredMetadata() external view {
+    function test_WhenNonConfiguredMetadata() external {
         // it should return empty metadata.
 
         bytes memory _metadata = notInitializedSppPlugin.getMetadata();
