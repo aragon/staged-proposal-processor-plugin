@@ -12,7 +12,10 @@ library PluginSettings {
     uint8 constant VERSION_RELEASE = 1;
     uint8 constant VERSION_BUILD = 1;
 
-    // todo load value from src/build and release metadata json
+    // 1. upload build-metadata and release-metadata jsons to the IPFS. 
+    // 2. use ethers to convert it to utf8 bytes:
+    // ethers.utils.hexlify(ethers.utils.toUtf8Bytes(`ipfs://${cid}`))
+    // 3. Copy/paste the bytes into BUILD_METADATA and RELEASE_METADATA    
     bytes constant BUILD_METADATA = "dummy";
     bytes constant RELEASE_METADATA = "dummy";
 }

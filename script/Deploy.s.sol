@@ -19,9 +19,6 @@ contract Deploy is BaseScript {
         // get deployed contracts
         (pluginRepoFactory, managementDao) = getRepoContractAddresses(network);
 
-        // ! 3. check if ensDomain is unclaimed if it is not revert
-        // ? this will revert if the ens domain is already claimed when registering, should be checked before?
-
         vm.startBroadcast(deployerPrivateKey);
 
         // crete plugin repo and version
@@ -29,9 +26,6 @@ contract Deploy is BaseScript {
 
         //transfer ownership of the plugin to the management DAO and revoke from deployer
         _transferOwnershipToManagementDao();
-
-        // ! 6. verify the contract on etherscan
-        // ? adding --verify when running forge script works, sill check if the proxies are linked correctly
 
         vm.stopBroadcast();
     }
@@ -64,7 +58,6 @@ contract Deploy is BaseScript {
         PermissionLib.MultiTargetPermission[]
             memory permissions = new PermissionLib.MultiTargetPermission[](6);
 
-        // Grant to the management DAO
         permissions[0] = PermissionLib.MultiTargetPermission({
             operation: PermissionLib.Operation.Grant,
             where: address(sppRepo),
@@ -81,7 +74,6 @@ contract Deploy is BaseScript {
             permissionId: sppRepo.UPGRADE_REPO_PERMISSION_ID()
         });
 
-        // ? what is this root permission for?
         permissions[2] = PermissionLib.MultiTargetPermission({
             operation: PermissionLib.Operation.Grant,
             where: address(sppRepo),
