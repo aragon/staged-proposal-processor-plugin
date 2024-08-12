@@ -11,7 +11,7 @@
 
 "@aragon/osx-commons-contracts-new@https://github.com/novaknole/osx-commons-test.git":
   version "1.0.0"
-  resolved "https://github.com/novaknole/osx-commons-test.git#5e02abcc4a1800e73b4d7b626206731019de0afc"
+  resolved "https://github.com/novaknole/osx-commons-test.git#2ce2c63273d3bdca56ab1822bfb803ac140e5706"
 
 "@aragon/osx-commons-contracts@1.4.0-alpha.5":
   version "1.4.0-alpha.5"
@@ -2090,9 +2090,9 @@ forever-agent@~0.6.1:
   resolved "https://registry.yarnpkg.com/forever-agent/-/forever-agent-0.6.1.tgz#fbc71f0c41adeb37f96c577ad1ed42d8fdacca91"
   integrity sha512-j0KLYPhm6zeac4lz3oJ3o65qvgQCcPubiyotZrXqEaG4hNagNYO8qdlUrX5vwqv9ohqeT/Z3j6+yW067yWWdUw==
 
-"forge-std@github:foundry-rs/forge-std#v1":
-  version "1.8.2"
-  resolved "https://codeload.github.com/foundry-rs/forge-std/tar.gz/978ac6fadb62f5f0b723c996f64be52eddba6801"
+"forge-std@github:foundry-rs/forge-std#v1.7.6":
+  version "1.7.6"
+  resolved "https://codeload.github.com/foundry-rs/forge-std/tar.gz/ae570fec082bfe1c1f45b0acca4a2b4f84d345ce"
 
 form-data-encoder@1.7.1:
   version "1.7.1"

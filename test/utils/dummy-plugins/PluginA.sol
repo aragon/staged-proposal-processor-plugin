@@ -35,6 +35,11 @@ contract PluginA is IProposal {
         return _proposalId;
     }
 
+    function canExecute(uint256 _proposalId) public view returns(bool) {
+        // TODO: for now
+        return true;
+    }
+
     function execute(
         uint256 _proposalId
     ) external returns (bytes[] memory execResults, uint256 failureMap) {
