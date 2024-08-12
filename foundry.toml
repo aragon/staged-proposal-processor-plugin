@@ -1,0 +1,15 @@
+[profile.default]
+src = "src"
+out = "out"
+libs = ["lib"]
+solc = "0.8.17"
+fs_permissions = [{ access = "read", path = "./node_modules/@aragon/osx-commons-configs/dist/deployments/json"}]
+
+gas_reports = ["StagedProposalProcessor", "StagedProposalProcessorSetup"]
+# See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
+
+[rpc_endpoints]
+local = "http://127.0.0.1:8545"
+
+[fuzz]
+runs = 2

@@ -1,0 +1,6 @@
+PrepareInstallation_SPPSetup_UnitTest
+└── when preparing installation
+    └── it should return the correct preparation data.
+
+
+// todo check if somethin else needs to be tested

@@ -1,0 +1,18 @@
+ReportProposalResult_SPP_UnitTest
+├── given existent proposal
+│   ├── when stageDuration has not passed
+│   │   ├── when the caller is an allowed body
+│   │   │   ├── when should try advance stage 
+│   │   │   │   ├── it should record the result.
+│   │   │   │   ├── it should emit event.
+│   │   │   │   └── it should call advanceProposal function.
+│   │   │   └── when should not try advance stage 
+│   │   │   │   ├── it should record the result.
+│   │   │   │   ├── it should emit event.
+│   │   │   │   └── it should not call advanceProposal function.
+│   │   └── when the caller is not an allowed body
+│   │       └── it should not record the result. // TBD
+│   └── when stageDuration has passed
+│       └── it should revert.
+└── given non existent proposal
+    └── it should reverts.   // TBD

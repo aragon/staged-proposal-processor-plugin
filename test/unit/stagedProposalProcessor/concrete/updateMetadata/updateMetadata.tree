@@ -1,0 +1,9 @@
+UpdateMetadata_SPP_UnitTest
+├── when caller is not allowed
+│   └── it should revert.
+└── when caller is allowed
+    ├── when metadata is empty
+    │   └── it should revert.
+    └── when metadata is not empty
+        ├── it should update metadata.
+        └── it should emit an event.

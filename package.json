@@ -1,0 +1,51 @@
+{
+  "name": "@aragon/proposal-processor-poc",
+  "description": "",
+  "version": "1.0.0",
+  "author": {
+    "name": "aragon",
+    "url": "https://github.com/Aragon"
+  },
+  "keywords": [
+    "blockchain",
+    "ethereum",
+    "forge",
+    "foundry",
+    "smart-contracts",
+    "solidity",
+    "aragon",
+    "osx",
+    "dao",
+    "daobox"
+  ],
+  "private": true,
+  "scripts": {
+    "clean": "rm -rf cache out",
+    "build": "forge build",
+    "lint": "yarn lint:sol && yarn prettier:check",
+    "lint:sol": "solhint --max-warnings 0 \"{script,src,test}/**/*.sol\"",
+    "prettier:check": "prettier --check --plugin=prettier-plugin-solidity  \"**/*.{js,json,md,sol,ts,yml}\"",
+    "prettier:write": "prettier --write --plugin=prettier-plugin-solidity  \"**/*.{js,json,md,sol,ts,yml}\"",
+    "test": "forge test -vvv",
+    "test:coverage": "forge coverage",
+    "test:coverage:report": "forge coverage --report lcov && genhtml lcov.info --branch-coverage --output-dir coverage"
+  },
+  "devDependencies": {
+    "ds-test": "github:dapphub/ds-test",
+    "forge-std": "github:foundry-rs/forge-std#v1.7.6",
+    "prettier": "^2.8.8",
+    "prettier-plugin-solidity": "^1.1.3",
+    "solhint": "^3.6.2",
+    "solhint-plugin-prettier": "^0.0.5"
+  },
+  "dependencies": {
+    "@aragon/osx": "1.3.0",
+    "@aragon/osx-new": "https://github.com/aragon/osx.git#develop",
+    "@aragon/osx-commons-contracts": "1.4.0-alpha.5",
+    "@aragon/osx-commons-contracts-new": "https://github.com/novaknole/osx-commons-test.git",
+    "@aragon/osx-commons-configs": "^0.5.0",
+    "@ensdomains/ens-contracts": "^1.1.4",
+    "@openzeppelin/contracts": "4.8.1",
+    "@openzeppelin/contracts-upgradeable": "4.8.1"
+  }
+}

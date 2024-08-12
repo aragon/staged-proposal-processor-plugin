@@ -1,0 +1,5 @@
+GetMetadata_SPP_UnitTest
+├── when non configured metadata
+│   └── it should return empty metadata.
+└── when configured metadata
+    └── it should return correct metadata.

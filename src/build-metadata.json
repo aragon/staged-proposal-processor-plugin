@@ -1,0 +1,74 @@
+{
+    "ui": {},
+    "change": "Initial build.",
+    "pluginSetup": {
+      "prepareInstallation": {
+        "description": "The information required for the installation of build 1.",
+        "inputs": [
+            {
+                "components": [
+                    {
+                        "components": [
+                            {
+                                "components": [
+                                    {
+                                        "name": "pluginAddress",
+                                        "type": "address"
+                                    },
+                                    {
+                                        "name": "isManual",
+                                        "type": "bool"
+                                    },
+                                    {
+                                        "name": "allowedBody",
+                                        "type": "address"
+                                    },
+                                    {
+                                        "name": "proposalType",
+                                        "type": "uint8"
+                                    }
+                                ],
+                                "name": "plugins",
+                                "type": "tuple[]"
+                            },
+                            {
+                                "name": "maxAdvance",
+                                "type": "uint64"
+                            },
+                            {
+                                "name": "minAdvance",
+                                "type": "uint64"
+                            },
+                            {
+                                "name": "stageDuration",
+                                "type": "uint64"
+                            },
+                            {
+                                "name": "approvalThreshold",
+                                "type": "uint16"
+                            },
+                            {
+                                "name": "vetoThreshold",
+                                "type": "uint16"
+                            }
+                        ],
+                        "name": "stages",
+                        "type": "tuple[]"
+                    }
+                ],
+                "name": "stages",
+                "type": "tuple[]"
+            },
+            {
+                "name": "metadata",
+                "type": "bytes"
+            }
+        ]
+      },
+      "prepareUpdate": {},
+      "prepareUninstallation": {
+        "description": "The information required for the uninstallation of build 1.",
+        "inputs": []
+      }
+    }
+}
