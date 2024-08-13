@@ -20,8 +20,7 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         });
         _;
     }
-
-    modifier whenStageDurationHasNotPassed() {
+    modifier whenVoteDurationHasNotPassed() {
         _;
     }
 
@@ -32,13 +31,12 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
     function test_WhenShouldTryAdvanceStage()
         external
         givenExistentProposal
-        whenStageDurationHasNotPassed
+        whenVoteDurationHasNotPassed
         whenTheCallerIsAnAllowedBody
     {
-        // it should make advance call.
-        // it should emit event.
         // it should record the result.
-
+        // it should emit event.
+        // it should call advanceProposal function.
         bool _tryAdvance = true;
 
         // check function was called
@@ -75,13 +73,12 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
     function test_WhenShouldNotTryAdvanceStage()
         external
         givenExistentProposal
-        whenStageDurationHasNotPassed
+        whenVoteDurationHasNotPassed
         whenTheCallerIsAnAllowedBody
     {
-        // it should not make advance call.
-        // it should emit event.
         // it should record the result.
-
+        // it should emit event.
+        // it should not call advanceProposal function.
         bool _tryAdvance = false;
 
         // todo this function is not working with internal functions, wait for foundry support response.
@@ -118,27 +115,43 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
     function test_WhenTheCallerIsNotAnAllowedBody()
         external
         givenExistentProposal
-        whenStageDurationHasNotPassed
+        whenVoteDurationHasNotPassed
     {
         // todo TBD
         // it should not record the result.
         vm.skip(true);
     }
 
-    function test_RevertWhen_StageDurationHasPassed() external givenExistentProposal {
-        // it should revert.
+    function test_WhenVoteDurationHasPassed() external givenExistentProposal {
+        // it should record the result.
+        // it should emit event.
 
         SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
 
         // pass the stage duration.
-        vm.warp(proposal.lastStageTransition + STAGE_DURATION + 1);
+        vm.warp(proposal.lastStageTransition + VOTE_DURATION + 1);
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.StageDurationAlreadyPassed.selector));
+        // check event
+        vm.expectEmit({emitter: address(sppPlugin)});
+        emit ProposalResult(proposalId, users.manager);
+
         sppPlugin.reportProposalResult({
             _proposalId: proposalId,
             _proposalType: SPP.ProposalType.Approval,
-            _tryAdvance: true
+            _tryAdvance: false
         });
+
+        // check result was recorded
+        proposal = sppPlugin.getProposal(proposalId);
+        assertTrue(
+            sppPlugin.getPluginResult(
+                proposalId,
+                proposal.currentStage,
+                SPP.ProposalType.Approval,
+                users.manager
+            ),
+            "pluginResult"
+        );
     }
 
     function test_GivenNonExistentProposal() external {
