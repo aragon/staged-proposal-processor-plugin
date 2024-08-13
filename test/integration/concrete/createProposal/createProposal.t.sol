@@ -211,7 +211,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
             emit ProposalCreated({
                 proposalId: 0,
                 startDate: _expectedStartDate,
-                endDate: _expectedStartDate + stages[0].stageDuration
+                endDate: _expectedStartDate + stages[0].voteDuration
             });
         }
 
@@ -250,7 +250,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
             emit ProposalCreated({
                 proposalId: 0,
                 startDate: _expectedStartDate,
-                endDate: _expectedStartDate + stages[0].stageDuration
+                endDate: _expectedStartDate + stages[0].voteDuration
             });
         }
 

@@ -21,7 +21,7 @@ abstract contract Fuzzers is StdUtils {
             _fuzzedStages[i] = SPP.Stage({
                 maxAdvance: _stages[i].maxAdvance,
                 minAdvance: _stages[i].minAdvance,
-                stageDuration: _stages[i].stageDuration,
+                voteDuration: _stages[i].voteDuration,
                 approvalThreshold: uint16(bound(_stages[i].approvalThreshold, 0, _stages.length)),
                 vetoThreshold: uint16(bound(_stages[i].vetoThreshold, 0, _stages.length)),
                 plugins: fuzzPlugins

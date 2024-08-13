@@ -10,7 +10,6 @@ import {Fuzzers} from "./utils/Fuzzers.sol";
 import {Constants} from "./utils/Constants.sol";
 import {Assertions} from "./utils/Assertions.sol";
 import {PluginA} from "./utils/dummy-plugins/PluginA.sol";
-import {PluginB} from "./utils/dummy-plugins/PluginB.sol";
 import {TrustedForwarder} from "../src/utils/TrustedForwarder.sol";
 import {AlwaysTrueCondition} from "../src/utils/AlwaysTrueCondition.sol";
 import {StagedProposalProcessor as SPP} from "../src/StagedProposalProcessor.sol";
@@ -37,7 +36,7 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
     // helpers
     uint64 internal maxAdvance = MAX_ADVANCE;
     uint64 internal minAdvance = MIN_ADVANCE;
-    uint64 internal stageDuration = STAGE_DURATION;
+    uint64 internal voteDuration = VOTE_DURATION;
 
     uint16 internal approvalThreshold = 1;
     uint16 internal vetoThreshold = 1;
@@ -196,7 +195,7 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
             plugins: _plugins,
             maxAdvance: maxAdvance,
             minAdvance: minAdvance,
-            stageDuration: stageDuration,
+            voteDuration: voteDuration,
             approvalThreshold: approvalThreshold,
             vetoThreshold: vetoThreshold
         });

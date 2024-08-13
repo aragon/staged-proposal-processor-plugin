@@ -62,7 +62,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         _executeStageProposals(initialStage);
 
         // advance to last stage
-        vm.warp(STAGE_DURATION + START_DATE);
+        vm.warp(VOTE_DURATION + START_DATE);
         sppPlugin.advanceProposal(proposalId);
 
         uint64 lastStageTransition = sppPlugin.getProposal(proposalId).lastStageTransition;
@@ -71,7 +71,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         _executeStageProposals(initialStage + 1);
 
         // advance last stage
-        vm.warp(lastStageTransition + STAGE_DURATION + START_DATE);
+        vm.warp(lastStageTransition + VOTE_DURATION + START_DATE);
         sppPlugin.advanceProposal(proposalId);
 
         // check proposal executed
@@ -113,7 +113,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         // execute proposals on first stage
         _executeStageProposals(initialStage);
 
-        vm.warp(STAGE_DURATION + START_DATE);
+        vm.warp(VOTE_DURATION + START_DATE);
 
         // check event emitted
         vm.expectEmit({emitter: address(sppPlugin)});
@@ -161,7 +161,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         // execute proposals on first stage
         _executeStageProposals(initialStage);
 
-        vm.warp(STAGE_DURATION + START_DATE);
+        vm.warp(VOTE_DURATION + START_DATE);
 
         // check event emitted
         vm.expectEmit({emitter: address(sppPlugin)});
