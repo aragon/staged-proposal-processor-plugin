@@ -49,6 +49,10 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         givenSomeSubProposalsOnStageZeroAreNonManual
     {
         // it should emit an event.
+
+        // todo add a check for this
+        // it should store uint max value as proposal id.
+
         // todo proposals are defined as non-manual but can not be created due to no implement IProposal interface.
         vm.skip(true);
     }
@@ -61,6 +65,8 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         // it should emit events.
         // it should create proposal.
         // it should create non-manual sub proposals on stage zero.
+        // todo add check for proposals ids being stored
+        // it should store non-manual sub proposal ids.
         // it should not create sub proposals on non zero stages.
 
         // create proposal
