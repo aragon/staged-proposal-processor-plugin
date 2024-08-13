@@ -46,7 +46,6 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
         bool isManual;
         address allowedBody;
         ProposalType proposalType;
-        uint256 proposalId; // proposalId received from the sub-plugin's creation of proposal.
     }
 
     // Stage Settings
@@ -69,6 +68,8 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
         uint16 stageConfigIndex; // What stage configuration the proposal is using
         bool executed;
     }
+
+    mapping(bytes32 => mapping(uint256 => mapping(address => uint256))) pluginProposalIds;
 
     // proposalId => stageId => proposalType => allowedBody => true/false
     mapping(bytes32 => mapping(uint16 => mapping(ProposalType => mapping(address => bool))))
@@ -332,14 +333,16 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
             Plugin storage plugin = stage.plugins[i];
             address allowedBody = plugin.allowedBody;
 
+            uint256 pluginProposalId = pluginProposalIds[_proposalId][currentStage][plugin.pluginAddress];
+            
             if (pluginResults[_proposalId][currentStage][plugin.proposalType][allowedBody]) {
                 if (plugin.proposalType == ProposalType.Approval) {
                     ++approvals;
                 } else {
                     ++vetoes;
                 }
-            } else if(stage.vetoThreshold > 0 && !plugin.isManual && plugin.proposalId != 0) {
-                if(IProposal(stage.plugins[i].pluginAddress).canExecute(plugin.proposalId)){
+            } else if(stage.vetoThreshold > 0 && !plugin.isManual && pluginProposalId != 2**256 - 1) {
+                if(IProposal(stage.plugins[i].pluginAddress).canExecute(pluginProposalId)){
                     vetoesEarlyCount++;
                 }
             }
@@ -493,8 +496,10 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
                     _startDate + stage.voteDuration
                 )
             returns (uint256 pluginProposalId) {
-                plugin.proposalId = pluginProposalId;
+                pluginProposalIds[_proposalId][_stageId][stage.plugins[i].pluginAddress] = pluginProposalId;
             } catch {
+                pluginProposalIds[_proposalId][_stageId][stage.plugins[i].pluginAddress] = 2**256 - 1; // uint max
+
                 uint256 gasAfter = gasleft();
 
                 if (gasAfter < gasBefore / 64) {
