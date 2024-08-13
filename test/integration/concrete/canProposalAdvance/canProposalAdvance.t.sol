@@ -12,7 +12,7 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
     bytes32 proposalId;
 
     modifier whenExistentProposal() {
-        _confStagesAndCreateProposal();
+        _configureStagesAndCreateProposal();
         _;
     }
 
@@ -45,7 +45,7 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         _executeStageProposals(initialStage);
 
         // advance to last stage
-        vm.warp(STAGE_DURATION + 1);
+        vm.warp(voteDuration + 1);
         sppPlugin.advanceProposal(proposalId);
 
         uint64 lastStageTransition = sppPlugin.getProposal(proposalId).lastStageTransition;
@@ -54,7 +54,7 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         _executeStageProposals(initialStage + 1);
 
         // advance last stage
-        vm.warp(lastStageTransition + STAGE_DURATION + 1);
+        vm.warp(lastStageTransition + voteDuration + 1);
         sppPlugin.advanceProposal(proposalId);
 
         bool _canProposalAdvance = sppPlugin.canProposalAdvance(proposalId);
@@ -62,7 +62,7 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         assertFalse(_canProposalAdvance, "canProposalAdvance");
     }
 
-    modifier whenMinAdvanceIsLowerThanStageDuration() {
+    modifier whenMinAdvanceIsLowerThanVoteDuration() {
         _;
     }
 
@@ -72,7 +72,7 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
 
     function test_WhenStageDurationIsNotReached()
         external
-        whenMinAdvanceIsLowerThanStageDuration
+        whenMinAdvanceIsLowerThanVoteDuration
         whenVetoStageThresholdIsNotZero
         whenExistentProposal
     {
@@ -87,7 +87,7 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         assertFalse(_canProposalAdvance, "canProposalAdvance");
     }
 
-    modifier whenStageDurationIsReached() {
+    modifier whenVoteDurationIsReached() {
         _;
     }
 
@@ -96,12 +96,12 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         _;
     }
 
-    function test_whenMinAdvanceIsLowerThanStageDuration_WhenVetoThresholdIsMet()
+    function test_whenMinAdvanceIsLowerThanVoteDuration_WhenVetoThresholdIsMet()
         external
         proposalTypeVeto
-        whenMinAdvanceIsLowerThanStageDuration
+        whenMinAdvanceIsLowerThanVoteDuration
         whenVetoStageThresholdIsNotZero
-        whenStageDurationIsReached
+        whenVoteDurationIsReached
         whenExistentProposal
     {
         // it should return false.
@@ -112,7 +112,7 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         _executeStageProposals(0);
 
         // reach min advance duration but not stage duration
-        vm.warp(lastStageTransition + stageDuration + 1);
+        vm.warp(lastStageTransition + voteDuration + 1);
         bool _canProposalAdvance = sppPlugin.canProposalAdvance(proposalId);
 
         assertFalse(_canProposalAdvance, "canProposalAdvance");
@@ -124,9 +124,9 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
 
     function test_whenVetoStageThresholdIsNotZero_WhenApprovalThresholdIsMet()
         external
-        whenMinAdvanceIsLowerThanStageDuration
+        whenMinAdvanceIsLowerThanVoteDuration
         whenVetoStageThresholdIsNotZero
-        whenStageDurationIsReached
+        whenVoteDurationIsReached
         whenVetoThresholdIsNotMet
         whenExistentProposal
     {
@@ -138,7 +138,7 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         _executeStageProposals(0);
 
         // reach stage duration
-        vm.warp(lastStageTransition + stageDuration + 1);
+        vm.warp(lastStageTransition + voteDuration + 1);
         bool _canProposalAdvance = sppPlugin.canProposalAdvance(proposalId);
 
         assertTrue(_canProposalAdvance, "canProposalAdvance");
@@ -146,9 +146,9 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
 
     function test_whenVetoStageThresholdIsNotZero_WhenApprovalThresholdIsNotMet()
         external
-        whenMinAdvanceIsLowerThanStageDuration
+        whenMinAdvanceIsLowerThanVoteDuration
         whenVetoStageThresholdIsNotZero
-        whenStageDurationIsReached
+        whenVoteDurationIsReached
         whenVetoThresholdIsNotMet
         whenExistentProposal
     {
@@ -157,7 +157,7 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         uint256 lastStageTransition = sppPlugin.getProposal(proposalId).lastStageTransition;
 
         // reach stage duration
-        vm.warp(lastStageTransition + stageDuration + 1);
+        vm.warp(lastStageTransition + voteDuration + 1);
         bool _canProposalAdvance = sppPlugin.canProposalAdvance(proposalId);
 
         assertFalse(_canProposalAdvance, "canProposalAdvance");
@@ -170,7 +170,7 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
 
     function test_whenVetoStageThresholdIsZero_WhenApprovalThresholdIsMet()
         external
-        whenMinAdvanceIsLowerThanStageDuration
+        whenMinAdvanceIsLowerThanVoteDuration
         whenVetoStageThresholdIsZero
         whenExistentProposal
     {
@@ -182,7 +182,7 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         _executeStageProposals(0);
 
         // reach min advance duration but not stage duration
-        vm.warp(lastStageTransition + stageDuration + 1);
+        vm.warp(lastStageTransition + voteDuration + 1);
         bool _canProposalAdvance = sppPlugin.canProposalAdvance(proposalId);
 
         assertTrue(_canProposalAdvance, "canProposalAdvance");
@@ -190,7 +190,7 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
 
     function test_whenVetoStageThresholdIsZero_WhenApprovalThresholdIsNotMet()
         external
-        whenMinAdvanceIsLowerThanStageDuration
+        whenMinAdvanceIsLowerThanVoteDuration
         whenVetoStageThresholdIsZero
         whenExistentProposal
     {
@@ -199,21 +199,21 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         uint256 lastStageTransition = sppPlugin.getProposal(proposalId).lastStageTransition;
 
         // reach min advance duration but not stage duration
-        vm.warp(lastStageTransition + stageDuration + 1);
+        vm.warp(lastStageTransition + voteDuration + 1);
         bool _canProposalAdvance = sppPlugin.canProposalAdvance(proposalId);
 
         assertFalse(_canProposalAdvance, "canProposalAdvance");
     }
 
-    modifier whenMinAdvanceIsBiggerThanStageDuration() {
-        minAdvance = STAGE_DURATION;
-        stageDuration = MIN_ADVANCE;
+    modifier whenMinAdvanceIsBiggerThanVoteDuration() {
+        minAdvance = VOTE_DURATION;
+        voteDuration = MIN_ADVANCE;
         _;
     }
 
-    function test_WhenStageDurationIsReachedButMinAdvanceIsNotReached()
+    function test_WhenVoteDurationIsReachedButMinAdvanceIsNotReached()
         external
-        whenMinAdvanceIsBiggerThanStageDuration
+        whenMinAdvanceIsBiggerThanVoteDuration
         whenExistentProposal
     {
         // it should return false.
@@ -221,21 +221,21 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         uint256 lastStageTransition = sppPlugin.getProposal(proposalId).lastStageTransition;
 
         // reach min advance duration but not stage duration
-        vm.warp(lastStageTransition + stageDuration + 1);
+        vm.warp(lastStageTransition + voteDuration + 1);
         bool _canProposalAdvance = sppPlugin.canProposalAdvance(proposalId);
 
         assertFalse(_canProposalAdvance, "canProposalAdvance");
     }
 
-    modifier whenStageDurationAndMinAdvanceAreReached() {
+    modifier whenVoteDurationAndMinAdvanceAreReached() {
         _;
     }
 
-    function test_whenMinAdvanceIsBiggerThanStageDuration_WhenVetoThresholdIsMet()
+    function test_whenMinAdvanceIsBiggerThanVoteDuration_WhenVetoThresholdIsMet()
         external
         proposalTypeVeto
-        whenMinAdvanceIsBiggerThanStageDuration
-        whenStageDurationAndMinAdvanceAreReached
+        whenMinAdvanceIsBiggerThanVoteDuration
+        whenVoteDurationAndMinAdvanceAreReached
         whenVetoStageThresholdIsNotZero
         whenExistentProposal
     {
@@ -255,8 +255,8 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
 
     function test_whenVetoStageThresholdIsNotZero_GivenApprovalThresholdIsMet()
         external
-        whenMinAdvanceIsBiggerThanStageDuration
-        whenStageDurationAndMinAdvanceAreReached
+        whenMinAdvanceIsBiggerThanVoteDuration
+        whenVoteDurationAndMinAdvanceAreReached
         whenVetoStageThresholdIsNotZero
         whenVetoThresholdIsNotMet
         whenExistentProposal
@@ -277,8 +277,8 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
 
     function test_whenVetoStageThresholdIsNotZero_GivenApprovalThresholdIsNotMet()
         external
-        whenMinAdvanceIsBiggerThanStageDuration
-        whenStageDurationAndMinAdvanceAreReached
+        whenMinAdvanceIsBiggerThanVoteDuration
+        whenVoteDurationAndMinAdvanceAreReached
         whenVetoStageThresholdIsNotZero
         whenVetoThresholdIsNotMet
         whenExistentProposal
@@ -296,8 +296,8 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
 
     function test_whenVetoStageThresholdIsZero_GivenApprovalThresholdIsMet()
         external
-        whenMinAdvanceIsBiggerThanStageDuration
-        whenStageDurationAndMinAdvanceAreReached
+        whenMinAdvanceIsBiggerThanVoteDuration
+        whenVoteDurationAndMinAdvanceAreReached
         whenVetoStageThresholdIsZero
         whenExistentProposal
     {
@@ -317,8 +317,8 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
 
     function test_whenVetoStageThresholdIsZero_GivenApprovalThresholdIsNotMet()
         external
-        whenMinAdvanceIsBiggerThanStageDuration
-        whenStageDurationAndMinAdvanceAreReached
+        whenMinAdvanceIsBiggerThanVoteDuration
+        whenVoteDurationAndMinAdvanceAreReached
         whenVetoStageThresholdIsZero
         whenExistentProposal
     {
@@ -339,6 +339,7 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         vm.skip(true);
     }
 
+    // ==== HELPERS ====
     function _executeStageProposals(uint256 _stage) internal {
         // execute proposals on first stage
         SPP.Stage[] memory stages = sppPlugin.getStages();
@@ -348,7 +349,7 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         }
     }
 
-    function _confStagesAndCreateProposal() internal {
+    function _configureStagesAndCreateProposal() internal {
         // setup stages
         SPP.Stage[] memory stages = _createDummyStages(2, false, false, false);
         sppPlugin.updateStages(stages);
