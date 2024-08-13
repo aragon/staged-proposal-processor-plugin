@@ -428,7 +428,7 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
     }
 
     /// @notice Records the result by the caller.
-    /// @dev Only allows to record if `stageDuration` has not passed yet.
+    /// @dev Results can be recorded at any time, but only once per plugin.
     /// @param _proposalId The ID of the proposal.
     /// @param _proposalType which method to use when reporting(veto or approval)
     function _processProposalResult(
@@ -436,13 +436,6 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
         ProposalType _proposalType
     ) internal virtual {
         Proposal storage proposal = proposals[_proposalId];
-        Stage storage stage = stages[proposal.stageConfigIndex][proposal.currentStage];
-
-        // // Prevent submission if `stageDuration` has passed.
-        // TODO: We remove this so optimistic plugin can still submit even after stageDuration ended.
-        // if (proposal.lastStageTransition + stage.stageDuration < block.timestamp) {
-        //     revert Errors.StageDurationAlreadyPassed();
-        // }
 
         address sender = msg.sender;
         // if sender is a trusted trustedForwarder, that means
@@ -460,7 +453,6 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
     }
 
     /// @notice Creates proposals on the non-manual plugins of the `stageId`.
-    /// @dev Only allows to record if `stageDuration` has not passed yet.
     /// @param _proposalId The ID of the proposal.
     /// @param _stageId stage number of the stages configuration array.
     function _createPluginProposals(

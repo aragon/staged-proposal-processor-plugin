@@ -20,9 +20,6 @@ library Errors {
     /// @notice Thrown when the metadata is empty.
     error EmptyMetadata();
 
-    /// @notice Thrown when staged duration has already passed.
-    error StageDurationAlreadyPassed();
-
     error InsufficientGas();
 
     // Trusted Forwarder
