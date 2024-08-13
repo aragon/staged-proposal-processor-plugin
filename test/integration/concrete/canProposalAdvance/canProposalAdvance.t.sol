@@ -70,7 +70,7 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         _;
     }
 
-    function test_WhenStageDurationIsNotReached()
+    function test_WhenVoteDurationIsNotReached()
         external
         whenMinAdvanceIsLowerThanVoteDuration
         whenVetoStageThresholdIsNotZero
