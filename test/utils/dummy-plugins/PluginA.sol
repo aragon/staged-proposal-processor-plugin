@@ -8,7 +8,9 @@ import {
     IProposal
 } from "@aragon/osx-commons-contracts-new/src/plugin/extensions/proposal/IProposal.sol";
 
-contract PluginA is IProposal {
+import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+
+contract PluginA is IProposal, IERC165 {
     bool public created;
     uint256 public proposalId;
     TrustedForwarder public trustedForwarder;
@@ -19,6 +21,12 @@ contract PluginA is IProposal {
     }
 
     event ProposalCreated(uint256 proposalId, uint64 startDate, uint64 endDate);
+
+    function supportsInterface(bytes4 _interfaceId) public view virtual override returns (bool) {
+        return
+            _interfaceId == type(IProposal).interfaceId ||
+            _interfaceId == type(IERC165).interfaceId;
+    }
 
     function createProposal(
         bytes calldata,
@@ -35,7 +43,7 @@ contract PluginA is IProposal {
         return _proposalId;
     }
 
-    function canExecute(uint256 _proposalId) public view returns(bool) {
+    function canExecute(uint256 _proposalId) public view returns (bool) {
         // TODO: for now
         return true;
     }
