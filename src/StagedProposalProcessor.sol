@@ -277,7 +277,7 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
         // TODO: do we want to restrict this ? it could be useful that proposal is created with only metadata
         // so people don't need actual action, but to vote on some "description" only.
         if (proposal.actions.length == 0) {
-            revert Errors.ProposalNotExists();
+            revert Errors.ProposalNotExists(_proposalId);
         }
 
         Stage[] storage _stages = stages[proposal.stageConfigIndex];
@@ -391,6 +391,10 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
     function canExecute(uint256 _proposalId) public view returns (bool) {
         bytes32 id = bytes32(_proposalId);
         Proposal storage proposal = proposals[id];
+        if (proposal.creator == address(0)) {
+            return false;
+        }
+
         Stage[] storage _stages = stages[proposal.stageConfigIndex];
 
         if (proposal.currentStage == _stages.length - 1 && canProposalAdvance(id)) {
@@ -517,7 +521,6 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
                 pluginProposalIds[_proposalId][_stageId][
                     stage.plugins[i].pluginAddress
                 ] = pluginProposalId;
-                console.log("pluginProposalId: %d", pluginProposalId);
             } catch {
                 pluginProposalIds[_proposalId][_stageId][stage.plugins[i].pluginAddress] = type(
                     uint256
