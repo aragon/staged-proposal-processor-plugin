@@ -12,7 +12,7 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
     bytes32 proposalId;
 
     modifier whenExistentProposal() {
-        _configureStagesAndCreateProposal();
+        proposalId = _configureStagesAndCreateDummyProposal();
         _;
     }
 
@@ -337,30 +337,5 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         // todo TBD
         // it should return false.
         vm.skip(true);
-    }
-
-    // ==== HELPERS ====
-    function _executeStageProposals(uint256 _stage) internal {
-        // execute proposals on first stage
-        SPP.Stage[] memory stages = sppPlugin.getStages();
-
-        for (uint256 i; i < stages[_stage].plugins.length; i++) {
-            PluginA(stages[_stage].plugins[i].pluginAddress).execute({_proposalId: 0});
-        }
-    }
-
-    function _configureStagesAndCreateProposal() internal {
-        // setup stages
-        SPP.Stage[] memory stages = _createDummyStages(2, false, false, false);
-        sppPlugin.updateStages(stages);
-
-        // create proposal
-        IDAO.Action[] memory actions = _createDummyActions();
-        proposalId = sppPlugin.createProposal({
-            _actions: actions,
-            _allowFailureMap: 0,
-            _metadata: DUMMY_METADATA,
-            _startDate: START_DATE
-        });
     }
 }
