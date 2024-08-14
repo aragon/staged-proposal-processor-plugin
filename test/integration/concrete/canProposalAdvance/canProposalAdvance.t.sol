@@ -30,7 +30,7 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         uint256 lastStageTransition = sppPlugin.getProposal(proposalId).lastStageTransition;
 
         // reach max advance
-        vm.warp(lastStageTransition + MAX_ADVANCE + 1);
+        vm.warp(lastStageTransition + MAX_ADVANCE + START_DATE);
         bool _canProposalAdvance = sppPlugin.canProposalAdvance(proposalId);
 
         assertFalse(_canProposalAdvance, "canProposalAdvance");
@@ -45,7 +45,7 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         _executeStageProposals(initialStage);
 
         // advance to last stage
-        vm.warp(voteDuration + 1);
+        vm.warp(voteDuration + START_DATE);
         sppPlugin.advanceProposal(proposalId);
 
         uint64 lastStageTransition = sppPlugin.getProposal(proposalId).lastStageTransition;
@@ -54,9 +54,12 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         _executeStageProposals(initialStage + 1);
 
         // advance last stage
-        vm.warp(lastStageTransition + voteDuration + 1);
+        vm.warp(lastStageTransition + voteDuration + START_DATE);
         sppPlugin.advanceProposal(proposalId);
 
+        lastStageTransition = sppPlugin.getProposal(proposalId).lastStageTransition;
+
+        vm.warp(lastStageTransition + voteDuration + START_DATE);
         bool _canProposalAdvance = sppPlugin.canProposalAdvance(proposalId);
 
         assertFalse(_canProposalAdvance, "canProposalAdvance");
@@ -81,7 +84,7 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         uint256 lastStageTransition = sppPlugin.getProposal(proposalId).lastStageTransition;
 
         // reach min advance duration but not stage duration
-        vm.warp(lastStageTransition + minAdvance + 1);
+        vm.warp(lastStageTransition + minAdvance + START_DATE);
         bool _canProposalAdvance = sppPlugin.canProposalAdvance(proposalId);
 
         assertFalse(_canProposalAdvance, "canProposalAdvance");
@@ -112,7 +115,7 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         _executeStageProposals(0);
 
         // reach min advance duration but not stage duration
-        vm.warp(lastStageTransition + voteDuration + 1);
+        vm.warp(lastStageTransition + voteDuration + START_DATE);
         bool _canProposalAdvance = sppPlugin.canProposalAdvance(proposalId);
 
         assertFalse(_canProposalAdvance, "canProposalAdvance");
@@ -138,7 +141,7 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         _executeStageProposals(0);
 
         // reach stage duration
-        vm.warp(lastStageTransition + voteDuration + 1);
+        vm.warp(lastStageTransition + voteDuration + START_DATE);
         bool _canProposalAdvance = sppPlugin.canProposalAdvance(proposalId);
 
         assertTrue(_canProposalAdvance, "canProposalAdvance");
@@ -157,7 +160,7 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         uint256 lastStageTransition = sppPlugin.getProposal(proposalId).lastStageTransition;
 
         // reach stage duration
-        vm.warp(lastStageTransition + voteDuration + 1);
+        vm.warp(lastStageTransition + voteDuration + START_DATE);
         bool _canProposalAdvance = sppPlugin.canProposalAdvance(proposalId);
 
         assertFalse(_canProposalAdvance, "canProposalAdvance");
@@ -182,7 +185,7 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         _executeStageProposals(0);
 
         // reach min advance duration but not stage duration
-        vm.warp(lastStageTransition + voteDuration + 1);
+        vm.warp(lastStageTransition + voteDuration + START_DATE);
         bool _canProposalAdvance = sppPlugin.canProposalAdvance(proposalId);
 
         assertTrue(_canProposalAdvance, "canProposalAdvance");
@@ -199,7 +202,7 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         uint256 lastStageTransition = sppPlugin.getProposal(proposalId).lastStageTransition;
 
         // reach min advance duration but not stage duration
-        vm.warp(lastStageTransition + voteDuration + 1);
+        vm.warp(lastStageTransition + voteDuration + START_DATE);
         bool _canProposalAdvance = sppPlugin.canProposalAdvance(proposalId);
 
         assertFalse(_canProposalAdvance, "canProposalAdvance");
@@ -221,7 +224,7 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         uint256 lastStageTransition = sppPlugin.getProposal(proposalId).lastStageTransition;
 
         // reach min advance duration but not stage duration
-        vm.warp(lastStageTransition + voteDuration + 1);
+        vm.warp(lastStageTransition + voteDuration + START_DATE);
         bool _canProposalAdvance = sppPlugin.canProposalAdvance(proposalId);
 
         assertFalse(_canProposalAdvance, "canProposalAdvance");
@@ -247,7 +250,7 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         _executeStageProposals(0);
 
         // reach min advance and stage duration
-        vm.warp(lastStageTransition + minAdvance + 1);
+        vm.warp(lastStageTransition + minAdvance + START_DATE);
         bool _canProposalAdvance = sppPlugin.canProposalAdvance(proposalId);
 
         assertFalse(_canProposalAdvance, "canProposalAdvance");
@@ -269,7 +272,7 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         _executeStageProposals(0);
 
         // reach min advance and stage duration
-        vm.warp(lastStageTransition + minAdvance + 1);
+        vm.warp(lastStageTransition + minAdvance + START_DATE);
         bool _canProposalAdvance = sppPlugin.canProposalAdvance(proposalId);
 
         assertTrue(_canProposalAdvance, "canProposalAdvance");
@@ -288,7 +291,7 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         uint256 lastStageTransition = sppPlugin.getProposal(proposalId).lastStageTransition;
 
         // reach min advance and stage duration
-        vm.warp(lastStageTransition + minAdvance + 1);
+        vm.warp(lastStageTransition + minAdvance + START_DATE);
         bool _canProposalAdvance = sppPlugin.canProposalAdvance(proposalId);
 
         assertFalse(_canProposalAdvance, "canProposalAdvance");
@@ -309,7 +312,8 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         _executeStageProposals(0);
 
         // reach min advance and stage duration
-        vm.warp(lastStageTransition + minAdvance + 1);
+        vm.warp(lastStageTransition + minAdvance + START_DATE);
+
         bool _canProposalAdvance = sppPlugin.canProposalAdvance(proposalId);
 
         assertTrue(_canProposalAdvance, "canProposalAdvance");
@@ -327,7 +331,7 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         uint256 lastStageTransition = sppPlugin.getProposal(proposalId).lastStageTransition;
 
         // reach min advance and stage duration
-        vm.warp(lastStageTransition + minAdvance + 1);
+        vm.warp(lastStageTransition + minAdvance + START_DATE);
         bool _canProposalAdvance = sppPlugin.canProposalAdvance(proposalId);
 
         assertFalse(_canProposalAdvance, "canProposalAdvance");
