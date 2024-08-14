@@ -7,12 +7,12 @@ UpdateStages_SPP_UnitTest
 │   ├── it should emit event.
 │   └── it should update the stage.
 └── when the new stages list has multiple stages
-    ├── when a stage is non manual
+    ├── when some stages are non manual
     │   ├── when the stage supports IProposal
     │   │   ├── it should emit event.
     │   │   └── it should update the stages.
     │   └── when the stage does not support IProposal
     │       └── it should revert.
-    └── when all stages are non manual
+    └── when all stages are manual
         ├── it should emit event.
         └── it should update the stages.
