@@ -4,6 +4,7 @@ pragma solidity ^0.8.8;
 import {BaseTest} from "../../../BaseTest.t.sol";
 import {Errors} from "../../../../src/libraries/Errors.sol";
 import {PluginA} from "../../../utils/dummy-plugins/PluginA.sol";
+import {PluginC} from "../../../utils/dummy-plugins/PluginC.sol";
 import {StagedProposalProcessor as SPP} from "../../../../src/StagedProposalProcessor.sol";
 
 import {DaoUnauthorized} from "@aragon/osx/core/utils/auth.sol";
@@ -48,13 +49,32 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         whenStagesAreConfigured
         givenSomeSubProposalsOnStageZeroAreNonManual
     {
+        // todo TBD that event is not being emitted currently.
         // it should emit an event.
-
-        // todo add a check for this
         // it should store uint max value as proposal id.
 
-        // todo proposals are defined as non-manual but can not be created due to no implement IProposal interface.
-        vm.skip(true);
+        // set up stages as non manual but not supporting IProposal interface
+        SPP.Plugin[] memory _plugins = new SPP.Plugin[](1);
+        _plugins[0] = _createPluginStruct(address(new PluginC(address(trustedForwarder))), false);
+        SPP.Stage[] memory _stages = new SPP.Stage[](1);
+        _stages[0] = _createStageStruct(_plugins);
+        sppPlugin.updateStages(_stages);
+
+        bytes32 proposalId = sppPlugin.createProposal({
+            _actions: new IDAO.Action[](0),
+            _allowFailureMap: 0,
+            _metadata: DUMMY_METADATA,
+            _startDate: START_DATE
+        });
+
+        // check sub proposal was not created and the id is max uint256
+        uint256 subProposalId = sppPlugin.pluginProposalIds(
+            proposalId,
+            0,
+            _plugins[0].pluginAddress
+        );
+
+        assertEq(subProposalId, type(uint256).max, "subProposalId");
     }
 
     function test_WhenSubProposalCanBeCreated()
@@ -65,7 +85,6 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         // it should emit events.
         // it should create proposal.
         // it should create non-manual sub proposals on stage zero.
-        // todo add check for proposals ids being stored
         // it should store non-manual sub proposal ids.
         // it should not create sub proposals on non zero stages.
 
@@ -117,6 +136,15 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
             } else {
                 // should be created since it is non-manual
                 assertEq(_currentPluginProposalsCount, 1, "proposalsCount");
+
+                // check sub proposal id was stored
+                uint256 subProposalId = sppPlugin.pluginProposalIds(
+                    proposalId,
+                    0,
+                    _currentPlugin.pluginAddress
+                );
+
+                assertEq(subProposalId, _currentPluginProposalsCount - 1, "subProposalId");
             }
         }
 
