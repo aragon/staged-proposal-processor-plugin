@@ -69,7 +69,8 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
         bool executed;
     }
 
-    mapping(bytes32 => mapping(uint256 => mapping(address => uint256))) pluginProposalIds;
+    // proposalId => stageId => pluginAddress => subProposalId
+    mapping(bytes32 => mapping(uint256 => mapping(address => uint256))) public pluginProposalIds;
 
     // proposalId => stageId => proposalType => allowedBody => true/false
     mapping(bytes32 => mapping(uint16 => mapping(ProposalType => mapping(address => bool))))
@@ -516,6 +517,7 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
                 pluginProposalIds[_proposalId][_stageId][
                     stage.plugins[i].pluginAddress
                 ] = pluginProposalId;
+                console.log("pluginProposalId: %d", pluginProposalId);
             } catch {
                 pluginProposalIds[_proposalId][_stageId][stage.plugins[i].pluginAddress] = type(
                     uint256
