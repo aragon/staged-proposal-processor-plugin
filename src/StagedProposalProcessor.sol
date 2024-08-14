@@ -328,22 +328,28 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
 
         uint256 approvals = 0;
         uint256 vetoes = 0;
-        uint256 vetoesEarlyCount = 0;
         for (uint256 i = 0; i < stage.plugins.length; ) {
             Plugin storage plugin = stage.plugins[i];
             address allowedBody = plugin.allowedBody;
 
-            uint256 pluginProposalId = pluginProposalIds[_proposalId][currentStage][plugin.pluginAddress];
-            
+            uint256 pluginProposalId = pluginProposalIds[_proposalId][currentStage][
+                plugin.pluginAddress
+            ];
+
             if (pluginResults[_proposalId][currentStage][plugin.proposalType][allowedBody]) {
                 if (plugin.proposalType == ProposalType.Approval) {
                     ++approvals;
                 } else {
                     ++vetoes;
                 }
-            } else if(stage.vetoThreshold > 0 && !plugin.isManual && pluginProposalId != 2**256 - 1) {
-                if(IProposal(stage.plugins[i].pluginAddress).canExecute(pluginProposalId)){
-                    vetoesEarlyCount++;
+            } else if (
+                stage.vetoThreshold > 0 &&
+                plugin.proposalType == ProposalType.Veto &&
+                !plugin.isManual &&
+                pluginProposalId != 2 ** 256 - 1
+            ) {
+                if (IProposal(stage.plugins[i].pluginAddress).canExecute(pluginProposalId)) {
+                    ++vetoes;
                 }
             }
 
@@ -352,7 +358,7 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
             }
         }
 
-        if (stage.vetoThreshold > 0 && vetoes + vetoesEarlyCount >= stage.vetoThreshold) {
+        if (stage.vetoThreshold > 0 && vetoes >= stage.vetoThreshold) {
             return false;
         }
 
@@ -362,12 +368,12 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
 
         return false;
     }
-    
+
     /// @notice Necessary to abide the rules of IProposal interface.
     /// @dev One must convert bytes32 proposalId into uint256 type and pass it.
     /// @param _proposalId The proposal Id.
     /// @return bool Returns if proposal can be executed or not.
-    function canExecute(uint256 _proposalId) public view returns(bool) {
+    function canExecute(uint256 _proposalId) public view returns (bool) {
         bytes32 id = bytes32(_proposalId);
         Proposal storage proposal = proposals[id];
         Stage[] storage _stages = stages[proposal.stageConfigIndex];
@@ -386,10 +392,15 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
     /// @param _stages The stages configuration.
     function _updateStages(Stage[] calldata _stages) internal virtual {
         Stage[] storage storedStages = stages[++currentConfigIndex];
-         
+
         for (uint256 i = 0; i < _stages.length; i++) {
             for (uint256 j = 0; j < _stages[i].plugins.length; j++) {
-                if(!_stages[i].plugins[j].isManual && !_stages[i].plugins[j].pluginAddress.supportsInterface(type(IProposal).interfaceId)) {
+                if (
+                    !_stages[i].plugins[j].isManual &&
+                    !_stages[i].plugins[j].pluginAddress.supportsInterface(
+                        type(IProposal).interfaceId
+                    )
+                ) {
                     revert Errors.InterfaceNotSupported();
                 }
             }
@@ -486,7 +497,7 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
             // the remaining 1/64 gas are sufficient to successfully finish the call.
             uint256 gasBefore = gasleft();
 
-            // TODO: in the createProposal standardization, shall we rename it to `data` instead of `metadata` ? 
+            // TODO: in the createProposal standardization, shall we rename it to `data` instead of `metadata` ?
             // This way, people would understand that it could be anything.
             try
                 IProposal(stage.plugins[i].pluginAddress).createProposal(
@@ -496,9 +507,13 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
                     _startDate + stage.voteDuration
                 )
             returns (uint256 pluginProposalId) {
-                pluginProposalIds[_proposalId][_stageId][stage.plugins[i].pluginAddress] = pluginProposalId;
+                pluginProposalIds[_proposalId][_stageId][
+                    stage.plugins[i].pluginAddress
+                ] = pluginProposalId;
             } catch {
-                pluginProposalIds[_proposalId][_stageId][stage.plugins[i].pluginAddress] = 2**256 - 1; // uint max
+                pluginProposalIds[_proposalId][_stageId][stage.plugins[i].pluginAddress] =
+                    2 ** 256 -
+                    1; // uint max
 
                 uint256 gasAfter = gasleft();
 
