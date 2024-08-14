@@ -43,7 +43,7 @@ contract PluginA is IProposal, IERC165 {
         return _proposalId;
     }
 
-    function canExecute(uint256 _proposalId) public view returns (bool) {
+    function canExecute(uint256) public pure returns (bool) {
         // TODO: for now
         return true;
     }
