@@ -326,8 +326,32 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
             }
         }
 
-        uint256 approvals = 0;
-        uint256 vetoes = 0;
+        (uint256 approvals, uint256 vetoes) = getProposalTally(_proposalId);
+
+        if (stage.vetoThreshold > 0 && vetoes >= stage.vetoThreshold) {
+            return false;
+        }
+
+        if (approvals >= stage.approvalThreshold) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /// @notice Calculates the votes and vetoes for a proposal.
+    /// @param _proposalId The ID of the proposal.
+    /// @return votes The number of votes for the proposal.
+    /// @return vetoes The number of vetoes for the proposal.
+    function getProposalTally(
+        bytes32 _proposalId
+    ) public view virtual returns (uint256 votes, uint256 vetoes) {
+        Proposal storage proposal = proposals[_proposalId];
+
+        uint16 currentStage = proposal.currentStage;
+
+        Stage storage stage = stages[proposal.stageConfigIndex][currentStage];
+
         for (uint256 i = 0; i < stage.plugins.length; ) {
             Plugin storage plugin = stage.plugins[i];
             address allowedBody = plugin.allowedBody;
@@ -338,7 +362,7 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
 
             if (pluginResults[_proposalId][currentStage][plugin.proposalType][allowedBody]) {
                 if (plugin.proposalType == ProposalType.Approval) {
-                    ++approvals;
+                    ++votes;
                 } else {
                     ++vetoes;
                 }
@@ -357,16 +381,6 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
                 ++i;
             }
         }
-
-        if (stage.vetoThreshold > 0 && vetoes >= stage.vetoThreshold) {
-            return false;
-        }
-
-        if (approvals >= stage.approvalThreshold) {
-            return true;
-        }
-
-        return false;
     }
 
     /// @notice Necessary to abide the rules of IProposal interface.
