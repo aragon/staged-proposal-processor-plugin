@@ -16,6 +16,8 @@ contract PluginA is IProposal, IERC165 {
     TrustedForwarder public trustedForwarder;
     mapping(uint256 => IDAO.Action) public actions;
 
+    bool public revertOnCreateProposal;
+
     constructor(address _trustedForwarder) {
         trustedForwarder = TrustedForwarder(_trustedForwarder);
     }
@@ -34,6 +36,8 @@ contract PluginA is IProposal, IERC165 {
         uint64 startDate,
         uint64 endDate
     ) external override returns (uint256 _proposalId) {
+        if (revertOnCreateProposal) revert("revertOnCreateProposal");
+
         _proposalId = proposalId;
         proposalId = proposalId + 1;
         actions[_proposalId] = _actions[0];
@@ -58,5 +62,9 @@ contract PluginA is IProposal, IERC165 {
 
     function proposalCount() external view override returns (uint256) {
         return proposalId;
+    }
+
+    function setRevertOnCreateProposal(bool _revertOnCreateProposal) external {
+        revertOnCreateProposal = _revertOnCreateProposal;
     }
 }
