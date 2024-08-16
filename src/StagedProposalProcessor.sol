@@ -349,8 +349,12 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
     ) public view virtual returns (uint256 votes, uint256 vetoes) {
         Proposal storage proposal = proposals[_proposalId];
 
-        uint16 currentStage = proposal.currentStage;
+        // non existent proposal
+        if (proposal.creator == address(0)) {
+            return (0, 0);
+        }
 
+        uint16 currentStage = proposal.currentStage;
         Stage storage stage = stages[proposal.stageConfigIndex][currentStage];
 
         for (uint256 i = 0; i < stage.plugins.length; ) {
