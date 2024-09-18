@@ -3,7 +3,7 @@ pragma solidity ^0.8.8;
 
 import {StagedProposalProcessor as SPP} from "../../src/StagedProposalProcessor.sol";
 
-import {IDAO} from "@aragon/osx-commons-contracts-new/src/dao/IDAO.sol";
+import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
 
 contract Events {
     event ProposalAdvanced(bytes32 indexed proposalId, uint256 indexed stageId);

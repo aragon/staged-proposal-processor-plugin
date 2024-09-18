@@ -3,10 +3,10 @@ pragma solidity ^0.8.8;
 
 import {TrustedForwarder} from "../../../src/utils/TrustedForwarder.sol";
 
-import {IDAO} from "@aragon/osx-commons-contracts-new/src/dao/IDAO.sol";
+import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
 import {
     IProposal
-} from "@aragon/osx-commons-contracts-new/src/plugin/extensions/proposal/IProposal.sol";
+} from "@aragon/osx-commons-contracts/src/plugin/extensions/proposal/IProposal.sol";
 
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
@@ -31,20 +31,27 @@ contract PluginA is IProposal, IERC165 {
     }
 
     function createProposal(
-        bytes calldata,
+        bytes calldata _metadata,
         IDAO.Action[] calldata _actions,
         uint64 startDate,
         uint64 endDate
     ) external override returns (uint256 _proposalId) {
         if (revertOnCreateProposal) revert("revertOnCreateProposal");
 
-        _proposalId = proposalId;
+        _proposalId = createProposalId(_actions, _metadata);
         proposalId = proposalId + 1;
         actions[_proposalId] = _actions[0];
         created = true;
 
         emit ProposalCreated(_proposalId, startDate, endDate);
         return _proposalId;
+    }
+
+    function createProposalId(
+        IDAO.Action[] memory,
+        bytes memory
+    ) public view override returns (uint256) {
+        return proposalId;
     }
 
     function canExecute(uint256) public pure returns (bool) {

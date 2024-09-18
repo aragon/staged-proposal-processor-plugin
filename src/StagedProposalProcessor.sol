@@ -8,11 +8,11 @@ import {ERC165Checker} from "@openzeppelin/contracts/utils/introspection/ERC165C
 
 import {
     PluginUUPSUpgradeable
-} from "@aragon/osx-commons-contracts-new/src/plugin/PluginUUPSUpgradeable.sol";
-import {IDAO} from "@aragon/osx-commons-contracts-new/src/dao/IDAO.sol";
+} from "@aragon/osx-commons-contracts/src/plugin/PluginUUPSUpgradeable.sol";
+import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
 import {
     IProposal
-} from "@aragon/osx-commons-contracts-new/src/plugin/extensions/proposal/IProposal.sol";
+} from "@aragon/osx-commons-contracts/src/plugin/extensions/proposal/IProposal.sol";
 
 import "forge-std/console.sol";
 
@@ -153,9 +153,8 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
             revert Errors.StageCountZero();
         }
 
-        uint256 _proposalId = counter.current();
-        counter.increment();
-
+        uint256 _proposalId = createProposalId(_actions, _metadata);
+        
         // Include block.timestamp to minimize the chance
         // for sub-plugins to create proposals in advance.
         proposalId = keccak256(abi.encode(block.timestamp, address(this), _proposalId));
@@ -201,6 +200,25 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
         uint64 /** */
     ) external override returns (uint256 proposalId) {
         proposalId = uint256(createProposal(_metadata, _actions, 0, _startDate));
+    }
+
+    /// @notice Hashing function used to (re)build the proposal id from the proposal details..
+    /// @dev The proposal id is produced by hashing the ABI encoded `targets` array, the `values` array, the `calldatas` array
+    /// and the descriptionHash (bytes32 which itself is the keccak256 hash of the description string). This proposal id
+    /// can be produced from the proposal data which is part of the {ProposalCreated} event. It can even be computed in
+    /// advance, before the proposal is submitted.
+    /// The chainId and the governor address are not part of the proposal id computation. Consequently, the
+    /// same proposal (with same operation and same description) will have the same id if submitted on multiple governors
+    /// across multiple networks. This also means that in order to execute the same operation twice (on the same
+    /// governor) the proposer will have to change the description in order to avoid proposal id conflicts.
+    /// @param _actions The actions that will be executed after the proposal passes.
+    /// @param _metadata The metadata of the proposal.
+    /// @return proposalId The ID of the proposal.
+    function createProposalId(
+        IDAO.Action[] memory _actions,
+        bytes memory _metadata
+    ) public pure override returns (uint256) {
+        return uint256(keccak256(abi.encode(_actions, _metadata)));
     }
 
     /// @notice Returns all information for a proposal by its ID.

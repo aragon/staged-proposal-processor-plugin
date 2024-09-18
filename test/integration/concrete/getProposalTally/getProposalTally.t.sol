@@ -5,7 +5,7 @@ import {BaseTest} from "../../../BaseTest.t.sol";
 import {PluginA} from "../../../utils/dummy-plugins/PluginA.sol";
 import {StagedProposalProcessor as SPP} from "../../../../src/StagedProposalProcessor.sol";
 
-import {IDAO} from "@aragon/osx-commons-contracts-new/src/dao/IDAO.sol";
+import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
 
 contract GetProposalTally_SPP_IntegrationTest is BaseTest {
     bytes32 proposalId;

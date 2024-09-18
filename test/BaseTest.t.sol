@@ -15,7 +15,7 @@ import {AlwaysTrueCondition} from "../src/utils/AlwaysTrueCondition.sol";
 import {StagedProposalProcessor as SPP} from "../src/StagedProposalProcessor.sol";
 
 import {DAO} from "@aragon/osx/core/dao/DAO.sol";
-import {IDAO} from "@aragon/osx-commons-contracts-new/src/dao/IDAO.sol";
+import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
 import {PermissionLib} from "@aragon/osx/core/permission/PermissionLib.sol";
 import {PermissionManager} from "@aragon/osx/core/permission/PermissionManager.sol";
 

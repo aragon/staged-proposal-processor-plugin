@@ -6,13 +6,13 @@ import {AlwaysTrueCondition} from "./utils/AlwaysTrueCondition.sol";
 import {StagedProposalProcessor as SPP} from "./StagedProposalProcessor.sol";
 
 import {DAO} from "@aragon/osx/core/dao/DAO.sol";
-import {IDAO} from "@aragon/osx-commons-contracts-new/src/dao/IDAO.sol";
-import {ProxyLib} from "@aragon/osx-commons-contracts-new/src/utils/deployment/ProxyLib.sol";
-import {IPluginSetup} from "@aragon/osx-commons-contracts-new/src/plugin/setup/IPluginSetup.sol";
-import {PermissionLib} from "@aragon/osx-commons-contracts-new/src/permission/PermissionLib.sol";
+import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
+import {ProxyLib} from "@aragon/osx-commons-contracts/src/utils/deployment/ProxyLib.sol";
+import {IPluginSetup} from "@aragon/osx-commons-contracts/src/plugin/setup/IPluginSetup.sol";
+import {PermissionLib} from "@aragon/osx-commons-contracts/src/permission/PermissionLib.sol";
 import {
     PluginUpgradeableSetup
-} from "@aragon/osx-commons-contracts-new/src/plugin/setup/PluginUpgradeableSetup.sol";
+} from "@aragon/osx-commons-contracts/src/plugin/setup/PluginUpgradeableSetup.sol";
 
 /// @title MyPluginSetup
 /// @dev Release 1, Build 1
