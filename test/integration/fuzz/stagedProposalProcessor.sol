@@ -12,7 +12,9 @@ import {IDAO} from "@aragon/osx-commons-contracts-new/src/dao/IDAO.sol";
 
 contract SPP_Integration_FuzzTest is BaseTest {
     function testFuzz_advanceProposal_RevertWhen_NonExistent(bytes32 _randomProposalId) external {
-        vm.expectRevert(abi.encodeWithSelector(Errors.ProposalNotExists.selector));
+        vm.expectRevert(
+            abi.encodeWithSelector(Errors.ProposalNotExists.selector, _randomProposalId)
+        );
         sppPlugin.advanceProposal(_randomProposalId);
     }
 

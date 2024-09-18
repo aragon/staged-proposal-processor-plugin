@@ -22,7 +22,7 @@ struct Plugin {
 struct Stage {
     uint64 maxAdvance;
     uint64 minAdvance;
-    uint64 stageDuration;
+    uint64 voteDuration;
     uint16 approvalThreshold;
     uint16 vetoThreshold;
 }

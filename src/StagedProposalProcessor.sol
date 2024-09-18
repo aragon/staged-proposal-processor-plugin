@@ -69,7 +69,8 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
         bool executed;
     }
 
-    mapping(bytes32 => mapping(uint256 => mapping(address => uint256))) pluginProposalIds;
+    // proposalId => stageId => pluginAddress => subProposalId
+    mapping(bytes32 => mapping(uint256 => mapping(address => uint256))) public pluginProposalIds;
 
     // proposalId => stageId => proposalType => allowedBody => true/false
     mapping(bytes32 => mapping(uint16 => mapping(ProposalType => mapping(address => bool))))
@@ -276,7 +277,7 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
         // TODO: do we want to restrict this ? it could be useful that proposal is created with only metadata
         // so people don't need actual action, but to vote on some "description" only.
         if (proposal.actions.length == 0) {
-            revert Errors.ProposalNotExists();
+            revert Errors.ProposalNotExists(_proposalId);
         }
 
         Stage[] storage _stages = stages[proposal.stageConfigIndex];
@@ -326,37 +327,7 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
             }
         }
 
-        uint256 approvals = 0;
-        uint256 vetoes = 0;
-        for (uint256 i = 0; i < stage.plugins.length; ) {
-            Plugin storage plugin = stage.plugins[i];
-            address allowedBody = plugin.allowedBody;
-
-            uint256 pluginProposalId = pluginProposalIds[_proposalId][currentStage][
-                plugin.pluginAddress
-            ];
-
-            if (pluginResults[_proposalId][currentStage][plugin.proposalType][allowedBody]) {
-                if (plugin.proposalType == ProposalType.Approval) {
-                    ++approvals;
-                } else {
-                    ++vetoes;
-                }
-            } else if (
-                stage.vetoThreshold > 0 &&
-                plugin.proposalType == ProposalType.Veto &&
-                !plugin.isManual &&
-                pluginProposalId != 2 ** 256 - 1
-            ) {
-                if (IProposal(stage.plugins[i].pluginAddress).canExecute(pluginProposalId)) {
-                    ++vetoes;
-                }
-            }
-
-            unchecked {
-                ++i;
-            }
-        }
+        (uint256 approvals, uint256 vetoes) = getProposalTally(_proposalId);
 
         if (stage.vetoThreshold > 0 && vetoes >= stage.vetoThreshold) {
             return false;
@@ -369,6 +340,54 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
         return false;
     }
 
+    /// @notice Calculates the votes and vetoes for a proposal.
+    /// @param _proposalId The ID of the proposal.
+    /// @return votes The number of votes for the proposal.
+    /// @return vetoes The number of vetoes for the proposal.
+    function getProposalTally(
+        bytes32 _proposalId
+    ) public view virtual returns (uint256 votes, uint256 vetoes) {
+        Proposal storage proposal = proposals[_proposalId];
+
+        // non existent proposal
+        if (proposal.creator == address(0)) {
+            return (0, 0);
+        }
+
+        uint16 currentStage = proposal.currentStage;
+        Stage storage stage = stages[proposal.stageConfigIndex][currentStage];
+
+        for (uint256 i = 0; i < stage.plugins.length; ) {
+            Plugin storage plugin = stage.plugins[i];
+            address allowedBody = plugin.allowedBody;
+
+            uint256 pluginProposalId = pluginProposalIds[_proposalId][currentStage][
+                plugin.pluginAddress
+            ];
+
+            if (pluginResults[_proposalId][currentStage][plugin.proposalType][allowedBody]) {
+                if (plugin.proposalType == ProposalType.Approval) {
+                    ++votes;
+                } else {
+                    ++vetoes;
+                }
+            } else if (
+                stage.vetoThreshold > 0 &&
+                plugin.proposalType == ProposalType.Veto &&
+                !plugin.isManual &&
+                pluginProposalId != type(uint256).max
+            ) {
+                if (IProposal(stage.plugins[i].pluginAddress).canExecute(pluginProposalId)) {
+                    ++vetoes;
+                }
+            }
+
+            unchecked {
+                ++i;
+            }
+        }
+    }
+
     /// @notice Necessary to abide the rules of IProposal interface.
     /// @dev One must convert bytes32 proposalId into uint256 type and pass it.
     /// @param _proposalId The proposal Id.
@@ -376,6 +395,10 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
     function canExecute(uint256 _proposalId) public view returns (bool) {
         bytes32 id = bytes32(_proposalId);
         Proposal storage proposal = proposals[id];
+        if (proposal.creator == address(0)) {
+            return false;
+        }
+
         Stage[] storage _stages = stages[proposal.stageConfigIndex];
 
         if (proposal.currentStage == _stages.length - 1 && canProposalAdvance(id)) {
@@ -430,7 +453,7 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
     }
 
     /// @notice Records the result by the caller.
-    /// @dev Only allows to record if `stageDuration` has not passed yet.
+    /// @dev Results can be recorded at any time, but only once per plugin.
     /// @param _proposalId The ID of the proposal.
     /// @param _proposalType which method to use when reporting(veto or approval)
     function _processProposalResult(
@@ -438,13 +461,6 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
         ProposalType _proposalType
     ) internal virtual {
         Proposal storage proposal = proposals[_proposalId];
-        Stage storage stage = stages[proposal.stageConfigIndex][proposal.currentStage];
-
-        // // Prevent submission if `stageDuration` has passed.
-        // TODO: We remove this so optimistic plugin can still submit even after stageDuration ended.
-        // if (proposal.lastStageTransition + stage.stageDuration < block.timestamp) {
-        //     revert Errors.StageDurationAlreadyPassed();
-        // }
 
         address sender = msg.sender;
         // if sender is a trusted trustedForwarder, that means
@@ -462,7 +478,6 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
     }
 
     /// @notice Creates proposals on the non-manual plugins of the `stageId`.
-    /// @dev Only allows to record if `stageDuration` has not passed yet.
     /// @param _proposalId The ID of the proposal.
     /// @param _stageId stage number of the stages configuration array.
     function _createPluginProposals(
@@ -511,9 +526,9 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
                     stage.plugins[i].pluginAddress
                 ] = pluginProposalId;
             } catch {
-                pluginProposalIds[_proposalId][_stageId][stage.plugins[i].pluginAddress] =
-                    2 ** 256 -
-                    1; // uint max
+                pluginProposalIds[_proposalId][_stageId][stage.plugins[i].pluginAddress] = type(
+                    uint256
+                ).max;
 
                 uint256 gasAfter = gasleft();
 
