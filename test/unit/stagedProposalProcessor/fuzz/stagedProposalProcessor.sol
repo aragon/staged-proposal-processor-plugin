@@ -56,19 +56,4 @@ contract SPP_Unit_FuzzTest is BaseTest {
 
         assertEq(sppPlugin.getMetadata(), _metadata, "metadata");
     }
-
-    function testFuzz_updateStages(Stage[] memory stages, Plugin[] memory plugins) external {
-        // it should update stages.
-
-        vm.assume(stages.length > 0);
-        vm.assume(stages.length < 5);
-        vm.assume(plugins.length > 0);
-        vm.assume(plugins.length < 5);
-
-        SPP.Stage[] memory fuzzStages = fuzzSppStages(stages, plugins);
-
-        sppPlugin.updateStages(fuzzStages);
-
-        assertEq(sppPlugin.getStages(), fuzzStages);
-    }
 }

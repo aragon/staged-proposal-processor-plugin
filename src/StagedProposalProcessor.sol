@@ -4,6 +4,8 @@ pragma solidity ^0.8.8;
 import {Errors} from "./libraries/Errors.sol";
 
 import {Counters} from "@openzeppelin/contracts/utils/Counters.sol";
+import {ERC165Checker} from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
+
 import {
     PluginUUPSUpgradeable
 } from "@aragon/osx-commons-contracts-new/src/plugin/PluginUUPSUpgradeable.sol";
@@ -16,6 +18,7 @@ import "forge-std/console.sol";
 
 contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
     using Counters for Counters.Counter;
+    using ERC165Checker for address;
 
     /// @notice The ID of the permission required to call the `createProposal` function.
     bytes32 public constant CREATE_PROPOSAL_PERMISSION_ID = keccak256("CREATE_PROPOSAL_PERMISSION");
@@ -50,7 +53,7 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
         Plugin[] plugins;
         uint64 maxAdvance;
         uint64 minAdvance;
-        uint64 stageDuration;
+        uint64 voteDuration;
         uint16 approvalThreshold;
         uint16 vetoThreshold;
     }
@@ -65,6 +68,9 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
         uint16 stageConfigIndex; // What stage configuration the proposal is using
         bool executed;
     }
+
+    // proposalId => stageId => pluginAddress => subProposalId
+    mapping(bytes32 => mapping(uint256 => mapping(address => uint256))) public pluginProposalIds;
 
     // proposalId => stageId => proposalType => allowedBody => true/false
     mapping(bytes32 => mapping(uint16 => mapping(ProposalType => mapping(address => bool))))
@@ -268,8 +274,10 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
         bytes32 _proposalId
     ) public virtual auth(ADVANCE_PROPOSAL_PERMISSION_ID) {
         Proposal storage proposal = proposals[_proposalId];
+        // TODO: do we want to restrict this ? it could be useful that proposal is created with only metadata
+        // so people don't need actual action, but to vote on some "description" only.
         if (proposal.actions.length == 0) {
-            revert Errors.ProposalNotExists();
+            revert Errors.ProposalNotExists(_proposalId);
         }
 
         Stage[] storage _stages = stages[proposal.stageConfigIndex];
@@ -312,23 +320,64 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
             return false;
         }
 
-        // Allow `stageDuration` to pass for plugins to have veto possibility.
+        // Allow `voteDuration` to pass for plugins to have veto possibility.
         if (stage.vetoThreshold > 0) {
-            if (proposal.lastStageTransition + stage.stageDuration > block.timestamp) {
+            if (proposal.lastStageTransition + stage.voteDuration > block.timestamp) {
                 return false;
             }
         }
 
-        uint256 approvals = 0;
-        uint256 vetoes = 0;
+        (uint256 approvals, uint256 vetoes) = getProposalTally(_proposalId);
+
+        if (stage.vetoThreshold > 0 && vetoes >= stage.vetoThreshold) {
+            return false;
+        }
+
+        if (approvals >= stage.approvalThreshold) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /// @notice Calculates the votes and vetoes for a proposal.
+    /// @param _proposalId The ID of the proposal.
+    /// @return votes The number of votes for the proposal.
+    /// @return vetoes The number of vetoes for the proposal.
+    function getProposalTally(
+        bytes32 _proposalId
+    ) public view virtual returns (uint256 votes, uint256 vetoes) {
+        Proposal storage proposal = proposals[_proposalId];
+
+        // non existent proposal
+        if (proposal.creator == address(0)) {
+            return (0, 0);
+        }
+
+        uint16 currentStage = proposal.currentStage;
+        Stage storage stage = stages[proposal.stageConfigIndex][currentStage];
+
         for (uint256 i = 0; i < stage.plugins.length; ) {
             Plugin storage plugin = stage.plugins[i];
             address allowedBody = plugin.allowedBody;
 
+            uint256 pluginProposalId = pluginProposalIds[_proposalId][currentStage][
+                plugin.pluginAddress
+            ];
+
             if (pluginResults[_proposalId][currentStage][plugin.proposalType][allowedBody]) {
                 if (plugin.proposalType == ProposalType.Approval) {
-                    ++approvals;
+                    ++votes;
                 } else {
+                    ++vetoes;
+                }
+            } else if (
+                stage.vetoThreshold > 0 &&
+                plugin.proposalType == ProposalType.Veto &&
+                !plugin.isManual &&
+                pluginProposalId != type(uint256).max
+            ) {
+                if (IProposal(stage.plugins[i].pluginAddress).canExecute(pluginProposalId)) {
                     ++vetoes;
                 }
             }
@@ -337,12 +386,22 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
                 ++i;
             }
         }
+    }
 
-        if (stage.vetoThreshold > 0 && vetoes >= stage.vetoThreshold) {
+    /// @notice Necessary to abide the rules of IProposal interface.
+    /// @dev One must convert bytes32 proposalId into uint256 type and pass it.
+    /// @param _proposalId The proposal Id.
+    /// @return bool Returns if proposal can be executed or not.
+    function canExecute(uint256 _proposalId) public view returns (bool) {
+        bytes32 id = bytes32(_proposalId);
+        Proposal storage proposal = proposals[id];
+        if (proposal.creator == address(0)) {
             return false;
         }
 
-        if (approvals >= stage.approvalThreshold) {
+        Stage[] storage _stages = stages[proposal.stageConfigIndex];
+
+        if (proposal.currentStage == _stages.length - 1 && canProposalAdvance(id)) {
             return true;
         }
 
@@ -358,6 +417,16 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
         Stage[] storage storedStages = stages[++currentConfigIndex];
 
         for (uint256 i = 0; i < _stages.length; i++) {
+            for (uint256 j = 0; j < _stages[i].plugins.length; j++) {
+                if (
+                    !_stages[i].plugins[j].isManual &&
+                    !_stages[i].plugins[j].pluginAddress.supportsInterface(
+                        type(IProposal).interfaceId
+                    )
+                ) {
+                    revert Errors.InterfaceNotSupported();
+                }
+            }
             storedStages.push(_stages[i]);
         }
 
@@ -384,7 +453,7 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
     }
 
     /// @notice Records the result by the caller.
-    /// @dev Only allows to record if `stageDuration` has not passed yet.
+    /// @dev Results can be recorded at any time, but only once per plugin.
     /// @param _proposalId The ID of the proposal.
     /// @param _proposalType which method to use when reporting(veto or approval)
     function _processProposalResult(
@@ -392,12 +461,6 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
         ProposalType _proposalType
     ) internal virtual {
         Proposal storage proposal = proposals[_proposalId];
-        Stage storage stage = stages[proposal.stageConfigIndex][proposal.currentStage];
-
-        // Prevent submission if `stageDuration` has passed.
-        if (proposal.lastStageTransition + stage.stageDuration < block.timestamp) {
-            revert Errors.StageDurationAlreadyPassed();
-        }
 
         address sender = msg.sender;
         // if sender is a trusted trustedForwarder, that means
@@ -415,7 +478,6 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
     }
 
     /// @notice Creates proposals on the non-manual plugins of the `stageId`.
-    /// @dev Only allows to record if `stageDuration` has not passed yet.
     /// @param _proposalId The ID of the proposal.
     /// @param _stageId stage number of the stages configuration array.
     function _createPluginProposals(
@@ -450,14 +512,24 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
             // the remaining 1/64 gas are sufficient to successfully finish the call.
             uint256 gasBefore = gasleft();
 
+            // TODO: in the createProposal standardization, shall we rename it to `data` instead of `metadata` ?
+            // This way, people would understand that it could be anything.
             try
                 IProposal(stage.plugins[i].pluginAddress).createProposal(
                     proposalMetadata,
                     actions,
                     _startDate,
-                    _startDate + stage.stageDuration
+                    _startDate + stage.voteDuration
                 )
-            returns (uint256 /* pluginProposalId*/) {} catch {
+            returns (uint256 pluginProposalId) {
+                pluginProposalIds[_proposalId][_stageId][
+                    stage.plugins[i].pluginAddress
+                ] = pluginProposalId;
+            } catch {
+                pluginProposalIds[_proposalId][_stageId][stage.plugins[i].pluginAddress] = type(
+                    uint256
+                ).max;
+
                 uint256 gasAfter = gasleft();
 
                 if (gasAfter < gasBefore / 64) {
@@ -471,6 +543,6 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
     /// variables without shifting down storage in the inheritance chain.
     /// https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
 
-    /// ! adjust the reserved gap size
+    /// TODO: adjust the reserved gap size
     uint256[43] private __gap;
 }

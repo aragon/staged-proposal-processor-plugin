@@ -6,7 +6,7 @@ pragma solidity ^0.8.8;
 library Errors {
     // SPP
     /// @notice Thrown the proposal does not exist.
-    error ProposalNotExists();
+    error ProposalNotExists(bytes32);
 
     /// ! @notice not used so far
     error CallerNotABody();
@@ -20,12 +20,12 @@ library Errors {
     /// @notice Thrown when the metadata is empty.
     error EmptyMetadata();
 
-    /// @notice Thrown when staged duration has already passed.
-    error StageDurationAlreadyPassed();
-
     error InsufficientGas();
 
     // Trusted Forwarder
     /// @notice Thrown when trusted forwarder can not execute the actions.
     error NotPossible();
+
+    /// @notice Thrown when a plugin doesn't support IProposal interface
+    error InterfaceNotSupported();
 }

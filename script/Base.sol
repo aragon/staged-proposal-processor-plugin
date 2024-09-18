@@ -32,14 +32,14 @@ contract BaseScript is Script, Constants {
 
         string memory _repoFactoryKey = _buildKey(protocolVersion, PLUGIN_FACTORY_ADDRESS_KEY);
 
-        if (!vm.keyExistsJson(_json, _repoFactoryKey)) {
+        if (!vm.keyExists(_json, _repoFactoryKey)) {
             revert UnsupportedNetwork(_network);
         }
         _repoFactory = vm.parseJsonAddress(_json, _repoFactoryKey);
 
         string memory _managementDaoKey = _buildKey(protocolVersion, MANAGEMENT_DAO_ADDRESS_KEY);
 
-        if (!vm.keyExistsJson(_json, _managementDaoKey)) {
+        if (!vm.keyExists(_json, _managementDaoKey)) {
             revert UnsupportedNetwork(_network);
         }
         _managementDao = vm.parseJsonAddress(_json, _managementDaoKey);
