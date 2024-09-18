@@ -12,7 +12,7 @@ contract Constants {
 
     uint64 internal constant MIN_ADVANCE = 10;
     uint64 internal constant MAX_ADVANCE = 100;
-    uint64 internal constant STAGE_DURATION = 50;
+    uint64 internal constant VOTE_DURATION = 50;
     uint64 internal constant START_DATE = 3;
 
     bytes32 internal constant NON_EXISTENT_PROPOSAL_ID = bytes32(0);

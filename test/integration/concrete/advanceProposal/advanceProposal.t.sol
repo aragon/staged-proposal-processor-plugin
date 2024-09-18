@@ -44,25 +44,15 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
     function test_WhenProposalIsInLastStage() external givenProposalExists whenProposalCanAdvance {
         // it should execute the proposal.
 
-        // configure stages
-        SPP.Stage[] memory stages = _createDummyStages(2, false, false, false);
-        sppPlugin.updateStages(stages);
+        bytes32 proposalId = _configureStagesAndCreateDummyProposal();
 
-        // create proposal
-        IDAO.Action[] memory actions = _createDummyActions();
-        bytes32 proposalId = sppPlugin.createProposal({
-            _actions: actions,
-            _allowFailureMap: 0,
-            _metadata: DUMMY_METADATA,
-            _startDate: START_DATE
-        });
         uint256 initialStage;
 
         // execute proposals on first stage
         _executeStageProposals(initialStage);
 
         // advance to last stage
-        vm.warp(STAGE_DURATION + START_DATE);
+        vm.warp(VOTE_DURATION + START_DATE);
         sppPlugin.advanceProposal(proposalId);
 
         uint64 lastStageTransition = sppPlugin.getProposal(proposalId).lastStageTransition;
@@ -71,7 +61,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         _executeStageProposals(initialStage + 1);
 
         // advance last stage
-        vm.warp(lastStageTransition + STAGE_DURATION + START_DATE);
+        vm.warp(lastStageTransition + VOTE_DURATION + START_DATE);
         sppPlugin.advanceProposal(proposalId);
 
         // check proposal executed
@@ -113,7 +103,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         // execute proposals on first stage
         _executeStageProposals(initialStage);
 
-        vm.warp(STAGE_DURATION + START_DATE);
+        vm.warp(VOTE_DURATION + START_DATE);
 
         // check event emitted
         vm.expectEmit({emitter: address(sppPlugin)});
@@ -161,7 +151,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         // execute proposals on first stage
         _executeStageProposals(initialStage);
 
-        vm.warp(STAGE_DURATION + START_DATE);
+        vm.warp(VOTE_DURATION + START_DATE);
 
         // check event emitted
         vm.expectEmit({emitter: address(sppPlugin)});
@@ -190,16 +180,9 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
     function test_RevertGiven_ProposalDoesNotExist() external {
         // it should revert
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.ProposalNotExists.selector));
+        vm.expectRevert(
+            abi.encodeWithSelector(Errors.ProposalNotExists.selector, NON_EXISTENT_PROPOSAL_ID)
+        );
         sppPlugin.advanceProposal(NON_EXISTENT_PROPOSAL_ID);
-    }
-
-    function _executeStageProposals(uint256 _stage) internal {
-        // execute proposals on first stage
-        SPP.Stage[] memory stages = sppPlugin.getStages();
-
-        for (uint256 i; i < stages[_stage].plugins.length; i++) {
-            PluginA(stages[_stage].plugins[i].pluginAddress).execute({_proposalId: 0});
-        }
     }
 }

@@ -10,7 +10,6 @@ import {Fuzzers} from "./utils/Fuzzers.sol";
 import {Constants} from "./utils/Constants.sol";
 import {Assertions} from "./utils/Assertions.sol";
 import {PluginA} from "./utils/dummy-plugins/PluginA.sol";
-import {PluginB} from "./utils/dummy-plugins/PluginB.sol";
 import {TrustedForwarder} from "../src/utils/TrustedForwarder.sol";
 import {AlwaysTrueCondition} from "../src/utils/AlwaysTrueCondition.sol";
 import {StagedProposalProcessor as SPP} from "../src/StagedProposalProcessor.sol";
@@ -37,7 +36,7 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
     // helpers
     uint64 internal maxAdvance = MAX_ADVANCE;
     uint64 internal minAdvance = MIN_ADVANCE;
-    uint64 internal stageDuration = STAGE_DURATION;
+    uint64 internal voteDuration = VOTE_DURATION;
 
     uint16 internal approvalThreshold = 1;
     uint16 internal vetoThreshold = 1;
@@ -73,6 +72,8 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
         vm.stopPrank();
         vm.startPrank(msgSender);
     }
+
+    // ==== HELPERS ====
 
     function _setUpDaoAndPlugin() internal {
         vm.startPrank({msgSender: users.manager});
@@ -196,7 +197,7 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
             plugins: _plugins,
             maxAdvance: maxAdvance,
             minAdvance: minAdvance,
-            stageDuration: stageDuration,
+            voteDuration: voteDuration,
             approvalThreshold: approvalThreshold,
             vetoThreshold: vetoThreshold
         });
@@ -213,5 +214,29 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
         actions[1].to = address(target);
         actions[1].value = 0;
         actions[1].data = abi.encodeCall(target.setAddress, TARGET_ADDRESS);
+    }
+
+    function _configureStagesAndCreateDummyProposal() internal returns (bytes32 proposalId) {
+        // setup stages
+        SPP.Stage[] memory stages = _createDummyStages(2, false, false, false);
+        sppPlugin.updateStages(stages);
+
+        // create proposal
+        IDAO.Action[] memory actions = _createDummyActions();
+        proposalId = sppPlugin.createProposal({
+            _actions: actions,
+            _allowFailureMap: 0,
+            _metadata: DUMMY_METADATA,
+            _startDate: START_DATE
+        });
+    }
+
+    function _executeStageProposals(uint256 _stage) internal {
+        // execute proposals on first stage
+        SPP.Stage[] memory stages = sppPlugin.getStages();
+
+        for (uint256 i; i < stages[_stage].plugins.length; i++) {
+            PluginA(stages[_stage].plugins[i].pluginAddress).execute({_proposalId: 0});
+        }
     }
 }

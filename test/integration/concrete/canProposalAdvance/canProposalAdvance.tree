@@ -6,11 +6,11 @@ CanProposalAdvance_SPP_IntegrationTest
 │   │   └── it should return false.
 │   ├── when proposal is executed
 │   │   └── it should return false.
-│   ├── when minAdvance is lower than stageDuration
+│   ├── when minAdvance is lower than voteDuration
 │   │   ├── when veto stage threshold is not zero  // ! dupplicated changed when for given until fixed in bulloak
-│   │   │   ├── when stageDuration is not reached
+│   │   │   ├── when voteDuration is not reached
 │   │   │   │   └── it should return false.
-│   │   │   └── when stageDuration is reached
+│   │   │   └── when voteDuration is reached
 │   │   │       ├── when veto threshold is met 
 │   │   │       │   └── it should return false.
 │   │   │       └── when veto threshold is not met  //! dupplicated changed when for given until fixed in bulloak
@@ -21,19 +21,19 @@ CanProposalAdvance_SPP_IntegrationTest
 │   │   └── when veto stage threshold is zero  //! dupplicated changed when for given until fixed in bulloak
 │   │       ├── when approval threshold is met 2 //! dupplicated re-frased until fixed in bulloak
 │   │       │   └── it should return true.
-│   │       └── given approval threshold is not met 2 // ! dupp
+│   │       └── when approval threshold is not met 2 // ! dupp
 │   │           └── it should return false.
-│   └── when minAdvance is bigger than stageDuration
-│       ├── when stageDuration is reached but minAdvance is not reached
+│   └── when minAdvance is bigger than voteDuration
+│       ├── when voteDuration is reached but minAdvance is not reached
 │       │   └── it should return false.
-│       └── when stageDuration and minAdvance are reached
+│       └── when voteDuration and minAdvance are reached
 │           ├── given veto stage threshold is not zero  // ! dupp
 │           │   ├── given veto threshold is met   // ! dupp
 │           │   │   └── it should return false.
 │           │   └── given veto threshold is not met  // ! dupp
 │           │       ├── given approval threshold is met 1 // ! dupp
 │           │       │   └── it should return true.
-│           │       └── when approval threshold is not met 1 // ! dupp
+│           │       └── given approval threshold is not met 1 // ! dupp
 │           │           └── it should return false.
 │           └── given veto stage threshold is zero  // ! dupp
 │               ├── given approval threshold is met  2 // ! dupp
