@@ -18,6 +18,9 @@ import {DAO} from "@aragon/osx/core/dao/DAO.sol";
 import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
 import {PermissionLib} from "@aragon/osx/core/permission/PermissionLib.sol";
 import {PermissionManager} from "@aragon/osx/core/permission/PermissionManager.sol";
+import {
+    PluginUUPSUpgradeable
+} from "@aragon/osx-commons-contracts/src/plugin/PluginUUPSUpgradeable.sol";
 
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
@@ -42,6 +45,8 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
     uint16 internal vetoThreshold = 1;
 
     SPP.ProposalType internal proposalType = SPP.ProposalType.Approval;
+
+    PluginUUPSUpgradeable.TargetConfig internal defaultTargetConfig;
 
     function setUp() public virtual {
         // deploy external needed contracts
@@ -86,13 +91,16 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
             )
         );
 
+        defaultTargetConfig.target = address(dao);
+        defaultTargetConfig.operation = PluginUUPSUpgradeable.Operation.Call;
+
         // create SPP plugin.
         sppPlugin = SPP(
             createProxyAndCall(
                 address(new SPP()),
                 abi.encodeCall(
                     SPP.initialize,
-                    (dao, address(trustedForwarder), new SPP.Stage[](0), DUMMY_METADATA)
+                    (dao, address(trustedForwarder), new SPP.Stage[](0), DUMMY_METADATA, defaultTargetConfig)
                 )
             )
         );

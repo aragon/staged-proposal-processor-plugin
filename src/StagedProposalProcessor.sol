@@ -67,6 +67,7 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
         uint16 currentStage; // At which stage the proposal is.
         uint16 stageConfigIndex; // What stage configuration the proposal is using
         bool executed;
+        TargetConfig targetConfig;
     }
 
     // proposalId => stageId => pluginAddress => subProposalId
@@ -100,7 +101,8 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
         IDAO _dao,
         address _trustedForwarder,
         Stage[] calldata _stages,
-        bytes calldata _metadata
+        bytes calldata _metadata,
+        TargetConfig calldata _targetConfig
     ) external initializer {
         __PluginUUPSUpgradeable_init(_dao);
 
@@ -112,6 +114,7 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
         }
 
         _updateMetadata(_metadata);
+        _setTargetConfig(_targetConfig);
 
         trustedForwarder = _trustedForwarder;
     }
@@ -158,7 +161,7 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
         // Include block.timestamp to minimize the chance
         // for sub-plugins to create proposals in advance.
         proposalId = keccak256(abi.encode(block.timestamp, address(this), _proposalId));
-
+    
         Proposal storage proposal = proposals[proposalId];
         proposal.allowFailureMap = _allowFailureMap;
         proposal.metadata = _metadata;
@@ -166,6 +169,8 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
         // store stage configuration per proposal to avoid
         // changing it while proposal is still open
         proposal.stageConfigIndex = index;
+
+        proposal.targetConfig = getTargetConfig();
 
         // if the startDate is in the past use the current block timestamp
         proposal.lastStageTransition = _startDate > uint64(block.timestamp)
@@ -466,7 +471,16 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
     function _executeProposal(bytes32 _proposalId) internal virtual {
         Proposal storage proposal = proposals[_proposalId];
         proposal.executed = true;
-        dao().execute(_proposalId, proposal.actions, proposal.allowFailureMap);
+
+        _execute(
+            proposal.targetConfig.target,
+            _proposalId,
+            proposal.actions,
+            proposal.allowFailureMap,
+            proposal.targetConfig.operation
+        );
+
+        emit ProposalExecuted(uint256(_proposalId));
     }
 
     /// @notice Records the result by the caller.

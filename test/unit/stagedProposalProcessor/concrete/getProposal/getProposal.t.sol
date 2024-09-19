@@ -33,7 +33,8 @@ contract GetProposal_SPP_UnitTest is StagedConfiguredSharedTest {
             currentStage: 0,
             stageConfigIndex: sppPlugin.getCurrentConfigIndex(),
             executed: false,
-            actions: _createDummyActions()
+            actions: _createDummyActions(),
+            targetConfig: defaultTargetConfig
         });
 
         // check proposal is correct
