@@ -9,10 +9,10 @@ import {StagedProposalProcessor as SPP} from "../../../../src/StagedProposalProc
 import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
 
 contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
-    bytes32 proposalId;
+    uint256 proposalId;
 
     modifier whenExistentProposal() {
-        proposalId = _configureStagesAndCreateDummyProposal();
+        proposalId = _configureStagesAndCreateDummyProposal(DUMMY_METADATA);
         _;
     }
 

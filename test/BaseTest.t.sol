@@ -224,7 +224,7 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
         actions[1].data = abi.encodeCall(target.setAddress, TARGET_ADDRESS);
     }
 
-    function _configureStagesAndCreateDummyProposal() internal returns (bytes32 proposalId) {
+    function _configureStagesAndCreateDummyProposal(bytes memory _metadata) internal returns (uint256 proposalId) {
         // setup stages
         SPP.Stage[] memory stages = _createDummyStages(2, false, false, false);
         sppPlugin.updateStages(stages);
@@ -234,7 +234,7 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
         proposalId = sppPlugin.createProposal({
             _actions: actions,
             _allowFailureMap: 0,
-            _metadata: DUMMY_METADATA,
+            _metadata: _metadata,
             _startDate: START_DATE
         });
     }

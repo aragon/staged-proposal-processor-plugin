@@ -10,11 +10,11 @@ import {StagedProposalProcessor as SPP} from "../../../../src/StagedProposalProc
 import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
 
 contract GetProposalTally_SPP_IntegrationTest is BaseTest {
-    bytes32 proposalId;
+    uint256 proposalId;
 
     modifier whenExistentProposal() {
         proposalType = SPP.ProposalType.Veto;
-        proposalId = _configureStagesAndCreateDummyProposal();
+        proposalId = _configureStagesAndCreateDummyProposal(DUMMY_METADATA);
 
         _;
     }
@@ -45,7 +45,7 @@ contract GetProposalTally_SPP_IntegrationTest is BaseTest {
 
         vetoThreshold = 0;
         proposalType = SPP.ProposalType.Veto;
-        proposalId = _configureStagesAndCreateDummyProposal();
+        proposalId = _configureStagesAndCreateDummyProposal(abi.encode(DUMMY_METADATA, "0x01"));
 
         (uint256 votes, uint256 vetos) = sppPlugin.getProposalTally(proposalId);
 
@@ -68,7 +68,7 @@ contract GetProposalTally_SPP_IntegrationTest is BaseTest {
 
         // set non optimistic stages
         proposalType = SPP.ProposalType.Approval;
-        proposalId = _configureStagesAndCreateDummyProposal();
+        proposalId = _configureStagesAndCreateDummyProposal(abi.encode(DUMMY_METADATA, "0x01"));
 
         (uint256 votes, uint256 vetos) = sppPlugin.getProposalTally(proposalId);
 
@@ -104,7 +104,7 @@ contract GetProposalTally_SPP_IntegrationTest is BaseTest {
         proposalId = sppPlugin.createProposal({
             _actions: actions,
             _allowFailureMap: 0,
-            _metadata: DUMMY_METADATA,
+            _metadata: abi.encode(DUMMY_METADATA, "0x01"),
             _startDate: START_DATE
         });
 
@@ -138,7 +138,7 @@ contract GetProposalTally_SPP_IntegrationTest is BaseTest {
         proposalId = sppPlugin.createProposal({
             _actions: actions,
             _allowFailureMap: 0,
-            _metadata: DUMMY_METADATA,
+            _metadata: abi.encode(DUMMY_METADATA, "0x01"),
             _startDate: START_DATE
         });
 

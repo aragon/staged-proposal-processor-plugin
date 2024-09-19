@@ -18,7 +18,7 @@ contract GIORGI_OE is BaseTest {
         IDAO.Action[] memory actions = _createDummyActions();
 
         uint256 g1 = gasleft();
-        bytes32 proposalId = sppPlugin.createProposal({
+        uint256 proposalId = sppPlugin.createProposal({
             _actions: actions,
             _allowFailureMap: 0,
             _metadata: DUMMY_METADATA,

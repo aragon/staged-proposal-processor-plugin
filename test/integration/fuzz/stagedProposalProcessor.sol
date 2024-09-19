@@ -11,7 +11,7 @@ import {DaoUnauthorized} from "@aragon/osx/core/utils/auth.sol";
 import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
 
 contract SPP_Integration_FuzzTest is BaseTest {
-    function testFuzz_advanceProposal_RevertWhen_NonExistent(bytes32 _randomProposalId) external {
+    function testFuzz_advanceProposal_RevertWhen_NonExistent(uint256 _randomProposalId) external {
         vm.expectRevert(
             abi.encodeWithSelector(Errors.ProposalNotExists.selector, _randomProposalId)
         );

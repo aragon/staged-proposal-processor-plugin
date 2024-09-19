@@ -8,7 +8,7 @@ import {StagedProposalProcessor as SPP} from "../../../../../src/StagedProposalP
 import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
 
 contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
-    bytes32 internal proposalId;
+    uint256 internal proposalId;
 
     modifier givenExistentProposal() {
         // create proposal

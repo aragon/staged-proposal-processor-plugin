@@ -15,9 +15,9 @@ contract PluginB {
     }
 
     function execute(
-        bytes32 proposalId,
+        uint256 proposalId,
         IDAO.Action[] memory actions
     ) external returns (bytes[] memory execResults, uint256 failureMap) {
-        (execResults, failureMap) = trustedForwarder.execute(proposalId, actions, 0);
+        (execResults, failureMap) = trustedForwarder.execute(bytes32(proposalId), actions, 0);
     }
 }

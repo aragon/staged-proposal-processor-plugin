@@ -19,7 +19,7 @@ contract GetProposal_SPP_UnitTest is StagedConfiguredSharedTest {
         // it should return correct proposal.
 
         // create proposal
-        bytes32 proposalId = sppPlugin.createProposal({
+        uint256 proposalId = sppPlugin.createProposal({
             _actions: _createDummyActions(),
             _allowFailureMap: 0,
             _metadata: DUMMY_METADATA,
