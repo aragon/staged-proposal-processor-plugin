@@ -4,6 +4,7 @@ pragma solidity ^0.8.8;
 import {BaseTest} from "../../../BaseTest.t.sol";
 import {PluginA} from "../../../utils/dummy-plugins/PluginA.sol";
 import {StagedProposalProcessor as SPP} from "../../../../src/StagedProposalProcessor.sol";
+import {Errors} from "../../../../src/libraries/Errors.sol";
 
 contract CanExecute_SPP_IntegrationTest is BaseTest {
     bytes32 proposalId;
@@ -49,16 +50,20 @@ contract CanExecute_SPP_IntegrationTest is BaseTest {
     }
 
     function test_WhenProposalIsNotInLastStage() external whenExistentProposal {
-        // it returns false.
+        // it should revert.
+        vm.expectRevert(
+            abi.encodeWithSelector(Errors.ProposalNotExists.selector, NON_EXISTENT_PROPOSAL_ID)
+        );
 
-        bool canExecute = sppPlugin.canExecute(uint256(NON_EXISTENT_PROPOSAL_ID));
-        assertFalse(canExecute, "canExecute");
+        sppPlugin.canExecute(uint256(NON_EXISTENT_PROPOSAL_ID));
     }
 
     function test_WhenNonExistentProposal() external {
-        // it returns false.
+        // it should revert.
+        vm.expectRevert(
+            abi.encodeWithSelector(Errors.ProposalNotExists.selector, NON_EXISTENT_PROPOSAL_ID)
+        );
 
-        bool canExecute = sppPlugin.canExecute(uint256(NON_EXISTENT_PROPOSAL_ID));
-        assertFalse(canExecute, "canExecute");
+        sppPlugin.canExecute(uint256(NON_EXISTENT_PROPOSAL_ID));
     }
 }

@@ -38,7 +38,7 @@ contract PluginC is IProposal, IERC165 {
     function createProposalId(
         IDAO.Action[] memory _actions,
         bytes memory _metadata
-    ) public override returns (uint256) {}
+    ) public pure override returns (uint256) {}
 
     function canExecute(uint256) public pure returns (bool) {
         // TODO: for now

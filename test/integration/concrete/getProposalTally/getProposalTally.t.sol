@@ -3,6 +3,8 @@ pragma solidity ^0.8.8;
 
 import {BaseTest} from "../../../BaseTest.t.sol";
 import {PluginA} from "../../../utils/dummy-plugins/PluginA.sol";
+import {Errors} from "../../../../src/libraries/Errors.sol";
+
 import {StagedProposalProcessor as SPP} from "../../../../src/StagedProposalProcessor.sol";
 
 import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
@@ -173,11 +175,12 @@ contract GetProposalTally_SPP_IntegrationTest is BaseTest {
     }
 
     function test_WhenNonExistentProposal() external {
-        // it should have zero tally.
-        (uint256 votes, uint256 vetos) = sppPlugin.getProposalTally(NON_EXISTENT_PROPOSAL_ID);
+        // it should revert.
+        vm.expectRevert(
+            abi.encodeWithSelector(Errors.ProposalNotExists.selector, NON_EXISTENT_PROPOSAL_ID)
+        );
 
-        // there should be no vetos and no vote
-        assertEq(vetos, 0, "vetos");
-        assertEq(votes, 0, "votes");
+        // it should have zero tally.
+        sppPlugin.getProposalTally(NON_EXISTENT_PROPOSAL_ID);
     }
 }

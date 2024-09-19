@@ -367,9 +367,8 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
     ) public view virtual returns (uint256 votes, uint256 vetoes) {
         Proposal storage proposal = proposals[_proposalId];
 
-        // non existent proposal
         if (proposal.creator == address(0)) {
-            return (0, 0);
+            revert Errors.ProposalNotExists(_proposalId);
         }
 
         uint16 currentStage = proposal.currentStage;
@@ -410,11 +409,11 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
     /// @dev One must convert bytes32 proposalId into uint256 type and pass it.
     /// @param _proposalId The proposal Id.
     /// @return bool Returns if proposal can be executed or not.
-    function canExecute(uint256 _proposalId) public view returns (bool) {
+    function canExecute(uint256 _proposalId) public view override returns (bool) {
         bytes32 id = bytes32(_proposalId);
         Proposal storage proposal = proposals[id];
         if (proposal.creator == address(0)) {
-            return false;
+            revert Errors.ProposalNotExists(id);
         }
 
         Stage[] storage _stages = stages[proposal.stageConfigIndex];
@@ -544,6 +543,10 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
                     stage.plugins[i].pluginAddress
                 ] = pluginProposalId;
             } catch {
+                // Handles the edge case where:
+                // on success: it could return 0
+                // on failure: default 0 would be used 
+                // In order to differentiate, we store `uint256.max` on failure.
                 pluginProposalIds[_proposalId][_stageId][stage.plugins[i].pluginAddress] = type(
                     uint256
                 ).max;

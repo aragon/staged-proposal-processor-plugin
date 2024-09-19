@@ -17,4 +17,4 @@ GetProposalTally_SPP_IntegrationTest
 │                   └── when stored proposal id is valid
 │                       └── it should count unreported results of non manual, optimistic proposals with valid id.
 └── when non existent proposal
-    └── it should have zero tally.
+    └── it should revert.
