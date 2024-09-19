@@ -3,7 +3,6 @@ pragma solidity ^0.8.8;
 
 import {Errors} from "./libraries/Errors.sol";
 
-import {Counters} from "@openzeppelin/contracts/utils/Counters.sol";
 import {ERC165Checker} from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 
 import {
@@ -13,11 +12,11 @@ import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
 import {
     IProposal
 } from "@aragon/osx-commons-contracts/src/plugin/extensions/proposal/IProposal.sol";
+import {ProposalUpgradeable} from "@aragon/osx-commons-contracts/src/plugin/extensions/proposal/ProposalUpgradeable.sol";
 
 import "forge-std/console.sol";
 
-contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
-    using Counters for Counters.Counter;
+contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
     using ERC165Checker for address;
 
     /// @notice The ID of the permission required to call the `createProposal` function.
@@ -32,9 +31,6 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
 
     /// @notice The ID of the permission required to call the `updateStages` function.
     bytes32 public constant UPDATE_STAGES_PERMISSION_ID = keccak256("UPDATE_STAGES_PERMISSION");
-
-    /// @notice The incremental ID for proposals.
-    Counters.Counter private counter;
 
     enum ProposalType {
         Approval,
@@ -117,6 +113,15 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
         _setTargetConfig(_targetConfig);
 
         trustedForwarder = _trustedForwarder;
+    }
+
+    /// @notice Checks if this or the parent contract supports an interface by its ID.
+    /// @param _interfaceId The ID of the interface.
+    /// @return Returns `true` if the interface is supported.
+    function supportsInterface(
+        bytes4 _interfaceId
+    ) public view virtual override(PluginUUPSUpgradeable, ProposalUpgradeable) returns (bool) {
+        return super.supportsInterface(_interfaceId);
     }
 
     /// @notice Allows to update stage configuration.
@@ -246,11 +251,6 @@ contract StagedProposalProcessor is IProposal, PluginUUPSUpgradeable {
         address _body
     ) public view virtual returns (bool) {
         return pluginResults[_proposalId][_stageId][_proposalType][_body];
-    }
-
-    /// @inheritdoc IProposal
-    function proposalCount() public view override returns (uint256) {
-        return counter.current();
     }
 
     /// @notice Returns the current config index at which current configurations of stages are stored.
