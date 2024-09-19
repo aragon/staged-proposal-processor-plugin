@@ -298,9 +298,8 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
         uint256 _proposalId
     ) public virtual auth(ADVANCE_PROPOSAL_PERMISSION_ID) {
         Proposal storage proposal = proposals[_proposalId];
-        // TODO: do we want to restrict this ? it could be useful that proposal is created with only metadata
-        // so people don't need actual action, but to vote on some "description" only.
-        if (proposal.actions.length == 0) {
+
+        if(proposal.lastStageTransition == 0) {
             revert Errors.ProposalNotExists(_proposalId);
         }
 
