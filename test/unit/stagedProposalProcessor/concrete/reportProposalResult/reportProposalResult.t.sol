@@ -16,7 +16,8 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
             _actions: _createDummyActions(),
             _allowFailureMap: 0,
             _metadata: DUMMY_METADATA,
-            _startDate: START_DATE
+            _startDate: START_DATE,
+            _data: defaultCreationParams
         });
         _;
     }

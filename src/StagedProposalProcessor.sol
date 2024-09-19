@@ -12,7 +12,9 @@ import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
 import {
     IProposal
 } from "@aragon/osx-commons-contracts/src/plugin/extensions/proposal/IProposal.sol";
-import {ProposalUpgradeable} from "@aragon/osx-commons-contracts/src/plugin/extensions/proposal/ProposalUpgradeable.sol";
+import {
+    ProposalUpgradeable
+} from "@aragon/osx-commons-contracts/src/plugin/extensions/proposal/ProposalUpgradeable.sol";
 
 import "forge-std/console.sol";
 
@@ -74,7 +76,8 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
         private pluginResults;
 
     mapping(uint256 => Proposal) private proposals;
-    mapping(uint => Stage[]) private stages;
+    mapping(uint256 => Stage[]) private stages;
+    mapping(uint256 => bytes[][]) private createProposalParams;
 
     // the StagedProposalProcessor metadata cid
     bytes private metadata;
@@ -146,12 +149,14 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
     /// Uses bitmap representation.
     /// If the bit at index `x` is 1, the tx succeeds even if the action at `x` failed.
     /// Passing 0 will be treated as atomic execution.
+    /// @param _data The extra abi encoded parameters for each sub-plugin's createProposal function.
     /// @return proposalId The ID of the proposal.
     function createProposal(
         bytes calldata _metadata,
         IDAO.Action[] calldata _actions,
         uint256 _allowFailureMap,
-        uint64 _startDate
+        uint64 _startDate,
+        bytes[][] memory _data
     ) public auth(CREATE_PROPOSAL_PERMISSION_ID) returns (uint256 proposalId) {
         // If `currentConfigIndex` is 0, this means the plugin was installed
         // with empty configurations and still hasn't updated stages
@@ -162,10 +167,10 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
         }
 
         proposalId = createProposalId(_actions, _metadata);
-        
+
         Proposal storage proposal = proposals[proposalId];
 
-        if(proposal.lastStageTransition != 0) {
+        if (proposal.lastStageTransition != 0) {
             revert Errors.ProposalAlreadyExists(proposalId);
         }
 
@@ -191,7 +196,16 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
             }
         }
 
-        _createPluginProposals(proposalId, 0, proposal.lastStageTransition);
+        if (_data.length > 0) {
+            createProposalParams[proposalId] = _data;
+        }
+
+        _createPluginProposals(
+            proposalId,
+            0,
+            proposal.lastStageTransition,
+            _data.length > 0 ? _data[0] : new bytes[](0)
+        );
 
         emit ProposalCreated({
             proposalId: proposalId,
@@ -204,13 +218,23 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
         });
     }
 
+    /// @inheritdoc IProposal
     function createProposal(
         bytes calldata _metadata,
         IDAO.Action[] calldata _actions,
         uint64 _startDate,
-        uint64 /** */
+        uint64 /** */,
+        bytes memory _data
     ) external override returns (uint256 proposalId) {
-        proposalId = uint256(createProposal(_metadata, _actions, 0, _startDate));
+        proposalId = uint256(
+            createProposal(_metadata, _actions, 0, _startDate, abi.decode(_data, (bytes[][])))
+        );
+    }
+
+    /// @inheritdoc IProposal
+    /// @dev Since SPP is also IProposal, it's required to override. Though, ABI can not be defined at compile time.
+    function createProposalParamsABI() external pure override returns (string memory) {
+        return "";
     }
 
     /// @notice Hashing function used to (re)build the proposal id from the proposal details..
@@ -299,7 +323,7 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
     ) public virtual auth(ADVANCE_PROPOSAL_PERMISSION_ID) {
         Proposal storage proposal = proposals[_proposalId];
 
-        if(proposal.lastStageTransition == 0) {
+        if (proposal.lastStageTransition == 0) {
             revert Errors.ProposalNotExists(_proposalId);
         }
 
@@ -312,7 +336,14 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
                 uint16 newStage = proposal.currentStage + 1;
                 proposal.currentStage = newStage;
 
-                _createPluginProposals(_proposalId, newStage, uint64(block.timestamp));
+                bytes[][] memory params = createProposalParams[_proposalId];
+
+                _createPluginProposals(
+                    _proposalId,
+                    newStage,
+                    uint64(block.timestamp),
+                    params.length > 0 ? params[0] : new bytes[](0)
+                );
 
                 emit ProposalAdvanced(_proposalId, newStage);
             } else {
@@ -512,7 +543,8 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
     function _createPluginProposals(
         uint256 _proposalId,
         uint16 _stageId,
-        uint64 _startDate
+        uint64 _startDate,
+        bytes[] memory _createProposalParams
     ) internal virtual {
         Proposal storage proposal = proposals[_proposalId];
 
@@ -548,7 +580,8 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
                     proposalMetadata,
                     actions,
                     _startDate,
-                    _startDate + stage.voteDuration
+                    _startDate + stage.voteDuration,
+                    _createProposalParams.length > 0 ? _createProposalParams[i] : bytes("")
                 )
             returns (uint256 pluginProposalId) {
                 pluginProposalIds[_proposalId][_stageId][
@@ -557,7 +590,7 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
             } catch {
                 // Handles the edge case where:
                 // on success: it could return 0
-                // on failure: default 0 would be used 
+                // on failure: default 0 would be used
                 // In order to differentiate, we store `uint256.max` on failure.
                 pluginProposalIds[_proposalId][_stageId][stage.plugins[i].pluginAddress] = type(
                     uint256

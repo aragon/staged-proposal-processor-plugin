@@ -105,7 +105,8 @@ contract GetProposalTally_SPP_IntegrationTest is BaseTest {
             _actions: actions,
             _allowFailureMap: 0,
             _metadata: abi.encode(DUMMY_METADATA, "0x01"),
-            _startDate: START_DATE
+            _startDate: START_DATE,
+            _data: defaultCreationParams
         });
 
         (uint256 votes, uint256 vetos) = sppPlugin.getProposalTally(proposalId);
@@ -139,7 +140,8 @@ contract GetProposalTally_SPP_IntegrationTest is BaseTest {
             _actions: actions,
             _allowFailureMap: 0,
             _metadata: abi.encode(DUMMY_METADATA, "0x01"),
-            _startDate: START_DATE
+            _startDate: START_DATE,
+            _data: defaultCreationParams
         });
 
         SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);

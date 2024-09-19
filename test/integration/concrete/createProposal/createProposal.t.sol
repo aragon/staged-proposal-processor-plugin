@@ -30,7 +30,8 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
             _actions: new IDAO.Action[](0),
             _allowFailureMap: 0,
             _metadata: DUMMY_METADATA,
-            _startDate: START_DATE
+            _startDate: START_DATE,
+            _data: defaultCreationParams
         });
     }
 
@@ -64,7 +65,8 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
             _actions: new IDAO.Action[](0),
             _allowFailureMap: 0,
             _metadata: DUMMY_METADATA,
-            _startDate: START_DATE
+            _startDate: START_DATE,
+            _data: defaultCreationParams
         });
 
         // check sub proposal was not created and the id is max uint256
@@ -112,7 +114,8 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
             _actions: actions,
             _allowFailureMap: 0,
             _metadata: DUMMY_METADATA,
-            _startDate: START_DATE
+            _startDate: START_DATE,
+            _data: defaultCreationParams
         });
 
         // check proposal
@@ -190,7 +193,8 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
             _actions: actions,
             _allowFailureMap: 0,
             _metadata: DUMMY_METADATA,
-            _startDate: START_DATE
+            _startDate: START_DATE,
+            _data: defaultCreationParams
         });
 
         // check proposal
@@ -253,7 +257,8 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
             _actions: actions,
             _allowFailureMap: 0,
             _metadata: DUMMY_METADATA,
-            _startDate: 1
+            _startDate: 1,
+            _data: defaultCreationParams
         });
 
         SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
@@ -292,7 +297,8 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
             _actions: actions,
             _allowFailureMap: 0,
             _metadata: DUMMY_METADATA,
-            _startDate: START_DATE
+            _startDate: START_DATE,
+            _data: defaultCreationParams
         });
 
         SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
@@ -309,7 +315,8 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
             _actions: new IDAO.Action[](0),
             _allowFailureMap: 0,
             _metadata: DUMMY_METADATA,
-            _startDate: START_DATE
+            _startDate: START_DATE,
+            _data: defaultCreationParams
         });
     }
 }

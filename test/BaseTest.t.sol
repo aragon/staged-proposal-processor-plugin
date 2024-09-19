@@ -48,6 +48,8 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
 
     PluginUUPSUpgradeable.TargetConfig internal defaultTargetConfig;
 
+    bytes[][] internal defaultCreationParams;
+
     function setUp() public virtual {
         // deploy external needed contracts
         trustedForwarder = new TrustedForwarder();
@@ -235,7 +237,8 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
             _actions: actions,
             _allowFailureMap: 0,
             _metadata: _metadata,
-            _startDate: START_DATE
+            _startDate: START_DATE,
+            _data: defaultCreationParams
         });
     }
 

@@ -30,9 +30,14 @@ contract PluginC is IProposal, IERC165 {
         bytes calldata,
         IDAO.Action[] calldata,
         uint64,
-        uint64
+        uint64,
+        bytes memory
     ) external pure override returns (uint256) {
         revert("Always reverts");
+    }
+
+    function createProposalParamsABI() external pure override returns (string memory) {
+        return "";
     }
 
     function createProposalId(

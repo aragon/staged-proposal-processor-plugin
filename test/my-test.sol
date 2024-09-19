@@ -22,7 +22,8 @@ contract GIORGI_OE is BaseTest {
             _actions: actions,
             _allowFailureMap: 0,
             _metadata: DUMMY_METADATA,
-            _startDate: START_DATE
+            _startDate: START_DATE,
+            _data: defaultCreationParams
         });
 
         uint256 g2 = gasleft();

@@ -96,7 +96,8 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
             _actions: actions,
             _allowFailureMap: 0,
             _metadata: DUMMY_METADATA,
-            _startDate: START_DATE
+            _startDate: START_DATE,
+            _data: defaultCreationParams
         });
         uint256 initialStage;
 
@@ -144,7 +145,8 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
             _actions: actions,
             _allowFailureMap: 0,
             _metadata: DUMMY_METADATA,
-            _startDate: START_DATE
+            _startDate: START_DATE,
+            _data: defaultCreationParams
         });
 
         uint256 initialStage;

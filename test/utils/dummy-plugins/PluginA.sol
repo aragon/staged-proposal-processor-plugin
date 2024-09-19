@@ -34,7 +34,8 @@ contract PluginA is IProposal, IERC165 {
         bytes calldata _metadata,
         IDAO.Action[] calldata _actions,
         uint64 startDate,
-        uint64 endDate
+        uint64 endDate,
+        bytes memory
     ) external override returns (uint256 _proposalId) {
         if (revertOnCreateProposal) revert("revertOnCreateProposal");
 
@@ -57,6 +58,10 @@ contract PluginA is IProposal, IERC165 {
     function canExecute(uint256) public pure returns (bool) {
         // TODO: for now
         return true;
+    }
+
+    function createProposalParamsABI() external pure override returns (string memory) {
+        return "";
     }
 
     function execute(
