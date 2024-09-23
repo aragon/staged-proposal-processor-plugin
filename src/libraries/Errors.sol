@@ -6,13 +6,17 @@ pragma solidity ^0.8.8;
 library Errors {
     // SPP
     /// @notice Thrown the proposal does not exist.
-    error ProposalNotExists(bytes32);
+    error ProposalNotExists(uint256);
+
+    /// @notice Thrown if the proposal with same actions and metadata already exists.
+    /// @param proposalId The id of the proposal.
+    error ProposalAlreadyExists(uint256 proposalId);
 
     /// ! @notice not used so far
     error CallerNotABody();
 
     /// ! @notice not used so far
-    error ProposalCannotExecute(bytes32);
+    error ProposalCannotExecute(uint256);
 
     /// @notice Thrown when the stages length is zero.
     error StageCountZero();

@@ -15,9 +15,12 @@ import {AlwaysTrueCondition} from "../src/utils/AlwaysTrueCondition.sol";
 import {StagedProposalProcessor as SPP} from "../src/StagedProposalProcessor.sol";
 
 import {DAO} from "@aragon/osx/core/dao/DAO.sol";
-import {IDAO} from "@aragon/osx-commons-contracts-new/src/dao/IDAO.sol";
+import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
 import {PermissionLib} from "@aragon/osx/core/permission/PermissionLib.sol";
 import {PermissionManager} from "@aragon/osx/core/permission/PermissionManager.sol";
+import {
+    PluginUUPSUpgradeable
+} from "@aragon/osx-commons-contracts/src/plugin/PluginUUPSUpgradeable.sol";
 
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
@@ -42,6 +45,8 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
     uint16 internal vetoThreshold = 1;
 
     SPP.ProposalType internal proposalType = SPP.ProposalType.Approval;
+
+    PluginUUPSUpgradeable.TargetConfig internal defaultTargetConfig;
 
     function setUp() public virtual {
         // deploy external needed contracts
@@ -86,13 +91,16 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
             )
         );
 
+        defaultTargetConfig.target = address(dao);
+        defaultTargetConfig.operation = PluginUUPSUpgradeable.Operation.Call;
+
         // create SPP plugin.
         sppPlugin = SPP(
             createProxyAndCall(
                 address(new SPP()),
                 abi.encodeCall(
                     SPP.initialize,
-                    (dao, address(trustedForwarder), new SPP.Stage[](0), DUMMY_METADATA)
+                    (dao, address(trustedForwarder), new SPP.Stage[](0), DUMMY_METADATA, defaultTargetConfig)
                 )
             )
         );
@@ -216,7 +224,7 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
         actions[1].data = abi.encodeCall(target.setAddress, TARGET_ADDRESS);
     }
 
-    function _configureStagesAndCreateDummyProposal() internal returns (bytes32 proposalId) {
+    function _configureStagesAndCreateDummyProposal(bytes memory _metadata) internal returns (uint256 proposalId) {
         // setup stages
         SPP.Stage[] memory stages = _createDummyStages(2, false, false, false);
         sppPlugin.updateStages(stages);
@@ -226,7 +234,7 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
         proposalId = sppPlugin.createProposal({
             _actions: actions,
             _allowFailureMap: 0,
-            _metadata: DUMMY_METADATA,
+            _metadata: _metadata,
             _startDate: START_DATE
         });
     }

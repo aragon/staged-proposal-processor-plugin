@@ -6,13 +6,16 @@ import {AlwaysTrueCondition} from "./utils/AlwaysTrueCondition.sol";
 import {StagedProposalProcessor as SPP} from "./StagedProposalProcessor.sol";
 
 import {DAO} from "@aragon/osx/core/dao/DAO.sol";
-import {IDAO} from "@aragon/osx-commons-contracts-new/src/dao/IDAO.sol";
-import {ProxyLib} from "@aragon/osx-commons-contracts-new/src/utils/deployment/ProxyLib.sol";
-import {IPluginSetup} from "@aragon/osx-commons-contracts-new/src/plugin/setup/IPluginSetup.sol";
-import {PermissionLib} from "@aragon/osx-commons-contracts-new/src/permission/PermissionLib.sol";
+import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
+import {ProxyLib} from "@aragon/osx-commons-contracts/src/utils/deployment/ProxyLib.sol";
+import {IPluginSetup} from "@aragon/osx-commons-contracts/src/plugin/setup/IPluginSetup.sol";
+import {PermissionLib} from "@aragon/osx-commons-contracts/src/permission/PermissionLib.sol";
+import {
+    PluginUUPSUpgradeable
+} from "@aragon/osx-commons-contracts/src/plugin/PluginUUPSUpgradeable.sol";
 import {
     PluginUpgradeableSetup
-} from "@aragon/osx-commons-contracts-new/src/plugin/setup/PluginUpgradeableSetup.sol";
+} from "@aragon/osx-commons-contracts/src/plugin/setup/PluginUpgradeableSetup.sol";
 
 /// @title MyPluginSetup
 /// @dev Release 1, Build 1
@@ -42,9 +45,9 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
         address _dao,
         bytes calldata _data
     ) external returns (address plugin, PreparedSetupData memory preparedSetupData) {
-        (SPP.Stage[] memory stages, bytes memory metadata) = abi.decode(
+        (SPP.Stage[] memory stages, bytes memory metadata, PluginUUPSUpgradeable.TargetConfig memory targetConfig) = abi.decode(
             _data,
-            (SPP.Stage[], bytes)
+            (SPP.Stage[], bytes, PluginUUPSUpgradeable.TargetConfig)
         );
 
         // TODO: shall we deploy this with proxy as well ?
@@ -53,7 +56,7 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
         plugin = IMPLEMENTATION.deployUUPSProxy(
             abi.encodeCall(
                 SPP.initialize,
-                (IDAO(_dao), address(trustedForwarder), stages, metadata)
+                (IDAO(_dao), address(trustedForwarder), stages, metadata, targetConfig)
             )
         );
 

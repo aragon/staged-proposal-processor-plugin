@@ -3,11 +3,11 @@ pragma solidity ^0.8.8;
 
 import {TrustedForwarder} from "../../../src/utils/TrustedForwarder.sol";
 
-import {IDAO} from "@aragon/osx-commons-contracts-new/src/dao/IDAO.sol";
+import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import {
     IProposal
-} from "@aragon/osx-commons-contracts-new/src/plugin/extensions/proposal/IProposal.sol";
+} from "@aragon/osx-commons-contracts/src/plugin/extensions/proposal/IProposal.sol";
 
 // dummy plugin that implements IProposal but the create function always reverts
 contract PluginC is IProposal, IERC165 {
@@ -34,6 +34,11 @@ contract PluginC is IProposal, IERC165 {
     ) external pure override returns (uint256) {
         revert("Always reverts");
     }
+
+    function createProposalId(
+        IDAO.Action[] memory _actions,
+        bytes memory _metadata
+    ) public pure override returns (uint256) {}
 
     function canExecute(uint256) public pure returns (bool) {
         // TODO: for now

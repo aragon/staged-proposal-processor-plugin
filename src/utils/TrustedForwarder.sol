@@ -3,7 +3,7 @@ pragma solidity ^0.8.8;
 
 import {Errors} from "../libraries/Errors.sol";
 
-import "@aragon/osx-commons-contracts-new/src/dao/IDAO.sol";
+import "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
 
 contract TrustedForwarder {
     // We use array of actions even though we always revert with > 1

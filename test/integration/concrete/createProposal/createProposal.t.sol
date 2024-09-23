@@ -8,7 +8,7 @@ import {PluginC} from "../../../utils/dummy-plugins/PluginC.sol";
 import {StagedProposalProcessor as SPP} from "../../../../src/StagedProposalProcessor.sol";
 
 import {DaoUnauthorized} from "@aragon/osx/core/utils/auth.sol";
-import {IDAO} from "@aragon/osx-commons-contracts-new/src/dao/IDAO.sol";
+import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
 import {PermissionLib} from "@aragon/osx/core/permission/PermissionLib.sol";
 
 contract CreateProposal_SPP_IntegrationTest is BaseTest {
@@ -60,7 +60,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         _stages[0] = _createStageStruct(_plugins);
         sppPlugin.updateStages(_stages);
 
-        bytes32 proposalId = sppPlugin.createProposal({
+        uint256 proposalId = sppPlugin.createProposal({
             _actions: new IDAO.Action[](0),
             _allowFailureMap: 0,
             _metadata: DUMMY_METADATA,
@@ -108,7 +108,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
             actions: actions,
             allowFailureMap: 0
         });
-        bytes32 proposalId = sppPlugin.createProposal({
+        uint256 proposalId = sppPlugin.createProposal({
             _actions: actions,
             _allowFailureMap: 0,
             _metadata: DUMMY_METADATA,
@@ -186,7 +186,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
             allowFailureMap: 0
         });
 
-        bytes32 proposalId = sppPlugin.createProposal({
+        uint256 proposalId = sppPlugin.createProposal({
             _actions: actions,
             _allowFailureMap: 0,
             _metadata: DUMMY_METADATA,
@@ -249,7 +249,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
             });
         }
 
-        bytes32 proposalId = sppPlugin.createProposal({
+        uint256 proposalId = sppPlugin.createProposal({
             _actions: actions,
             _allowFailureMap: 0,
             _metadata: DUMMY_METADATA,
@@ -288,7 +288,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
             });
         }
 
-        bytes32 proposalId = sppPlugin.createProposal({
+        uint256 proposalId = sppPlugin.createProposal({
             _actions: actions,
             _allowFailureMap: 0,
             _metadata: DUMMY_METADATA,

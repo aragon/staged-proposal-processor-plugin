@@ -6,13 +6,13 @@ import {PluginA} from "../../../utils/dummy-plugins/PluginA.sol";
 import {StagedConfiguredSharedTest} from "../../../StagedConfiguredSharedTest.t.sol";
 import {StagedProposalProcessor as SPP} from "../../../../src/StagedProposalProcessor.sol";
 
-import {IDAO} from "@aragon/osx-commons-contracts-new/src/dao/IDAO.sol";
+import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
 
 contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
-    bytes32 proposalId;
+    uint256 proposalId;
 
     modifier whenExistentProposal() {
-        proposalId = _configureStagesAndCreateDummyProposal();
+        proposalId = _configureStagesAndCreateDummyProposal(DUMMY_METADATA);
         _;
     }
 

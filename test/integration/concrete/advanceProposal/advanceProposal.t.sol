@@ -8,7 +8,7 @@ import {StagedProposalProcessor as SPP} from "../../../../src/StagedProposalProc
 
 import {DAO} from "@aragon/osx/core/dao/DAO.sol";
 import {DaoUnauthorized} from "@aragon/osx/core/utils/auth.sol";
-import {IDAO} from "@aragon/osx-commons-contracts-new/src/dao/IDAO.sol";
+import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
 
 contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
     function test_RevertWhen_CallerIsNotAllowed() external {
@@ -44,7 +44,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
     function test_WhenProposalIsInLastStage() external givenProposalExists whenProposalCanAdvance {
         // it should execute the proposal.
 
-        bytes32 proposalId = _configureStagesAndCreateDummyProposal();
+        uint256 proposalId = _configureStagesAndCreateDummyProposal(DUMMY_METADATA);
 
         uint256 initialStage;
 
@@ -92,7 +92,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
 
         // create proposal
         IDAO.Action[] memory actions = _createDummyActions();
-        bytes32 proposalId = sppPlugin.createProposal({
+        uint256 proposalId = sppPlugin.createProposal({
             _actions: actions,
             _allowFailureMap: 0,
             _metadata: DUMMY_METADATA,
@@ -140,7 +140,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
 
         // create proposal
         IDAO.Action[] memory actions = _createDummyActions();
-        bytes32 proposalId = sppPlugin.createProposal({
+        uint256 proposalId = sppPlugin.createProposal({
             _actions: actions,
             _allowFailureMap: 0,
             _metadata: DUMMY_METADATA,

@@ -15,7 +15,7 @@ contract Constants {
     uint64 internal constant VOTE_DURATION = 50;
     uint64 internal constant START_DATE = 3;
 
-    bytes32 internal constant NON_EXISTENT_PROPOSAL_ID = bytes32(0);
+    uint256 internal constant NON_EXISTENT_PROPOSAL_ID = uint256(0);
 
     uint256 internal constant TARGET_VALUE = 15;
     address internal constant TARGET_ADDRESS = address(0x1234567890123456789012345678901234567890);
