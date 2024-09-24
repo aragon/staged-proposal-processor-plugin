@@ -419,19 +419,12 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
             ];
 
             if (pluginResults[_proposalId][currentStage][plugin.proposalType][allowedBody]) {
-                if (plugin.proposalType == ProposalType.Approval) {
-                    ++votes;
-                } else {
-                    ++vetoes;
-                }
-            } else if (
-                stage.vetoThreshold > 0 &&
-                plugin.proposalType == ProposalType.Veto &&
-                !plugin.isManual &&
-                pluginProposalId != type(uint256).max
-            ) {
+                // result was already reported
+                plugin.proposalType == ProposalType.Approval ? ++votes : ++vetoes;
+            } else if (pluginProposalId != type(uint256).max && !plugin.isManual) {
+                // result was not reported yet
                 if (IProposal(stage.plugins[i].pluginAddress).canExecute(pluginProposalId)) {
-                    ++vetoes;
+                    plugin.proposalType == ProposalType.Approval ? ++votes : ++vetoes;
                 }
             }
 
