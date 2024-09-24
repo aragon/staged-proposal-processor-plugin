@@ -17,6 +17,7 @@ contract PluginA is IProposal, IERC165 {
     mapping(uint256 => IDAO.Action) public actions;
 
     bool public revertOnCreateProposal;
+    bool public canExecuteResult = true;
 
     constructor(address _trustedForwarder) {
         trustedForwarder = TrustedForwarder(_trustedForwarder);
@@ -55,9 +56,8 @@ contract PluginA is IProposal, IERC165 {
         return proposalId;
     }
 
-    function canExecute(uint256) public pure returns (bool) {
-        // TODO: for now
-        return true;
+    function canExecute(uint256) public view returns (bool) {
+        return canExecuteResult;
     }
 
     function createProposalParamsABI() external pure override returns (string memory) {
@@ -78,5 +78,9 @@ contract PluginA is IProposal, IERC165 {
 
     function setRevertOnCreateProposal(bool _revertOnCreateProposal) external {
         revertOnCreateProposal = _revertOnCreateProposal;
+    }
+
+    function setCanExecuteResult(bool _canExecuteResult) external {
+        canExecuteResult = _canExecuteResult;
     }
 }
