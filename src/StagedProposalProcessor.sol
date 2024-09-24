@@ -358,6 +358,10 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
     /// @return Returns `true` if the proposal can be advanced.
     function canProposalAdvance(uint256 _proposalId) public view virtual returns (bool) {
         Proposal storage proposal = proposals[_proposalId];
+        if (proposal.creator == address(0)) {
+            revert Errors.ProposalNotExists(_proposalId);
+        }
+
         if (proposal.executed) {
             return false;
         }
@@ -381,7 +385,7 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
             }
         }
 
-        (uint256 approvals, uint256 vetoes) = getProposalTally(_proposalId);
+        (uint256 approvals, uint256 vetoes) = _getProposalTally(_proposalId, proposal);
 
         if (stage.vetoThreshold > 0 && vetoes >= stage.vetoThreshold) {
             return false;
@@ -407,31 +411,7 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
             revert Errors.ProposalNotExists(_proposalId);
         }
 
-        uint16 currentStage = proposal.currentStage;
-        Stage storage stage = stages[proposal.stageConfigIndex][currentStage];
-
-        for (uint256 i = 0; i < stage.plugins.length; ) {
-            Plugin storage plugin = stage.plugins[i];
-            address allowedBody = plugin.allowedBody;
-
-            uint256 pluginProposalId = pluginProposalIds[_proposalId][currentStage][
-                plugin.pluginAddress
-            ];
-
-            if (pluginResults[_proposalId][currentStage][plugin.proposalType][allowedBody]) {
-                // result was already reported
-                plugin.proposalType == ProposalType.Approval ? ++votes : ++vetoes;
-            } else if (pluginProposalId != type(uint256).max && !plugin.isManual) {
-                // result was not reported yet
-                if (IProposal(stage.plugins[i].pluginAddress).canExecute(pluginProposalId)) {
-                    plugin.proposalType == ProposalType.Approval ? ++votes : ++vetoes;
-                }
-            }
-
-            unchecked {
-                ++i;
-            }
-        }
+        return _getProposalTally(_proposalId, proposal);
     }
 
     /// @notice Necessary to abide the rules of IProposal interface.
@@ -594,6 +574,42 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
                 if (gasAfter < gasBefore / 64) {
                     revert Errors.InsufficientGas();
                 }
+            }
+        }
+    }
+
+    /// @notice Internal function to calculate the votes and vetoes for a proposal.
+    /// @param _proposalId The proposal Id.
+    /// @param _proposal The proposal data.
+    /// @return votes The number of votes for the proposal.
+    /// @return vetoes The number of vetoes for the proposal.
+    function _getProposalTally(
+        uint256 _proposalId,
+        Proposal memory _proposal
+    ) internal view returns (uint256 votes, uint256 vetoes) {
+        uint16 currentStage = _proposal.currentStage;
+        Stage storage stage = stages[_proposal.stageConfigIndex][currentStage];
+
+        for (uint256 i = 0; i < stage.plugins.length; ) {
+            Plugin storage plugin = stage.plugins[i];
+            address allowedBody = plugin.allowedBody;
+
+            uint256 pluginProposalId = pluginProposalIds[_proposalId][currentStage][
+                plugin.pluginAddress
+            ];
+
+            if (pluginResults[_proposalId][currentStage][plugin.proposalType][allowedBody]) {
+                // result was already reported
+                plugin.proposalType == ProposalType.Approval ? ++votes : ++vetoes;
+            } else if (pluginProposalId != type(uint256).max && !plugin.isManual) {
+                // result was not reported yet
+                if (IProposal(stage.plugins[i].pluginAddress).canExecute(pluginProposalId)) {
+                    plugin.proposalType == ProposalType.Approval ? ++votes : ++vetoes;
+                }
+            }
+
+            unchecked {
+                ++i;
             }
         }
     }
