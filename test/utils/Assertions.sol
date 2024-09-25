@@ -42,4 +42,15 @@ abstract contract Assertions is StdAssertions {
             fail();
         }
     }
+
+    event log_named_bytes_array(string key, bytes[][] value);
+
+    function assertEq(bytes[][] memory a, bytes[][] memory b) internal {
+        if (keccak256(abi.encode(a)) != keccak256(abi.encode(b))) {
+            emit log("Error: a == b not satisfied [bytes[][]]");
+            emit log_named_bytes_array("   Left", a);
+            emit log_named_bytes_array("  Right", b);
+            fail();
+        }
+    }
 }
