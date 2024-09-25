@@ -399,6 +399,10 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
         return false;
     }
 
+     function getCreateProposalParams(uint256 _proposalId) public view returns (bytes[][] memory) {
+        return createProposalParams[_proposalId];
+    }
+
     // =========================== INTERNAL/PRIVATE FUNCTIONS =============================
 
     /// @notice Internal function to update stage configuration.
