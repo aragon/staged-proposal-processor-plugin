@@ -532,15 +532,16 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
                 // on success: it could return 0
                 // on failure: default 0 would be used
                 // In order to differentiate, we store `uint256.max` on failure.
-                pluginProposalIds[_proposalId][_stageId][stage.plugins[i].pluginAddress] = type(
-                    uint256
-                ).max;
 
                 uint256 gasAfter = gasleft();
 
                 if (gasAfter < gasBefore / 64) {
                     revert Errors.InsufficientGas();
                 }
+
+                pluginProposalIds[_proposalId][_stageId][stage.plugins[i].pluginAddress] = type(
+                    uint256
+                ).max;
             }
         }
     }
