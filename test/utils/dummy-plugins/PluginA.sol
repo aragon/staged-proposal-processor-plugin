@@ -15,8 +15,10 @@ contract PluginA is IProposal, IERC165 {
     uint256 public proposalId;
     TrustedForwarder public trustedForwarder;
     mapping(uint256 => IDAO.Action) public actions;
+    mapping(uint256 => bytes) public extraParams;
 
     bool public revertOnCreateProposal;
+    bool public needExtraParams;
     bool public canExecuteResult = true;
 
     constructor(address _trustedForwarder) {
@@ -36,7 +38,7 @@ contract PluginA is IProposal, IERC165 {
         IDAO.Action[] calldata _actions,
         uint64 startDate,
         uint64 endDate,
-        bytes memory
+        bytes memory data
     ) external override returns (uint256 _proposalId) {
         if (revertOnCreateProposal) revert("revertOnCreateProposal");
 
@@ -46,6 +48,15 @@ contract PluginA is IProposal, IERC165 {
         created = true;
 
         emit ProposalCreated(_proposalId, startDate, endDate);
+
+        if (needExtraParams) {
+            if (data.length == 0) {
+                revert("needExtraParams");
+            } else {
+                extraParams[_proposalId] = data;
+            }
+        }
+
         return _proposalId;
     }
 
@@ -82,5 +93,9 @@ contract PluginA is IProposal, IERC165 {
 
     function setCanExecuteResult(bool _canExecuteResult) external {
         canExecuteResult = _canExecuteResult;
+    }
+
+    function setNeedExtraParams(bool _needExtraParams) external {
+        needExtraParams = _needExtraParams;
     }
 }
