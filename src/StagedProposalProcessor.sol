@@ -342,7 +342,7 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
                     _proposalId,
                     newStage,
                     uint64(block.timestamp),
-                    params.length > 0 ? params[0] : new bytes[](0)
+                    params.length > 0 ? params[newStage] : new bytes[](0)
                 );
 
                 emit ProposalAdvanced(_proposalId, newStage);
