@@ -209,6 +209,10 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
     }
 
     modifier whenSomeSubProposalNeedExtraParams() {
+        // configure in the plugin that extra params are needed.
+        PluginA(sppPlugin.getStages()[0].plugins[1].pluginAddress).setNeedExtraParams(true);
+        PluginA(sppPlugin.getStages()[0].plugins[0].pluginAddress).setNeedExtraParams(true);
+
         _;
     }
 
@@ -225,10 +229,6 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         // it should not store extra params.
 
         IDAO.Action[] memory actions = _createDummyActions();
-
-        // configure in the plugin that extra params are needed.
-        PluginA(sppPlugin.getStages()[0].plugins[1].pluginAddress).setNeedExtraParams(true);
-        PluginA(sppPlugin.getStages()[0].plugins[0].pluginAddress).setNeedExtraParams(true);
 
         uint256 proposalId = sppPlugin.createProposal({
             _actions: actions,
@@ -305,11 +305,6 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         // it should not create sub proposals on non zero stages.
 
         IDAO.Action[] memory actions = _createDummyActions();
-
-        // configure in the plugin that extra params are needed.
-        PluginA(sppPlugin.getStages()[0].plugins[1].pluginAddress).setNeedExtraParams(true);
-        PluginA(sppPlugin.getStages()[0].plugins[0].pluginAddress).setNeedExtraParams(true);
-        // PluginA(sppPlugin.getStages()[1].plugins[0].pluginAddress).setNeedExtraParams(true);
 
         // create custom params
         bytes[][] memory customCreationParam = new bytes[][](2);
