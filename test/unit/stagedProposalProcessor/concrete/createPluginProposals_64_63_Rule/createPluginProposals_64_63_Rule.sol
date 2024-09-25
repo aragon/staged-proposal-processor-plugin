@@ -41,8 +41,8 @@ contract CreatePluginProposals_64_63_Rule is BaseTest {
         uint256 expectedGas = 481135;
 
         vm.expectRevert(abi.encodeWithSelector(Errors.InsufficientGas.selector));
+
         sppHarness.exposed_createPluginProposals{gas: expectedGas - 2000}({
-            // sppHarness.exposed_createPluginProposals({
             _proposalId: proposalId,
             _stageId: 1,
             _startDate: uint64(block.timestamp),
