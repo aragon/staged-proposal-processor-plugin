@@ -37,6 +37,7 @@ contract CreatePluginProposals_64_63_Rule is BaseTest {
     }
 
     function test_createPluginProposals_63_64_Rule() external {
+        // todo do this calculation dynamically (didn't found a way to estimate gas in foundry)
         uint256 expectedGas = 481135;
 
         vm.expectRevert(abi.encodeWithSelector(Errors.InsufficientGas.selector));
