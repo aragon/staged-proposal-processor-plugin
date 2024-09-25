@@ -37,12 +37,25 @@ contract CreatePluginProposals_64_63_Rule is BaseTest {
     }
 
     function test_createPluginProposals_63_64_Rule() external {
-        // todo do this calculation dynamically (didn't found a way to estimate gas in foundry)
-        uint256 expectedGas = 481135;
+        uint256 gasBefore = gasleft();
+        sppHarness.exposed_createPluginProposals({
+            _proposalId: proposalId,
+            _stageId: 1,
+            _startDate: uint64(block.timestamp),
+            _createProposalParams: new bytes[](0)
+        });
+        uint256 gasAfter = gasleft();
+
+        uint256 expectedGas = gasBefore - gasAfter;
+
+        // deploy again the contracts to cool the warmed storage
+        // todo use vm.cool when is life
+        setUp();
+        // vm.cool(address(this));
 
         vm.expectRevert(abi.encodeWithSelector(Errors.InsufficientGas.selector));
 
-        sppHarness.exposed_createPluginProposals{gas: expectedGas - 2000}({
+        sppHarness.exposed_createPluginProposals{gas: expectedGas - 19000}({
             _proposalId: proposalId,
             _stageId: 1,
             _startDate: uint64(block.timestamp),
