@@ -17,11 +17,16 @@ CreateProposal_SPP_IntegrationTest
 │       │       │   ├── it should store non-manual sub proposal ids.
 │       │       │   └── it should not create sub proposals on non zero stages.
 │       │       └── when some sub proposal need extra params
-│       │           ├── it should emit events.
-│       │           ├── it should create proposal.
-│       │           ├── it should create non-manual sub proposals on stage zero with all needed params.
-│       │           ├── it should store non-manual sub proposal ids.
-│       │           └── it should not create sub proposals on non zero stages.
+│       │           └── when extra params are not provided
+│       │               ├── it should create proposal.
+│       │               ├── it should not create sub proposals since extra param was not provided.
+│       │               ├── it should not store extra params.
+│       │               └── when extra params are provided
+│       │                   ├── it should emit events.
+│       │                   ├── it should create proposal.
+│       │                   ├── it should create non-manual sub proposals on stage zero with all needed params.
+│       │                   ├── it should store non-manual sub proposal ids.
+│       │                   └── it should not create sub proposals on non zero stages.
 │       ├── given some sub proposal on stage zero are manual
 │       │   ├── it should emit events.
 │       │   ├── it should create proposal.
@@ -35,40 +40,3 @@ CreateProposal_SPP_IntegrationTest
 │           └── it should use startDate for first stage sub proposal startDate.
 └── when stages are not configured
     └── it should revert.
-
-// # when caller is not allowed
-//     ## it should revert.
-// # when stages are configured
-//     ## when proposal already exists
-//         ### it should revert.
-//     ## when proposal does not exist
-//         ### given all sub proposals on stage zero are non manual
-//             #### when sub proposal can not be created
-//                 ##### it should store uint max value as proposal id.
-//                 ##### it should emit an event.     // TBD
-//             #### when sub proposal can be created
-//                 ##### when none sub proposal need extra params
-//                     ###### it should emit events.
-//                     ###### it should create proposal.
-//                     ###### it should create sub proposals on stage zero.
-//                     ###### it should store non-manual sub proposal ids.
-//                     ###### it should not create sub proposals on non zero stages.
-//                 ##### when some sub proposal need extra params
-//                     ###### it should emit events.
-//                     ###### it should create proposal.
-//                     ###### it should create sub proposals on stage zero with all needed params.
-//                     ###### it should store non-manual sub proposal ids.
-//                     ###### it should not create sub proposals on non zero stages.
-//         ### given some sub proposal on stage zero are manual
-//             #### it should emit events.
-//             #### it should create proposal.
-//             #### it should not create sub proposals on stage zero.
-//             #### it should not create sub proposals on non zero stages. 
-//         ### given startDate is in the past
-//             #### it should use block.timestamp for last stage transition.
-//             #### it should use block.timestamp for first stage sub proposal startDate.
-//         ### given startDate in in the future
-//             #### it should use startDate for last stage transition.
-//             #### it should use startDate for first stage sub proposal startDate.
-// # when stages are not configured
-//     ## it should revert.
