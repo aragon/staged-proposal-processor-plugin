@@ -2,6 +2,7 @@
 pragma solidity ^0.8.8;
 
 import {BaseTest} from "../../../BaseTest.t.sol";
+import {Errors} from "../../../../src/libraries/Errors.sol";
 import {PluginA} from "../../../utils/dummy-plugins/PluginA.sol";
 import {StagedConfiguredSharedTest} from "../../../StagedConfiguredSharedTest.t.sol";
 import {StagedProposalProcessor as SPP} from "../../../../src/StagedProposalProcessor.sol";
@@ -159,6 +160,10 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
 
         uint256 lastStageTransition = sppPlugin.getProposal(proposalId).lastStageTransition;
 
+        // make plugins not executable so the votes are not counted
+        PluginA(sppPlugin.getStages()[0].plugins[1].pluginAddress).setCanExecuteResult(false);
+        PluginA(sppPlugin.getStages()[0].plugins[0].pluginAddress).setCanExecuteResult(false);
+
         // reach stage duration
         vm.warp(lastStageTransition + voteDuration + START_DATE);
         bool _canProposalAdvance = sppPlugin.canProposalAdvance(proposalId);
@@ -200,6 +205,10 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         // it should return false.
 
         uint256 lastStageTransition = sppPlugin.getProposal(proposalId).lastStageTransition;
+
+        // make plugins not executable so the votes are not counted
+        PluginA(sppPlugin.getStages()[0].plugins[1].pluginAddress).setCanExecuteResult(false);
+        PluginA(sppPlugin.getStages()[0].plugins[0].pluginAddress).setCanExecuteResult(false);
 
         // reach min advance duration but not stage duration
         vm.warp(lastStageTransition + voteDuration + START_DATE);
@@ -290,6 +299,10 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
 
         uint256 lastStageTransition = sppPlugin.getProposal(proposalId).lastStageTransition;
 
+        // make plugins not executable so the votes are not counted
+        PluginA(sppPlugin.getStages()[0].plugins[1].pluginAddress).setCanExecuteResult(false);
+        PluginA(sppPlugin.getStages()[0].plugins[0].pluginAddress).setCanExecuteResult(false);
+
         // reach min advance and stage duration
         vm.warp(lastStageTransition + minAdvance + START_DATE);
         bool _canProposalAdvance = sppPlugin.canProposalAdvance(proposalId);
@@ -330,6 +343,10 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
 
         uint256 lastStageTransition = sppPlugin.getProposal(proposalId).lastStageTransition;
 
+        // make plugins not executable so the votes are not counted
+        PluginA(sppPlugin.getStages()[0].plugins[1].pluginAddress).setCanExecuteResult(false);
+        PluginA(sppPlugin.getStages()[0].plugins[0].pluginAddress).setCanExecuteResult(false);
+
         // reach min advance and stage duration
         vm.warp(lastStageTransition + minAdvance + START_DATE);
         bool _canProposalAdvance = sppPlugin.canProposalAdvance(proposalId);
@@ -337,9 +354,13 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         assertFalse(_canProposalAdvance, "canProposalAdvance");
     }
 
-    function test_WhenNonExistentProposal() external {
-        // todo TBD
-        // it should return false.
-        vm.skip(true);
+    function test_RevertWhen_NonExistentProposal() external {
+        // it should revert.
+
+        vm.expectRevert(
+            abi.encodeWithSelector(Errors.ProposalNotExists.selector, NON_EXISTENT_PROPOSAL_ID)
+        );
+
+        sppPlugin.canProposalAdvance(NON_EXISTENT_PROPOSAL_ID);
     }
 }

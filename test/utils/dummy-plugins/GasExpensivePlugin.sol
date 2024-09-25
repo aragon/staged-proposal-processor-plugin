@@ -4,26 +4,24 @@ pragma solidity ^0.8.8;
 import {TrustedForwarder} from "../../../src/utils/TrustedForwarder.sol";
 
 import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
+import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import {
     IProposal
 } from "@aragon/osx-commons-contracts/src/plugin/extensions/proposal/IProposal.sol";
 
-import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
-
-contract PluginA is IProposal, IERC165 {
+// dummy plugin that uses lot of gas when proposal is created
+contract GasExpensivePlugin is IProposal, IERC165 {
     bool public created;
     uint256 public proposalId;
     TrustedForwarder public trustedForwarder;
     mapping(uint256 => IDAO.Action) public actions;
 
-    bool public revertOnCreateProposal;
-    bool public canExecuteResult = true;
+    uint256 iterationsCount = 20;
+    mapping(uint256 => uint256) public store;
 
     constructor(address _trustedForwarder) {
         trustedForwarder = TrustedForwarder(_trustedForwarder);
     }
-
-    event ProposalCreated(uint256 proposalId, uint64 startDate, uint64 endDate);
 
     function supportsInterface(bytes4 _interfaceId) public view virtual override returns (bool) {
         return
@@ -32,36 +30,31 @@ contract PluginA is IProposal, IERC165 {
     }
 
     function createProposal(
-        bytes calldata _metadata,
-        IDAO.Action[] calldata _actions,
-        uint64 startDate,
-        uint64 endDate,
+        bytes calldata,
+        IDAO.Action[] calldata,
+        uint64,
+        uint64,
         bytes memory
-    ) external override returns (uint256 _proposalId) {
-        if (revertOnCreateProposal) revert("revertOnCreateProposal");
+    ) external override returns (uint256) {
+        for (uint256 i = 0; i < iterationsCount; i++) {
+            store[i] = 1;
+        }
 
-        _proposalId = createProposalId(_actions, _metadata);
-        proposalId = proposalId + 1;
-        actions[_proposalId] = _actions[0];
-        created = true;
-
-        emit ProposalCreated(_proposalId, startDate, endDate);
-        return _proposalId;
-    }
-
-    function createProposalId(
-        IDAO.Action[] memory,
-        bytes memory
-    ) public view override returns (uint256) {
         return proposalId;
-    }
-
-    function canExecute(uint256) public view returns (bool) {
-        return canExecuteResult;
     }
 
     function createProposalParamsABI() external pure override returns (string memory) {
         return "";
+    }
+
+    function createProposalId(
+        IDAO.Action[] memory _actions,
+        bytes memory _metadata
+    ) public pure override returns (uint256) {}
+
+    function canExecute(uint256) public pure returns (bool) {
+        // TODO: for now
+        return true;
     }
 
     function execute(
@@ -76,11 +69,7 @@ contract PluginA is IProposal, IERC165 {
         return proposalId;
     }
 
-    function setRevertOnCreateProposal(bool _revertOnCreateProposal) external {
-        revertOnCreateProposal = _revertOnCreateProposal;
-    }
-
-    function setCanExecuteResult(bool _canExecuteResult) external {
-        canExecuteResult = _canExecuteResult;
+    function setIterationsCount(uint256 _iterationsCount) external {
+        iterationsCount = _iterationsCount;
     }
 }

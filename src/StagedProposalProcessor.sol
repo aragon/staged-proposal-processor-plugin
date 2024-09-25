@@ -152,12 +152,12 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
     /// @param _data The extra abi encoded parameters for each sub-plugin's createProposal function.
     /// @return proposalId The ID of the proposal.
     function createProposal(
-        bytes calldata _metadata,
-        IDAO.Action[] calldata _actions,
+        bytes memory _metadata,
+        IDAO.Action[] memory _actions,
         uint256 _allowFailureMap,
         uint64 _startDate,
         bytes[][] memory _data
-    ) public auth(CREATE_PROPOSAL_PERMISSION_ID) returns (uint256 proposalId) {
+    ) public virtual auth(CREATE_PROPOSAL_PERMISSION_ID) returns (uint256 proposalId) {
         // If `currentConfigIndex` is 0, this means the plugin was installed
         // with empty configurations and still hasn't updated stages
         // in which case we should revert.
@@ -220,12 +220,12 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
 
     /// @inheritdoc IProposal
     function createProposal(
-        bytes calldata _metadata,
-        IDAO.Action[] calldata _actions,
+        bytes memory _metadata,
+        IDAO.Action[] memory _actions,
         uint64 _startDate,
         uint64 /** */,
         bytes memory _data
-    ) external override returns (uint256 proposalId) {
+    ) public virtual override returns (uint256 proposalId) {
         proposalId = uint256(
             createProposal(_metadata, _actions, 0, _startDate, abi.decode(_data, (bytes[][])))
         );
@@ -233,7 +233,7 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
 
     /// @inheritdoc IProposal
     /// @dev Since SPP is also IProposal, it's required to override. Though, ABI can not be defined at compile time.
-    function createProposalParamsABI() external pure override returns (string memory) {
+    function createProposalParamsABI() external virtual pure override returns (string memory) {
         return "";
     }
 
@@ -252,7 +252,7 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
     function createProposalId(
         IDAO.Action[] memory _actions,
         bytes memory _metadata
-    ) public pure override returns (uint256) {
+    ) public virtual pure override returns (uint256) {
         return uint256(keccak256(abi.encode(_actions, _metadata)));
     }
 
@@ -305,7 +305,7 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
         uint256 _proposalId,
         ProposalType _proposalType,
         bool _tryAdvance
-    ) external {
+    ) external virtual {
         _processProposalResult(_proposalId, _proposalType);
 
         if (_tryAdvance) {
@@ -329,7 +329,7 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
 
         Stage[] storage _stages = stages[proposal.stageConfigIndex];
 
-        if (canProposalAdvance(_proposalId)) {
+        if (_canProposalAdvance(_proposalId)) {
             proposal.lastStageTransition = uint64(block.timestamp);
 
             if (proposal.currentStage < _stages.length - 1) {
@@ -358,40 +358,11 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
     /// @return Returns `true` if the proposal can be advanced.
     function canProposalAdvance(uint256 _proposalId) public view virtual returns (bool) {
         Proposal storage proposal = proposals[_proposalId];
-        if (proposal.executed) {
-            return false;
+        if (proposal.lastStageTransition == 0) {
+            revert Errors.ProposalNotExists(_proposalId);
         }
 
-        uint16 currentStage = proposal.currentStage;
-
-        Stage storage stage = stages[proposal.stageConfigIndex][currentStage];
-
-        if (proposal.lastStageTransition + stage.maxAdvance < block.timestamp) {
-            return false;
-        }
-
-        if (proposal.lastStageTransition + stage.minAdvance > block.timestamp) {
-            return false;
-        }
-
-        // Allow `voteDuration` to pass for plugins to have veto possibility.
-        if (stage.vetoThreshold > 0) {
-            if (proposal.lastStageTransition + stage.voteDuration > block.timestamp) {
-                return false;
-            }
-        }
-
-        (uint256 approvals, uint256 vetoes) = getProposalTally(_proposalId);
-
-        if (stage.vetoThreshold > 0 && vetoes >= stage.vetoThreshold) {
-            return false;
-        }
-
-        if (approvals >= stage.approvalThreshold) {
-            return true;
-        }
-
-        return false;
+        return _canProposalAdvance(_proposalId);
     }
 
     /// @notice Calculates the votes and vetoes for a proposal.
@@ -403,56 +374,25 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
     ) public view virtual returns (uint256 votes, uint256 vetoes) {
         Proposal storage proposal = proposals[_proposalId];
 
-        if (proposal.creator == address(0)) {
+        if (proposal.lastStageTransition == 0) {
             revert Errors.ProposalNotExists(_proposalId);
         }
 
-        uint16 currentStage = proposal.currentStage;
-        Stage storage stage = stages[proposal.stageConfigIndex][currentStage];
-
-        for (uint256 i = 0; i < stage.plugins.length; ) {
-            Plugin storage plugin = stage.plugins[i];
-            address allowedBody = plugin.allowedBody;
-
-            uint256 pluginProposalId = pluginProposalIds[_proposalId][currentStage][
-                plugin.pluginAddress
-            ];
-
-            if (pluginResults[_proposalId][currentStage][plugin.proposalType][allowedBody]) {
-                if (plugin.proposalType == ProposalType.Approval) {
-                    ++votes;
-                } else {
-                    ++vetoes;
-                }
-            } else if (
-                stage.vetoThreshold > 0 &&
-                plugin.proposalType == ProposalType.Veto &&
-                !plugin.isManual &&
-                pluginProposalId != type(uint256).max
-            ) {
-                if (IProposal(stage.plugins[i].pluginAddress).canExecute(pluginProposalId)) {
-                    ++vetoes;
-                }
-            }
-
-            unchecked {
-                ++i;
-            }
-        }
+        return _getProposalTally(_proposalId);
     }
 
     /// @notice Necessary to abide the rules of IProposal interface.
     /// @param _proposalId The proposal Id.
     /// @return bool Returns if proposal can be executed or not.
-    function canExecute(uint256 _proposalId) public view override returns (bool) {
+    function canExecute(uint256 _proposalId) public view virtual override returns (bool) {
         Proposal storage proposal = proposals[_proposalId];
-        if (proposal.creator == address(0)) {
+        if (proposal.lastStageTransition == 0) {
             revert Errors.ProposalNotExists(_proposalId);
         }
 
         Stage[] storage _stages = stages[proposal.stageConfigIndex];
 
-        if (proposal.currentStage == _stages.length - 1 && canProposalAdvance(_proposalId)) {
+        if (proposal.currentStage == _stages.length - 1 && _canProposalAdvance(_proposalId)) {
             return true;
         }
 
@@ -464,7 +404,7 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
     /// @notice Internal function to update stage configuration.
     /// @dev It's a caller's responsibility not to call this in case `_stages` are empty.
     /// @param _stages The stages configuration.
-    function _updateStages(Stage[] calldata _stages) internal virtual {
+    function _updateStages(Stage[] memory _stages) internal virtual {
         Stage[] storage storedStages = stages[++currentConfigIndex];
 
         for (uint256 i = 0; i < _stages.length; i++) {
@@ -592,15 +532,97 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
                 // on success: it could return 0
                 // on failure: default 0 would be used
                 // In order to differentiate, we store `uint256.max` on failure.
-                pluginProposalIds[_proposalId][_stageId][stage.plugins[i].pluginAddress] = type(
-                    uint256
-                ).max;
 
                 uint256 gasAfter = gasleft();
 
                 if (gasAfter < gasBefore / 64) {
                     revert Errors.InsufficientGas();
                 }
+
+                pluginProposalIds[_proposalId][_stageId][stage.plugins[i].pluginAddress] = type(
+                    uint256
+                ).max;
+            }
+        }
+    }
+
+    /// @notice Internal function that decides if the proposal can be advanced to the next stage.
+    /// @dev Note that it's a caller's responsibility to check if proposal exists.
+    /// @param _proposalId The ID of the proposal.
+    /// @return Returns `true` if the proposal can be advanced.
+    function _canProposalAdvance(uint256 _proposalId) internal view virtual returns (bool) {
+        // Cheaper to do 2nd sload than to pass Proposal memory.
+        Proposal storage proposal = proposals[_proposalId];
+
+        if (proposal.executed) {
+            return false;
+        }
+
+        uint16 currentStage = proposal.currentStage;
+
+        Stage storage stage = stages[proposal.stageConfigIndex][currentStage];
+
+        if (proposal.lastStageTransition + stage.maxAdvance < block.timestamp) {
+            return false;
+        }
+
+        if (proposal.lastStageTransition + stage.minAdvance > block.timestamp) {
+            return false;
+        }
+
+        // Allow `voteDuration` to pass for plugins to have veto possibility.
+        if (stage.vetoThreshold > 0) {
+            if (proposal.lastStageTransition + stage.voteDuration > block.timestamp) {
+                return false;
+            }
+        }
+
+        (uint256 approvals, uint256 vetoes) = _getProposalTally(_proposalId);
+
+        if (stage.vetoThreshold > 0 && vetoes >= stage.vetoThreshold) {
+            return false;
+        }
+
+        if (approvals >= stage.approvalThreshold) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /// @notice Internal function to calculate the votes and vetoes for a proposal.
+    /// @param _proposalId The proposal Id.
+    /// @return votes The number of votes for the proposal.
+    /// @return vetoes The number of vetoes for the proposal.
+    function _getProposalTally(
+        uint256 _proposalId
+    ) internal view returns (uint256 votes, uint256 vetoes) {
+        // Cheaper to do 2nd sload than to pass Proposal memory.
+        Proposal storage proposal = proposals[_proposalId];
+
+        uint16 currentStage = proposal.currentStage;
+        Stage storage stage = stages[proposal.stageConfigIndex][currentStage];
+
+        for (uint256 i = 0; i < stage.plugins.length; ) {
+            Plugin storage plugin = stage.plugins[i];
+            address allowedBody = plugin.allowedBody;
+
+            uint256 pluginProposalId = pluginProposalIds[_proposalId][currentStage][
+                plugin.pluginAddress
+            ];
+
+            if (pluginResults[_proposalId][currentStage][plugin.proposalType][allowedBody]) {
+                // result was already reported
+                plugin.proposalType == ProposalType.Approval ? ++votes : ++vetoes;
+            } else if (pluginProposalId != type(uint256).max && !plugin.isManual) {
+                // result was not reported yet
+                if (IProposal(stage.plugins[i].pluginAddress).canExecute(pluginProposalId)) {
+                    plugin.proposalType == ProposalType.Approval ? ++votes : ++vetoes;
+                }
+            }
+
+            unchecked {
+                ++i;
             }
         }
     }

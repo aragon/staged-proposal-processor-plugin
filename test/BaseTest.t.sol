@@ -62,7 +62,7 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
         users.unauthorized = _createUser("unauthorized");
 
         // set up dao and plugin
-        _setUpDaoAndPlugin();
+        _setupDaoAndPluginHelper();
 
         // label contracts
         vm.label({account: address(dao), newLabel: "DAO"});
@@ -82,7 +82,13 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
 
     // ==== HELPERS ====
 
-    function _setUpDaoAndPlugin() internal {
+    // virtual function to be override if harness spp or similar is needed
+    function _setupDaoAndPluginHelper() internal virtual {
+        address sppAddress = address(new SPP());
+        _setUpDaoAndPlugin(sppAddress);
+    }
+
+    function _setUpDaoAndPlugin(address sppAddr) internal {
         vm.startPrank({msgSender: users.manager});
 
         // create DAO.
@@ -99,10 +105,16 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
         // create SPP plugin.
         sppPlugin = SPP(
             createProxyAndCall(
-                address(new SPP()),
+                sppAddr,
                 abi.encodeCall(
                     SPP.initialize,
-                    (dao, address(trustedForwarder), new SPP.Stage[](0), DUMMY_METADATA, defaultTargetConfig)
+                    (
+                        dao,
+                        address(trustedForwarder),
+                        new SPP.Stage[](0),
+                        DUMMY_METADATA,
+                        defaultTargetConfig
+                    )
                 )
             )
         );
@@ -170,16 +182,16 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
         bool _plugin2Manual,
         bool _plugin3Manual
     ) internal returns (SPP.Stage[] memory stages) {
-        address _pluginNonManual1 = address(new PluginA(address(trustedForwarder)));
-        address _pluginNonManual2 = address(new PluginA(address(trustedForwarder)));
-        address _pluginNonManual3 = address(new PluginA(address(trustedForwarder)));
+        address _plugin1 = address(new PluginA(address(trustedForwarder)));
+        address _plugin2 = address(new PluginA(address(trustedForwarder)));
+        address _plugin3 = address(new PluginA(address(trustedForwarder)));
 
         SPP.Plugin[] memory _plugins1 = new SPP.Plugin[](2);
-        _plugins1[0] = _createPluginStruct(_pluginNonManual1, _plugin1Manual);
-        _plugins1[1] = _createPluginStruct(_pluginNonManual2, _plugin2Manual);
+        _plugins1[0] = _createPluginStruct(_plugin1, _plugin1Manual);
+        _plugins1[1] = _createPluginStruct(_plugin2, _plugin2Manual);
 
         SPP.Plugin[] memory _plugins2 = new SPP.Plugin[](1);
-        _plugins2[0] = _createPluginStruct(_pluginNonManual3, _plugin3Manual);
+        _plugins2[0] = _createPluginStruct(_plugin3, _plugin3Manual);
 
         stages = new SPP.Stage[](_stageCount);
         for (uint i; i < _stageCount; i++) {
@@ -226,7 +238,9 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
         actions[1].data = abi.encodeCall(target.setAddress, TARGET_ADDRESS);
     }
 
-    function _configureStagesAndCreateDummyProposal(bytes memory _metadata) internal returns (uint256 proposalId) {
+    function _configureStagesAndCreateDummyProposal(
+        bytes memory _metadata
+    ) internal returns (uint256 proposalId) {
         // setup stages
         SPP.Stage[] memory stages = _createDummyStages(2, false, false, false);
         sppPlugin.updateStages(stages);
