@@ -82,7 +82,7 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
     address public trustedForwarder;
 
     event ProposalAdvanced(uint256 indexed proposalId, uint256 indexed stageId);
-    event ProposalResult(uint256 indexed proposalId, address indexed plugin);
+    event ProposalResultReported(uint256 indexed proposalId, address indexed plugin);
     event MetadataUpdated(bytes releaseMetadata);
     event StagesUpdated(Stage[] stages);
 
@@ -460,7 +460,7 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
         }
 
         pluginResults[_proposalId][proposal.currentStage][_proposalType][sender] = true;
-        emit ProposalResult(_proposalId, sender);
+        emit ProposalResultReported(_proposalId, sender);
     }
 
     /// @notice Creates proposals on the non-manual plugins of the `stageId`.
