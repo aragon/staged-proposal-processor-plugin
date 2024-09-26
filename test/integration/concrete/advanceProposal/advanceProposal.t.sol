@@ -78,7 +78,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         _;
     }
 
-    modifier whenAllProposalsOnNextStageAreNonManual() {
+    modifier whenAllPluginsOnNextStageAreNonManual() {
         // configure stages (one of them non-manual)
         stages = _createDummyStages(2, false, false, false);
         sppPlugin.updateStages(stages);
@@ -98,7 +98,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         givenProposalExists
         whenProposalCanAdvance
         whenProposalIsNotInLastStage
-        whenAllProposalsOnNextStageAreNonManual
+        whenAllPluginsOnNextStageAreNonManual
         whenSomeSubProposalNeedExtraParams
     {
         // it should create proposal.
@@ -144,7 +144,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         givenProposalExists
         whenProposalCanAdvance
         whenProposalIsNotInLastStage
-        whenAllProposalsOnNextStageAreNonManual
+        whenAllPluginsOnNextStageAreNonManual
         whenSomeSubProposalNeedExtraParams
     {
         // it should emit event.
@@ -206,7 +206,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         givenProposalExists
         whenProposalCanAdvance
         whenProposalIsNotInLastStage
-        whenAllProposalsOnNextStageAreNonManual
+        whenAllPluginsOnNextStageAreNonManual
     {
         // it should emit event.
         // it should advance proposal.
@@ -247,7 +247,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         );
     }
 
-    function test_WhenSomeProposalOnNextStageAreManual()
+    function test_WhenSomePluginsOnNextStageAreManual()
         external
         givenProposalExists
         whenProposalCanAdvance

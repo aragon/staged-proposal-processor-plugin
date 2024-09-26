@@ -5,7 +5,7 @@ CreateProposal_SPP_IntegrationTest
 │   ├── when proposal already exists
 │   │   └── it should revert.
 │   └── when proposal does not exist
-│       ├── given all sub proposals on stage zero are non manual
+│       ├── given all plugins on stage zero are non manual
 │       │   ├── when sub proposal can not be created
 │       │   │   ├── it should store uint max value as proposal id.
 │       │   │   └── it should emit an event.     // TBD
@@ -17,17 +17,17 @@ CreateProposal_SPP_IntegrationTest
 │       │       │   ├── it should store non-manual sub proposal ids.
 │       │       │   └── it should not create sub proposals on non zero stages.
 │       │       └── when some sub proposal need extra params
-│       │           └── when extra params are not provided
-│       │               ├── it should create proposal.
-│       │               ├── it should not create sub proposals since extra param was not provided.
-│       │               ├── it should not store extra params.
-│       │               └── when extra params are provided
-│       │                   ├── it should emit events.
-│       │                   ├── it should create proposal.
-│       │                   ├── it should create non-manual sub proposals on stage zero with all needed params.
-│       │                   ├── it should store non-manual sub proposal ids.
-│       │                   └── it should not create sub proposals on non zero stages.
-│       ├── given some sub proposal on stage zero are manual
+│       │           ├── when extra params are not provided
+│       │           │    ├── it should create proposal.
+│       │           │    ├── it should not create sub proposals since extra param was not provided.
+│       │           │    ├── it should not store extra params.
+│       │           └── when extra params are provided
+│       │                ├── it should emit events.
+│       │                ├── it should create proposal.
+│       │                ├── it should create non-manual sub proposals on stage zero with all needed params.
+│       │                ├── it should store non-manual sub proposal ids.
+│       │                └── it should not create sub proposals on non zero stages.
+│       ├── given some plugins on stage zero are manual
 │       │   ├── it should emit events.
 │       │   ├── it should create proposal.
 │       │   ├── it should not create sub proposals on stage zero.

@@ -6,7 +6,7 @@ AdvanceProposal_SPP_IntegrationTest
 │   │   ├── when proposal is in last stage
 │   │   │   └── it should execute the proposal.
 │   │   └── when proposal is not in last stage
-│   │       ├── when all proposals on next stage are non manual
+│   │       ├── when all plugins on next stage are non manual
 │   │       │   ├── when some sub proposal need extra params
 │   │       │   │   ├── when extra params are not provided
 │   │       │   │   │   ├── it should create proposal.
@@ -19,7 +19,7 @@ AdvanceProposal_SPP_IntegrationTest
 │   │       │       ├── it should emit event.
 │   │       │       ├── it should advance proposal.
 │   │       │       └── it should create sub proposals.
-│   │       └── when some proposal on next stage are manual
+│   │       └── when some plugins on next stage are manual
 │   │           ├── it should emit event.
 │   │           ├── it should advance proposal.
 │   │           └── it should not create sub proposals

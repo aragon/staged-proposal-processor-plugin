@@ -77,7 +77,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         _;
     }
 
-    modifier givenAllSubProposalsOnStageZeroAreNonManual() {
+    modifier givenAllPluginsOnStageZeroAreNonManual() {
         SPP.Stage[] memory stages = _createDummyStages({
             _stageCount: 2,
             _plugin1Manual: false,
@@ -92,7 +92,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         external
         whenStagesAreConfigured
         whenProposalDoesNotExist
-        givenAllSubProposalsOnStageZeroAreNonManual
+        givenAllPluginsOnStageZeroAreNonManual
     {
         // todo TBD that event is not being emitted currently.
         // it should emit an event.
@@ -131,7 +131,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         external
         whenStagesAreConfigured
         whenProposalDoesNotExist
-        givenAllSubProposalsOnStageZeroAreNonManual
+        givenAllPluginsOnStageZeroAreNonManual
         whenSubProposalCanBeCreated
     {
         // it should emit events.
@@ -216,11 +216,11 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         _;
     }
 
-    function test_ExtraParamsAreNotProvided()
+    function test_WhenExtraParamsAreNotProvided()
         external
         whenStagesAreConfigured
         whenProposalDoesNotExist
-        givenAllSubProposalsOnStageZeroAreNonManual
+        givenAllPluginsOnStageZeroAreNonManual
         whenSubProposalCanBeCreated
         whenSomeSubProposalNeedExtraParams
     {
@@ -294,7 +294,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         external
         whenStagesAreConfigured
         whenProposalDoesNotExist
-        givenAllSubProposalsOnStageZeroAreNonManual
+        givenAllPluginsOnStageZeroAreNonManual
         whenSubProposalCanBeCreated
         whenSomeSubProposalNeedExtraParams
     {
@@ -402,7 +402,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         assertEq(sppPlugin.getCreateProposalParams(proposalId), customCreationParam);
     }
 
-    function test_GivenSomeSubProposalOnStageZeroAreManual()
+    function test_GivenSomePluginsOnStageZeroAreManual()
         external
         whenStagesAreConfigured
         whenProposalDoesNotExist
