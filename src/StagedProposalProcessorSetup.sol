@@ -45,10 +45,11 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
         address _dao,
         bytes calldata _data
     ) external returns (address plugin, PreparedSetupData memory preparedSetupData) {
-        (SPP.Stage[] memory stages, bytes memory metadata, PluginUUPSUpgradeable.TargetConfig memory targetConfig) = abi.decode(
-            _data,
-            (SPP.Stage[], bytes, PluginUUPSUpgradeable.TargetConfig)
-        );
+        (
+            SPP.Stage[] memory stages,
+            bytes memory metadata,
+            PluginUUPSUpgradeable.TargetConfig memory targetConfig
+        ) = abi.decode(_data, (SPP.Stage[], bytes, PluginUUPSUpgradeable.TargetConfig));
 
         // TODO: shall we deploy this with proxy as well ?
         TrustedForwarder trustedForwarder = new TrustedForwarder();
@@ -107,7 +108,7 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
         address _dao,
         SetupPayload calldata _payload
     ) external view returns (PermissionLib.MultiTargetPermission[] memory permissions) {
-        permissions = new PermissionLib.MultiTargetPermission[](2);
+        permissions = new PermissionLib.MultiTargetPermission[](3);
 
         permissions[0] = PermissionLib.MultiTargetPermission({
             operation: PermissionLib.Operation.Revoke,
@@ -118,7 +119,7 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
         });
 
         permissions[1] = PermissionLib.MultiTargetPermission({
-            operation: PermissionLib.Operation.Grant,
+            operation: PermissionLib.Operation.Revoke,
             where: _payload.plugin,
             who: _dao,
             condition: PermissionLib.NO_CONDITION,
