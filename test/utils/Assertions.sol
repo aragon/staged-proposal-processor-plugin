@@ -6,7 +6,6 @@ import {StagedProposalProcessor as SPP} from "../../src/StagedProposalProcessor.
 import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
 
 import {StdAssertions} from "forge-std/StdAssertions.sol";
-import {PermissionLib} from "@aragon/osx/core/permission/PermissionLib.sol";
 
 abstract contract Assertions is StdAssertions {
     event log_named_array(string key, SPP.Stage[] stage);
