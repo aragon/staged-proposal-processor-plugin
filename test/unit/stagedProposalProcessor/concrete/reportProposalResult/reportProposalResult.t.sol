@@ -21,6 +21,7 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         });
         _;
     }
+
     modifier whenVoteDurationHasNotPassed() {
         _;
     }
@@ -29,15 +30,21 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         _;
     }
 
-    function test_WhenShouldTryAdvanceStage()
+    modifier whenShouldTryAdvanceStage() {
+        _;
+    }
+
+    function test_WhenProposalCanBeAdvanced()
         external
         givenExistentProposal
         whenVoteDurationHasNotPassed
         whenTheCallerIsAnAllowedBody
+        whenShouldTryAdvanceStage
     {
         // it should record the result.
-        // it should emit event.
-        // it should call advanceProposal function.
+        // it should emit event proposal result reported.
+        // it should call advanceProposal function and emit event.
+
         bool _tryAdvance = true;
 
         // check function was called
@@ -50,7 +57,8 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
 
         // check event was emitted
         vm.expectEmit({emitter: address(sppPlugin)});
-        emit ProposalResult(proposalId, users.manager);
+        emit ProposalResultReported(proposalId, users.manager);
+        emit ProposalAdvanced(proposalId, 1);
 
         sppPlugin.reportProposalResult({
             _proposalId: proposalId,
@@ -69,6 +77,58 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
             ),
             "pluginResult"
         );
+    }
+
+    function test_WhenProposalCanNotBeAdvanced()
+        external
+        givenExistentProposal
+        whenVoteDurationHasNotPassed
+        whenTheCallerIsAnAllowedBody
+        whenShouldTryAdvanceStage
+    {
+        // it should record the result.
+        // it should emit event proposal result reported.
+        // it should not call advanceProposal function nor emit event.
+
+        // configure stage that needs 2 approvals
+        approvalThreshold = 2;
+        SPP.Stage[] memory stages = _createDummyStages(2, false, false, false);
+        sppPlugin.updateStages(stages);
+
+        // create proposal
+        proposalId = sppPlugin.createProposal({
+            _actions: _createDummyActions(),
+            _allowFailureMap: 0,
+            _metadata: "dummy metadata1",
+            _startDate: START_DATE,
+            _data: defaultCreationParams
+        });
+        bool _tryAdvance = true;
+
+        // check event was emitted
+        vm.expectEmit({emitter: address(sppPlugin)});
+        emit ProposalResultReported(proposalId, users.manager);
+
+        sppPlugin.reportProposalResult({
+            _proposalId: proposalId,
+            _proposalType: SPP.ProposalType.Approval,
+            _tryAdvance: _tryAdvance
+        });
+
+        // check result was recorded
+        SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
+        assertTrue(
+            sppPlugin.getPluginResult(
+                proposalId,
+                proposal.currentStage,
+                SPP.ProposalType.Approval,
+                users.manager
+            ),
+            "pluginResult"
+        );
+
+        // check proposal stage is has not advanced
+        assertEq(proposal.currentStage, 0, "currentStage");
     }
 
     function test_WhenShouldNotTryAdvanceStage()
@@ -92,7 +152,7 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
 
         // check event
         vm.expectEmit({emitter: address(sppPlugin)});
-        emit ProposalResult(proposalId, users.manager);
+        emit ProposalResultReported(proposalId, users.manager);
 
         sppPlugin.reportProposalResult({
             _proposalId: proposalId,
@@ -161,7 +221,7 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
 
         // check event
         vm.expectEmit({emitter: address(sppPlugin)});
-        emit ProposalResult(proposalId, users.manager);
+        emit ProposalResultReported(proposalId, users.manager);
 
         sppPlugin.reportProposalResult({
             _proposalId: proposalId,
@@ -182,7 +242,7 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         );
     }
 
-    function test_GivenNonExistentProposal() external {
+    function test_RevertGiven_NonExistentProposal() external {
         // it should revert.
 
         vm.expectRevert(
