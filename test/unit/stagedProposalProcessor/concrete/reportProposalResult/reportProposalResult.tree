@@ -11,9 +11,10 @@ ReportProposalResult_SPP_UnitTest
 │   │   │       ├── it should emit event.
 │   │   │       └── it should not call advanceProposal function.
 │   │   └── when the caller is not an allowed body
-│   │       └── it should not record the result. // TBD
+│   │       ├── it should not record the result in the right proposal path.
+│   │       └── it should record the result for historical data. 
 │   └── when voteDuration has passed
 │       ├── it should record the result.
 │       └── it should emit event.
 └── given non existent proposal
-    └── it should reverts.   // TBD
+    └── it should revert.  

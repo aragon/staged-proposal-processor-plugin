@@ -11,6 +11,8 @@ import {DaoUnauthorized} from "@aragon/osx/core/utils/auth.sol";
 import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
 
 contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
+    SPP.Stage[] stages;
+
     function test_RevertWhen_CallerIsNotAllowed() external {
         // it should revert.
 
@@ -76,19 +78,139 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         _;
     }
 
-    function test_WhenSomeProposalsOnNextStageAreNonManual()
+    modifier whenAllPluginsOnNextStageAreNonManual() {
+        // configure stages (one of them non-manual)
+        stages = _createDummyStages(2, false, false, false);
+        sppPlugin.updateStages(stages);
+
+        _;
+    }
+
+    modifier whenSomeSubProposalNeedExtraParams() {
+        // configure in the plugin that extra params are needed.
+        PluginA(sppPlugin.getStages()[1].plugins[0].pluginAddress).setNeedExtraParams(true);
+
+        _;
+    }
+
+    function test_WhenExtraParamsAreNotProvided()
         external
         givenProposalExists
         whenProposalCanAdvance
         whenProposalIsNotInLastStage
+        whenAllPluginsOnNextStageAreNonManual
+        whenSomeSubProposalNeedExtraParams
     {
-        // it should emit events.
+        // it should create proposal.
+        // it should not create sub proposals since extra param was not provided.
+
+        // create proposal
+        IDAO.Action[] memory actions = _createDummyActions();
+        uint256 proposalId = sppPlugin.createProposal({
+            _actions: actions,
+            _allowFailureMap: 0,
+            _metadata: DUMMY_METADATA,
+            _startDate: START_DATE,
+            _data: defaultCreationParams
+        });
+        uint256 initialStage;
+
+        // execute proposals on first stage
+        _executeStageProposals(initialStage);
+
+        vm.warp(VOTE_DURATION + START_DATE);
+
+        // check event emitted
+        vm.expectEmit({emitter: address(sppPlugin)});
+        emit ProposalAdvanced(proposalId, initialStage + 1);
+
+        sppPlugin.advanceProposal(proposalId);
+
+        SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
+
+        // check proposal advanced
+        assertEq(proposal.currentStage, initialStage + 1, "currentStage");
+
+        // check sub proposal was not created
+        assertEq(
+            PluginA(stages[initialStage + 1].plugins[0].pluginAddress).proposalCount(),
+            0,
+            "proposalsCount"
+        );
+    }
+
+    function test_WhenExtraParamsAreProvided()
+        external
+        givenProposalExists
+        whenProposalCanAdvance
+        whenProposalIsNotInLastStage
+        whenAllPluginsOnNextStageAreNonManual
+        whenSomeSubProposalNeedExtraParams
+    {
+        // it should emit event.
+        // it should advance proposal.
+        // it should create sub proposals with correct extra params.
+
+        // create custom params
+        bytes[][] memory customCreationParam = new bytes[][](2);
+        customCreationParam[0] = new bytes[](2);
+        customCreationParam[0][0] = abi.encodePacked("data1");
+        customCreationParam[0][1] = abi.encodePacked("data2");
+        customCreationParam[1] = new bytes[](1);
+        customCreationParam[1][0] = abi.encodePacked("data3");
+
+        // create proposal
+        IDAO.Action[] memory actions = _createDummyActions();
+        uint256 proposalId = sppPlugin.createProposal({
+            _actions: actions,
+            _allowFailureMap: 0,
+            _metadata: DUMMY_METADATA,
+            _startDate: START_DATE,
+            _data: customCreationParam
+        });
+        uint256 initialStage;
+
+        // execute proposals on first stage
+        _executeStageProposals(initialStage);
+
+        vm.warp(VOTE_DURATION + START_DATE);
+
+        // check event emitted
+        vm.expectEmit({emitter: address(sppPlugin)});
+        emit ProposalAdvanced(proposalId, initialStage + 1);
+
+        sppPlugin.advanceProposal(proposalId);
+
+        SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
+
+        // check proposal advanced
+        assertEq(proposal.currentStage, initialStage + 1, "currentStage");
+
+        // check sub proposal created
+        assertEq(
+            PluginA(stages[initialStage + 1].plugins[0].pluginAddress).proposalCount(),
+            1,
+            "proposalsCount"
+        );
+
+        // should set the extra params on sub proposals
+        assertEq(
+            PluginA(stages[initialStage + 1].plugins[0].pluginAddress).extraParams(0),
+            customCreationParam[1][0],
+            "extraParams"
+        );
+    }
+
+    function test_WhenNoneSubProposalNeedExtraParams()
+        external
+        givenProposalExists
+        whenProposalCanAdvance
+        whenProposalIsNotInLastStage
+        whenAllPluginsOnNextStageAreNonManual
+    {
+        // it should emit event.
         // it should advance proposal.
         // it should create sub proposals.
-
-        // configure stages (one of them non-manual)
-        SPP.Stage[] memory stages = _createDummyStages(2, false, true, false);
-        sppPlugin.updateStages(stages);
 
         // create proposal
         IDAO.Action[] memory actions = _createDummyActions();
@@ -125,7 +247,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         );
     }
 
-    function test_WhenAllProposalOnNextStageAreManual()
+    function test_WhenSomePluginsOnNextStageAreManual()
         external
         givenProposalExists
         whenProposalCanAdvance
@@ -136,7 +258,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         // it should not create sub proposals.
 
         // configure stages (one of them non-manual)
-        SPP.Stage[] memory stages = _createDummyStages(2, false, true, true);
+        stages = _createDummyStages(2, false, true, true);
         sppPlugin.updateStages(stages);
 
         // create proposal
@@ -175,12 +297,12 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
 
     function test_RevertWhen_ProposalCanNotAdvance() external givenProposalExists {
         // todo TBD
-        // it should revert
+        // it should revert.
         vm.skip(true);
     }
 
     function test_RevertGiven_ProposalDoesNotExist() external {
-        // it should revert
+        // it should revert.
 
         vm.expectRevert(
             abi.encodeWithSelector(Errors.ProposalNotExists.selector, NON_EXISTENT_PROPOSAL_ID)

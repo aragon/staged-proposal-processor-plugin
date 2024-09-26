@@ -9,7 +9,10 @@ import {StagedProposalProcessor as SPP} from "../../../../src/StagedProposalProc
 
 import {DaoUnauthorized} from "@aragon/osx/core/utils/auth.sol";
 import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
-import {PermissionLib} from "@aragon/osx/core/permission/PermissionLib.sol";
+import {PermissionLib} from "@aragon/osx-commons-contracts/src/permission/PermissionLib.sol";
+import {
+    PluginUUPSUpgradeable as UUPSUpgradeable
+} from "@aragon/osx-commons-contracts/src/plugin/PluginUUPSUpgradeable.sol";
 
 contract CreateProposal_SPP_IntegrationTest is BaseTest {
     function test_RevertWhen_CallerIsNotAllowed() external {
@@ -39,8 +42,48 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         _;
     }
 
-    modifier givenSomeSubProposalsOnStageZeroAreNonManual() {
-        SPP.Stage[] memory stages = _createDummyStages(2, false, true, false);
+    function test_RevertWhen_ProposalAlreadyExists() external whenStagesAreConfigured {
+        // it should revert.
+
+        // configure stages
+        SPP.Stage[] memory stages = _createDummyStages({
+            _stageCount: 2,
+            _plugin1Manual: false,
+            _plugin2Manual: false,
+            _plugin3Manual: false
+        });
+        sppPlugin.updateStages(stages);
+
+        // create proposal
+        uint256 proposalId = sppPlugin.createProposal({
+            _actions: _createDummyActions(),
+            _allowFailureMap: 0,
+            _metadata: DUMMY_METADATA,
+            _startDate: START_DATE,
+            _data: defaultCreationParams
+        });
+
+        vm.expectRevert(abi.encodeWithSelector(Errors.ProposalAlreadyExists.selector, proposalId));
+        sppPlugin.createProposal({
+            _actions: _createDummyActions(),
+            _allowFailureMap: 0,
+            _metadata: DUMMY_METADATA,
+            _startDate: START_DATE,
+            _data: defaultCreationParams
+        });
+    }
+
+    modifier whenProposalDoesNotExist() {
+        _;
+    }
+
+    modifier givenAllPluginsOnStageZeroAreNonManual() {
+        SPP.Stage[] memory stages = _createDummyStages({
+            _stageCount: 2,
+            _plugin1Manual: false,
+            _plugin2Manual: false,
+            _plugin3Manual: false
+        });
         sppPlugin.updateStages(stages);
         _;
     }
@@ -48,7 +91,8 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
     function test_WhenSubProposalCanNotBeCreated()
         external
         whenStagesAreConfigured
-        givenSomeSubProposalsOnStageZeroAreNonManual
+        whenProposalDoesNotExist
+        givenAllPluginsOnStageZeroAreNonManual
     {
         // todo TBD that event is not being emitted currently.
         // it should emit an event.
@@ -79,10 +123,16 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         assertEq(subProposalId, type(uint256).max, "subProposalId");
     }
 
-    function test_WhenSubProposalCanBeCreated()
+    modifier whenSubProposalCanBeCreated() {
+        _;
+    }
+
+    function test_WhenNoneSubProposalNeedExtraParams()
         external
         whenStagesAreConfigured
-        givenSomeSubProposalsOnStageZeroAreNonManual
+        whenProposalDoesNotExist
+        givenAllPluginsOnStageZeroAreNonManual
+        whenSubProposalCanBeCreated
     {
         // it should emit events.
         // it should create proposal.
@@ -158,7 +208,205 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         }
     }
 
-    function test_GivenAllSubProposalOnStageZeroAreManual() external whenStagesAreConfigured {
+    modifier whenSomeSubProposalNeedExtraParams() {
+        // configure in the plugin that extra params are needed.
+        PluginA(sppPlugin.getStages()[0].plugins[1].pluginAddress).setNeedExtraParams(true);
+        PluginA(sppPlugin.getStages()[0].plugins[0].pluginAddress).setNeedExtraParams(true);
+
+        _;
+    }
+
+    function test_WhenExtraParamsAreNotProvided()
+        external
+        whenStagesAreConfigured
+        whenProposalDoesNotExist
+        givenAllPluginsOnStageZeroAreNonManual
+        whenSubProposalCanBeCreated
+        whenSomeSubProposalNeedExtraParams
+    {
+        // it should create proposal.
+        // it should not create sub proposals since extra param was not provided.
+        // it should not store extra params.
+
+        IDAO.Action[] memory actions = _createDummyActions();
+
+        uint256 proposalId = sppPlugin.createProposal({
+            _actions: actions,
+            _allowFailureMap: 0,
+            _metadata: DUMMY_METADATA,
+            _startDate: START_DATE,
+            _data: defaultCreationParams
+        });
+
+        // check proposal
+        SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
+
+        assertEq(
+            proposal,
+            SPP.Proposal({
+                allowFailureMap: 0,
+                creator: users.manager,
+                lastStageTransition: START_DATE,
+                metadata: DUMMY_METADATA,
+                actions: actions,
+                stageConfigIndex: 1,
+                currentStage: 0,
+                executed: false,
+                targetConfig: UUPSUpgradeable.TargetConfig({
+                    target: address(trustedForwarder),
+                    operation: UUPSUpgradeable.Operation.Call
+                })
+            })
+        );
+
+        // check sub proposals on stage zero, they should not be created
+        SPP.Stage[] memory stages = sppPlugin.getStages();
+        SPP.Plugin memory _currentPlugin;
+        uint256 _currentPluginProposalsCount;
+        for (uint256 i; i < stages[0].plugins.length; i++) {
+            _currentPlugin = stages[0].plugins[i];
+            _currentPluginProposalsCount = PluginA(_currentPlugin.pluginAddress).proposalCount();
+
+            // should not be created since the extra params are not provided
+            assertEq(_currentPluginProposalsCount, 0, "proposalsCount");
+
+            // check sub proposal invalid id was stored
+            uint256 subProposalId = sppPlugin.pluginProposalIds(
+                proposalId,
+                0,
+                _currentPlugin.pluginAddress
+            );
+
+            assertEq(subProposalId, type(uint256).max, "subProposalId");
+        }
+
+        // check sub proposals on non zero stage
+        for (uint256 i; i < stages[1].plugins.length; i++) {
+            _currentPlugin = stages[1].plugins[i];
+            assertEq(PluginA(_currentPlugin.pluginAddress).proposalCount(), 0, "proposalsCount");
+        }
+
+        // check extra params was not stored since was not provided
+        assertEq(sppPlugin.getCreateProposalParams(proposalId), defaultCreationParams);
+    }
+
+    function test_WhenExtraParamsAreProvided()
+        external
+        whenStagesAreConfigured
+        whenProposalDoesNotExist
+        givenAllPluginsOnStageZeroAreNonManual
+        whenSubProposalCanBeCreated
+        whenSomeSubProposalNeedExtraParams
+    {
+        // it should emit events.
+        // it should create proposal.
+        // it should create non-manual sub proposals on stage zero with all needed params.
+        // it should store non-manual sub proposal ids.
+        // it should not create sub proposals on non zero stages.
+
+        IDAO.Action[] memory actions = _createDummyActions();
+
+        // create custom params
+        bytes[][] memory customCreationParam = new bytes[][](2);
+        customCreationParam[0] = new bytes[](2);
+        customCreationParam[0][0] = abi.encodePacked("data1");
+        customCreationParam[0][1] = abi.encodePacked("data2");
+        customCreationParam[1] = new bytes[](1);
+        customCreationParam[1][0] = abi.encodePacked("data3");
+
+        // check event
+        vm.expectEmit({
+            checkTopic1: false,
+            checkTopic2: true,
+            checkTopic3: true,
+            checkData: true,
+            emitter: address(sppPlugin)
+        });
+        emit ProposalCreated({
+            proposalId: 0,
+            creator: users.manager,
+            startDate: START_DATE,
+            endDate: 0,
+            metadata: DUMMY_METADATA,
+            actions: actions,
+            allowFailureMap: 0
+        });
+        uint256 proposalId = sppPlugin.createProposal({
+            _actions: actions,
+            _allowFailureMap: 0,
+            _metadata: DUMMY_METADATA,
+            _startDate: START_DATE,
+            _data: customCreationParam
+        });
+
+        // check proposal
+        SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
+
+        assertEq(
+            proposal,
+            SPP.Proposal({
+                allowFailureMap: 0,
+                creator: users.manager,
+                lastStageTransition: START_DATE,
+                metadata: DUMMY_METADATA,
+                actions: actions,
+                stageConfigIndex: 1,
+                currentStage: 0,
+                executed: false,
+                targetConfig: UUPSUpgradeable.TargetConfig({
+                    target: address(trustedForwarder),
+                    operation: UUPSUpgradeable.Operation.Call
+                })
+            })
+        );
+
+        // check sub proposals on stage zero
+        SPP.Stage[] memory stages = sppPlugin.getStages();
+        SPP.Plugin memory _currentPlugin;
+        uint256 _currentPluginProposalsCount;
+        for (uint256 i; i < stages[0].plugins.length; i++) {
+            _currentPlugin = stages[0].plugins[i];
+            _currentPluginProposalsCount = PluginA(_currentPlugin.pluginAddress).proposalCount();
+            if (_currentPlugin.isManual) {
+                // should not be created since it is manual
+                assertEq(_currentPluginProposalsCount, 0, "proposalsCount");
+            } else {
+                // should be created since it is non-manual
+                assertEq(_currentPluginProposalsCount, 1, "proposalsCount");
+
+                // check sub proposal id was stored
+                uint256 subProposalId = sppPlugin.pluginProposalIds(
+                    proposalId,
+                    0,
+                    _currentPlugin.pluginAddress
+                );
+
+                assertEq(subProposalId, _currentPluginProposalsCount - 1, "subProposalId");
+
+                // should set the extra params on sub proposals
+                assertEq(
+                    PluginA(_currentPlugin.pluginAddress).extraParams(subProposalId),
+                    customCreationParam[0][i],
+                    "extraParams"
+                );
+            }
+        }
+
+        // check sub proposals on non zero stage
+        for (uint256 i; i < stages[1].plugins.length; i++) {
+            _currentPlugin = stages[1].plugins[i];
+            assertEq(PluginA(_currentPlugin.pluginAddress).proposalCount(), 0, "proposalsCount");
+        }
+
+        // check extra params are stored
+        assertEq(sppPlugin.getCreateProposalParams(proposalId), customCreationParam);
+    }
+
+    function test_GivenSomePluginsOnStageZeroAreManual()
+        external
+        whenStagesAreConfigured
+        whenProposalDoesNotExist
+    {
         // it should emit events.
         // it should create proposal.
         // it should not create sub proposals on stage zero.
@@ -224,7 +472,11 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         }
     }
 
-    function test_GivenStartDateIsInThePast() external whenStagesAreConfigured {
+    function test_GivenStartDateIsInThePast()
+        external
+        whenStagesAreConfigured
+        whenProposalDoesNotExist
+    {
         // it should use block.timestamp for first stage sub proposal startDate.
         // it should use block.timestamp for last stage transition.
 
@@ -267,7 +519,11 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         assertEq(proposal.lastStageTransition, _expectedStartDate, "lastStageTransition");
     }
 
-    function test_GivenStartDateInInTheFuture() external whenStagesAreConfigured {
+    function test_GivenStartDateInInTheFuture()
+        external
+        whenStagesAreConfigured
+        whenProposalDoesNotExist
+    {
         // it should use block.timestamp for first stage sub proposal startDate.
         // it should use block.timestamp for last stage transition.
 

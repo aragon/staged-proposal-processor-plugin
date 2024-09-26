@@ -118,9 +118,36 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         givenExistentProposal
         whenVoteDurationHasNotPassed
     {
-        // todo TBD
-        // it should not record the result.
-        vm.skip(true);
+        // it should record the result for historical data.
+        // it should not record the result in the right proposal path.
+
+        resetPrank(users.unauthorized);
+        sppPlugin.reportProposalResult({
+            _proposalId: proposalId,
+            _proposalType: SPP.ProposalType.Approval,
+            _tryAdvance: false
+        });
+
+        // check result was recorded
+        SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
+        assertFalse(
+            sppPlugin.getPluginResult(
+                proposalId,
+                proposal.currentStage,
+                SPP.ProposalType.Approval,
+                users.manager
+            ),
+            "pluginResult allowedBody"
+        );
+        assertTrue(
+            sppPlugin.getPluginResult(
+                proposalId,
+                proposal.currentStage,
+                SPP.ProposalType.Approval,
+                users.unauthorized
+            ),
+            "pluginResult notAllowedBody"
+        );
     }
 
     function test_WhenVoteDurationHasPassed() external givenExistentProposal {
@@ -156,9 +183,15 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
     }
 
     function test_GivenNonExistentProposal() external {
-        // todo TBD
+        // it should revert.
 
-        // it should reverts.
-        vm.skip(true);
+        vm.expectRevert(
+            abi.encodeWithSelector(Errors.ProposalNotExists.selector, NON_EXISTENT_PROPOSAL_ID)
+        );
+        sppPlugin.reportProposalResult({
+            _proposalId: NON_EXISTENT_PROPOSAL_ID,
+            _proposalType: SPP.ProposalType.Approval,
+            _tryAdvance: false
+        });
     }
 }

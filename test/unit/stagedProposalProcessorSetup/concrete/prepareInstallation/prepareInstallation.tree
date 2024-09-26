@@ -1,6 +1,6 @@
 PrepareInstallation_SPPSetup_UnitTest
 └── when preparing installation
-    └── it should return the correct preparation data.
-
-
-// todo check if somethin else needs to be tested
+    ├── it should deploy plugin.
+    ├── it should define trusted forwarder on the plugin.
+    ├── it should return correct helpers.
+    └── it should return correct permissions list.
