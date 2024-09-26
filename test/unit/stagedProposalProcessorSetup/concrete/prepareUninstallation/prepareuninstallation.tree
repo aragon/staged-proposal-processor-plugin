@@ -1,6 +1,3 @@
 PrepareUninstallation_SPPSetup_UnitTest
 └── when preparing uninstallation
-    └── it should return the correct preparation data.
-
-
-// todo check if somethin else needs to be tested
+    └── it should return the correct permissions list to revoke.

@@ -9,7 +9,7 @@ import {StagedProposalProcessor as SPP} from "../../../../src/StagedProposalProc
 
 import {DaoUnauthorized} from "@aragon/osx/core/utils/auth.sol";
 import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
-import {PermissionLib} from "@aragon/osx/core/permission/PermissionLib.sol";
+import {PermissionLib} from "@aragon/osx-commons-contracts/src/permission/PermissionLib.sol";
 import {
     PluginUUPSUpgradeable as UUPSUpgradeable
 } from "@aragon/osx-commons-contracts/src/plugin/PluginUUPSUpgradeable.sol";
