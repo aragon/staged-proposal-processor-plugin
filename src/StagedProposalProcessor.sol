@@ -233,7 +233,7 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
 
     /// @inheritdoc IProposal
     /// @dev Since SPP is also IProposal, it's required to override. Though, ABI can not be defined at compile time.
-    function createProposalParamsABI() external virtual pure override returns (string memory) {
+    function createProposalParamsABI() external pure virtual override returns (string memory) {
         return "";
     }
 
@@ -252,7 +252,7 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
     function createProposalId(
         IDAO.Action[] memory _actions,
         bytes memory _metadata
-    ) public virtual pure override returns (uint256) {
+    ) public pure virtual override returns (uint256) {
         return uint256(keccak256(abi.encode(_actions, _metadata)));
     }
 
@@ -306,6 +306,12 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
         ProposalType _proposalType,
         bool _tryAdvance
     ) external virtual {
+        Proposal storage proposal = proposals[_proposalId];
+
+        if (proposal.lastStageTransition == 0) {
+            revert Errors.ProposalNotExists(_proposalId);
+        }
+
         _processProposalResult(_proposalId, _proposalType);
 
         if (_tryAdvance) {
@@ -399,7 +405,7 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
         return false;
     }
 
-     function getCreateProposalParams(uint256 _proposalId) public view returns (bytes[][] memory) {
+    function getCreateProposalParams(uint256 _proposalId) public view returns (bytes[][] memory) {
         return createProposalParams[_proposalId];
     }
 
