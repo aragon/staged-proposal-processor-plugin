@@ -30,6 +30,9 @@ library Errors {
     /// @notice Thrown when trusted forwarder can not execute the actions.
     error NotPossible();
 
-    /// @notice Thrown when a plugin doesn't support IProposal interface
+    /// @notice Thrown when a plugin doesn't support IProposal interface.
     error InterfaceNotSupported();
+
+    /// @notice Thrown when a the proposal can not be advanced.
+    error ProposalCannotAdvance(uint256 proposalId);
 }

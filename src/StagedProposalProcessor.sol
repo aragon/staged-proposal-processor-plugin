@@ -314,9 +314,9 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
 
         _processProposalResult(_proposalId, _proposalType);
 
-        if (_tryAdvance) {
-            // uses public function for permission check
-            advanceProposal(_proposalId);
+        if (_tryAdvance && _canProposalAdvance(_proposalId)) {
+            // advance proposal
+            _advanceProposal(_proposalId);
         }
     }
 
@@ -333,29 +333,12 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
             revert Errors.ProposalNotExists(_proposalId);
         }
 
-        Stage[] storage _stages = stages[proposal.stageConfigIndex];
-
         if (_canProposalAdvance(_proposalId)) {
-            proposal.lastStageTransition = uint64(block.timestamp);
-
-            if (proposal.currentStage < _stages.length - 1) {
-                uint16 newStage = proposal.currentStage + 1;
-                proposal.currentStage = newStage;
-
-                bytes[][] memory params = createProposalParams[_proposalId];
-
-                _createPluginProposals(
-                    _proposalId,
-                    newStage,
-                    uint64(block.timestamp),
-                    params.length > 0 ? params[newStage] : new bytes[](0)
-                );
-
-                emit ProposalAdvanced(_proposalId, newStage);
-            } else {
-                // always execute if it is the last stage
-                _executeProposal(_proposalId);
-            }
+            // advance
+            _advanceProposal(_proposalId);
+        } else {
+            //  revert
+            revert Errors.ProposalCannotAdvance(_proposalId);
         }
     }
 
@@ -634,6 +617,35 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
             unchecked {
                 ++i;
             }
+        }
+    }
+
+    /// @notice Internal function to advance the proposal.
+    /// @dev Note that is assumes the proposal can advance.
+    /// @param _proposalId The proposal Id.
+    function _advanceProposal(uint256 _proposalId) internal {
+        Proposal storage _proposal = proposals[_proposalId];
+        Stage[] storage _stages = stages[_proposal.stageConfigIndex];
+
+        _proposal.lastStageTransition = uint64(block.timestamp);
+
+        if (_proposal.currentStage < _stages.length - 1) {
+            uint16 newStage = _proposal.currentStage + 1;
+            _proposal.currentStage = newStage;
+
+            bytes[][] memory params = createProposalParams[_proposalId];
+
+            _createPluginProposals(
+                _proposalId,
+                newStage,
+                uint64(block.timestamp),
+                params.length > 0 ? params[newStage] : new bytes[](0)
+            );
+
+            emit ProposalAdvanced(_proposalId, newStage);
+        } else {
+            // always execute if it is the last stage
+            _executeProposal(_proposalId);
         }
     }
 
