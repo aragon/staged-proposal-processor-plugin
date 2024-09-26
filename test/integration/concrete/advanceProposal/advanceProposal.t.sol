@@ -88,13 +88,12 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
 
     modifier whenSomeSubProposalNeedExtraParams() {
         // configure in the plugin that extra params are needed.
-        // PluginA(sppPlugin.getStages()[1].plugins[1].pluginAddress).setNeedExtraParams(true);
         PluginA(sppPlugin.getStages()[1].plugins[0].pluginAddress).setNeedExtraParams(true);
 
         _;
     }
 
-    function test_WhenExtraParamsAreNotProvided1()
+    function test_WhenExtraParamsAreNotProvided()
         external
         givenProposalExists
         whenProposalCanAdvance
