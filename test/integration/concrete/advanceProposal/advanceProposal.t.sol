@@ -13,28 +13,6 @@ import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
 contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
     SPP.Stage[] stages;
 
-    function test_RevertWhen_CallerIsNotAllowed() external {
-        // it should revert.
-
-        // revoke permission
-        DAO(payable(address(dao))).revoke({
-            _where: address(sppPlugin),
-            _who: ANY_ADDR,
-            _permissionId: sppPlugin.ADVANCE_PROPOSAL_PERMISSION_ID()
-        });
-
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                DaoUnauthorized.selector,
-                address(dao),
-                address(sppPlugin),
-                users.manager,
-                sppPlugin.ADVANCE_PROPOSAL_PERMISSION_ID()
-            )
-        );
-        sppPlugin.advanceProposal(NON_EXISTENT_PROPOSAL_ID);
-    }
-
     modifier givenProposalExists() {
         _;
     }

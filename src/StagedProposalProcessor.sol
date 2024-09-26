@@ -24,10 +24,6 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
     /// @notice The ID of the permission required to call the `createProposal` function.
     bytes32 public constant CREATE_PROPOSAL_PERMISSION_ID = keccak256("CREATE_PROPOSAL_PERMISSION");
 
-    /// @notice The ID of the permission required to call the `advanceProposal` function.
-    bytes32 public constant ADVANCE_PROPOSAL_PERMISSION_ID =
-        keccak256("ADVANCE_PROPOSAL_PERMISSION");
-
     /// @notice The ID of the permission required to call the `updateMetadata` function.
     bytes32 public constant UPDATE_METADATA_PERMISSION_ID = keccak256("UPDATE_METADATA_PERMISSION");
 
@@ -321,12 +317,9 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
     }
 
     /// @notice Advances the proposal to the next stage in case it's allowed.
-    /// @dev `ADVANCE_PROPOSAL_PERMISSION_ID` is callable by ANY_ADDR at the time of plugin installation.
     /// Useful for plugin uninstallation when revoked from ANY_ADDR, leaving no one with this permission.
     /// @param _proposalId The ID of the proposal.
-    function advanceProposal(
-        uint256 _proposalId
-    ) public virtual auth(ADVANCE_PROPOSAL_PERMISSION_ID) {
+    function advanceProposal(uint256 _proposalId) public virtual {
         Proposal storage proposal = proposals[_proposalId];
 
         if (proposal.lastStageTransition == 0) {

@@ -1,6 +1,4 @@
 AdvanceProposal_SPP_IntegrationTest
-├── when caller is not allowed
-│   └── it should revert.
 ├── given proposal exists
 │   ├── when proposal can advance
 │   │   ├── when proposal is in last stage
@@ -24,6 +22,6 @@ AdvanceProposal_SPP_IntegrationTest
 │   │           ├── it should advance proposal.
 │   │           └── it should not create sub proposals
 │   └── when proposal can not advance
-│       └── it should revert. // TBD
+│       └── it should revert.
 └── given proposal does not exist
     └── it should revert.
