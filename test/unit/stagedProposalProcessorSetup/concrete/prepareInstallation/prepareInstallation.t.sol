@@ -44,25 +44,14 @@ contract PrepareInstallation_SPPSetup_UnitTest is BaseTest {
         // todo check returned helpers
 
         // check returned permissions list.
-        assertEq(setupData.permissions.length, 3, "permissionsLength");
-        for (uint256 i = 0; i < 3; i++) {
-            if (i == 0) {
-                // first permission is granted with condition.
-                assertEq(
-                    uint256(setupData.permissions[i].operation),
-                    uint256(PermissionLib.Operation.GrantWithCondition),
-                    "operation"
-                );
-            } else {
-                assertEq(
-                    uint256(setupData.permissions[i].operation),
-                    uint256(PermissionLib.Operation.Grant),
-                    "operation"
-                );
-            }
+        assertEq(setupData.permissions.length, 2, "permissionsLength");
+        for (uint256 i = 0; i < 2; i++) {
+            assertEq(
+                uint256(setupData.permissions[i].operation),
+                uint256(PermissionLib.Operation.Grant),
+                "operation"
+            );
             if (
-                setupData.permissions[i].permissionId !=
-                sppSetup.ADVANCE_PROPOSAL_PERMISSION_ID() &&
                 setupData.permissions[i].permissionId != sppSetup.UPDATE_STAGES_PERMISSION_ID() &&
                 setupData.permissions[i].permissionId !=
                 DAO(payable(address(dao))).EXECUTE_PERMISSION_ID()

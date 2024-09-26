@@ -22,10 +22,6 @@ import {
 contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
     using ProxyLib for address;
 
-    /// @notice The ID of the permission required to call the `advanceProposal` function.
-    bytes32 public constant ADVANCE_PROPOSAL_PERMISSION_ID =
-        keccak256("ADVANCE_PROPOSAL_PERMISSION");
-
     /// @notice The ID of the permission required to call the `updateStages` function.
     bytes32 public constant UPDATE_STAGES_PERMISSION_ID = keccak256("UPDATE_STAGES_PERMISSION");
 
@@ -62,18 +58,9 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
         );
 
         PermissionLib.MultiTargetPermission[]
-            memory permissions = new PermissionLib.MultiTargetPermission[](3);
+            memory permissions = new PermissionLib.MultiTargetPermission[](2);
 
         permissions[0] = PermissionLib.MultiTargetPermission({
-            operation: PermissionLib.Operation.GrantWithCondition,
-            where: plugin,
-            // TODO:GIORGI If ANY_ADDR permission, PM not allowing it unless condition is set, do we want to leave this as it is in PM ?
-            who: ANY_ADDR,
-            condition: address(new AlwaysTrueCondition()),
-            permissionId: ADVANCE_PROPOSAL_PERMISSION_ID
-        });
-
-        permissions[1] = PermissionLib.MultiTargetPermission({
             operation: PermissionLib.Operation.Grant,
             where: plugin,
             who: _dao,
@@ -81,7 +68,7 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
             permissionId: UPDATE_STAGES_PERMISSION_ID
         });
 
-        permissions[2] = PermissionLib.MultiTargetPermission({
+        permissions[1] = PermissionLib.MultiTargetPermission({
             operation: PermissionLib.Operation.Grant,
             where: _dao,
             who: plugin,
@@ -108,17 +95,9 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
         address _dao,
         SetupPayload calldata _payload
     ) external view returns (PermissionLib.MultiTargetPermission[] memory permissions) {
-        permissions = new PermissionLib.MultiTargetPermission[](3);
+        permissions = new PermissionLib.MultiTargetPermission[](2);
 
         permissions[0] = PermissionLib.MultiTargetPermission({
-            operation: PermissionLib.Operation.Revoke,
-            where: _payload.plugin,
-            who: ANY_ADDR,
-            condition: PermissionLib.NO_CONDITION,
-            permissionId: ADVANCE_PROPOSAL_PERMISSION_ID
-        });
-
-        permissions[1] = PermissionLib.MultiTargetPermission({
             operation: PermissionLib.Operation.Revoke,
             where: _payload.plugin,
             who: _dao,
@@ -126,7 +105,7 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
             permissionId: UPDATE_STAGES_PERMISSION_ID
         });
 
-        permissions[2] = PermissionLib.MultiTargetPermission({
+        permissions[1] = PermissionLib.MultiTargetPermission({
             operation: PermissionLib.Operation.Revoke,
             where: _dao,
             who: _payload.plugin,

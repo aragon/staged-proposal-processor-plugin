@@ -121,7 +121,7 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
 
         // grant permissions
         PermissionLib.MultiTargetPermission[]
-            memory permissions = new PermissionLib.MultiTargetPermission[](5);
+            memory permissions = new PermissionLib.MultiTargetPermission[](4);
 
         // grant update stage permission on SPP plugin to the DAO
         permissions[0] = PermissionLib.MultiTargetPermission({
@@ -132,17 +132,8 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
             permissionId: sppPlugin.UPDATE_STAGES_PERMISSION_ID()
         });
 
-        // grant advance proposal permission to any address
-        permissions[1] = PermissionLib.MultiTargetPermission({
-            operation: PermissionLib.Operation.GrantWithCondition,
-            where: address(sppPlugin),
-            who: ANY_ADDR,
-            condition: address(new AlwaysTrueCondition()),
-            permissionId: sppPlugin.ADVANCE_PROPOSAL_PERMISSION_ID()
-        });
-
         // grant execute permission on the dao to the SPP plugin
-        permissions[2] = PermissionLib.MultiTargetPermission({
+        permissions[1] = PermissionLib.MultiTargetPermission({
             operation: PermissionLib.Operation.Grant,
             where: address(dao),
             who: address(sppPlugin),
@@ -151,7 +142,7 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
         });
 
         // grant update metadata permission on SPP plugin to the manager
-        permissions[3] = PermissionLib.MultiTargetPermission({
+        permissions[2] = PermissionLib.MultiTargetPermission({
             operation: PermissionLib.Operation.Grant,
             where: address(sppPlugin),
             who: users.manager,
@@ -160,7 +151,7 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
         });
 
         // grant permission for creating proposals on the spp to the manager
-        permissions[4] = PermissionLib.MultiTargetPermission({
+        permissions[3] = PermissionLib.MultiTargetPermission({
             operation: PermissionLib.Operation.Grant,
             where: address(sppPlugin),
             who: users.manager,
