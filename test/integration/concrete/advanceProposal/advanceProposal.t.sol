@@ -13,28 +13,6 @@ import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
 contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
     SPP.Stage[] stages;
 
-    function test_RevertWhen_CallerIsNotAllowed() external {
-        // it should revert.
-
-        // revoke permission
-        DAO(payable(address(dao))).revoke({
-            _where: address(sppPlugin),
-            _who: ANY_ADDR,
-            _permissionId: sppPlugin.ADVANCE_PROPOSAL_PERMISSION_ID()
-        });
-
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                DaoUnauthorized.selector,
-                address(dao),
-                address(sppPlugin),
-                users.manager,
-                sppPlugin.ADVANCE_PROPOSAL_PERMISSION_ID()
-            )
-        );
-        sppPlugin.advanceProposal(NON_EXISTENT_PROPOSAL_ID);
-    }
-
     modifier givenProposalExists() {
         _;
     }
@@ -296,9 +274,26 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
     }
 
     function test_RevertWhen_ProposalCanNotAdvance() external givenProposalExists {
-        // todo TBD
         // it should revert.
-        vm.skip(true);
+
+        // configure stages
+        stages = _createDummyStages(2, false, false, false);
+        sppPlugin.updateStages(stages);
+
+        // create proposal
+        uint256 proposalId = sppPlugin.createProposal({
+            _actions: _createDummyActions(),
+            _allowFailureMap: 0,
+            _metadata: DUMMY_METADATA,
+            _startDate: START_DATE,
+            _data: defaultCreationParams
+        });
+
+        // check proposal can not advance
+        assertFalse(sppPlugin.canProposalAdvance(proposalId), "canAdvanceProposal");
+
+        vm.expectRevert(abi.encodeWithSelector(Errors.ProposalCannotAdvance.selector, proposalId));
+        sppPlugin.advanceProposal(proposalId);
     }
 
     function test_RevertGiven_ProposalDoesNotExist() external {

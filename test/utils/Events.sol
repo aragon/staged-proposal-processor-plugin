@@ -7,7 +7,7 @@ import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
 
 contract Events {
     event ProposalAdvanced(uint256 indexed proposalId, uint256 indexed stageId);
-    event ProposalResult(uint256 indexed proposalId, address indexed plugin);
+    event ProposalResultReported(uint256 indexed proposalId, address indexed plugin);
     event MetadataUpdated(bytes releaseMetadata);
     event Initialized(uint8 version);
     event StagesUpdated(SPP.Stage[] stages);

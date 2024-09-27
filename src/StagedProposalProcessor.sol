@@ -24,10 +24,6 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
     /// @notice The ID of the permission required to call the `createProposal` function.
     bytes32 public constant CREATE_PROPOSAL_PERMISSION_ID = keccak256("CREATE_PROPOSAL_PERMISSION");
 
-    /// @notice The ID of the permission required to call the `advanceProposal` function.
-    bytes32 public constant ADVANCE_PROPOSAL_PERMISSION_ID =
-        keccak256("ADVANCE_PROPOSAL_PERMISSION");
-
     /// @notice The ID of the permission required to call the `updateMetadata` function.
     bytes32 public constant UPDATE_METADATA_PERMISSION_ID = keccak256("UPDATE_METADATA_PERMISSION");
 
@@ -86,7 +82,7 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
     address public trustedForwarder;
 
     event ProposalAdvanced(uint256 indexed proposalId, uint256 indexed stageId);
-    event ProposalResult(uint256 indexed proposalId, address indexed plugin);
+    event ProposalResultReported(uint256 indexed proposalId, address indexed plugin);
     event MetadataUpdated(bytes releaseMetadata);
     event StagesUpdated(Stage[] stages);
 
@@ -314,48 +310,28 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
 
         _processProposalResult(_proposalId, _proposalType);
 
-        if (_tryAdvance) {
-            // uses public function for permission check
-            advanceProposal(_proposalId);
+        if (_tryAdvance && _canProposalAdvance(_proposalId)) {
+            // advance proposal
+            _advanceProposal(_proposalId);
         }
     }
 
     /// @notice Advances the proposal to the next stage in case it's allowed.
-    /// @dev `ADVANCE_PROPOSAL_PERMISSION_ID` is callable by ANY_ADDR at the time of plugin installation.
     /// Useful for plugin uninstallation when revoked from ANY_ADDR, leaving no one with this permission.
     /// @param _proposalId The ID of the proposal.
-    function advanceProposal(
-        uint256 _proposalId
-    ) public virtual auth(ADVANCE_PROPOSAL_PERMISSION_ID) {
+    function advanceProposal(uint256 _proposalId) public virtual {
         Proposal storage proposal = proposals[_proposalId];
 
         if (proposal.lastStageTransition == 0) {
             revert Errors.ProposalNotExists(_proposalId);
         }
 
-        Stage[] storage _stages = stages[proposal.stageConfigIndex];
-
         if (_canProposalAdvance(_proposalId)) {
-            proposal.lastStageTransition = uint64(block.timestamp);
-
-            if (proposal.currentStage < _stages.length - 1) {
-                uint16 newStage = proposal.currentStage + 1;
-                proposal.currentStage = newStage;
-
-                bytes[][] memory params = createProposalParams[_proposalId];
-
-                _createPluginProposals(
-                    _proposalId,
-                    newStage,
-                    uint64(block.timestamp),
-                    params.length > 0 ? params[newStage] : new bytes[](0)
-                );
-
-                emit ProposalAdvanced(_proposalId, newStage);
-            } else {
-                // always execute if it is the last stage
-                _executeProposal(_proposalId);
-            }
+            // advance
+            _advanceProposal(_proposalId);
+        } else {
+            //  revert
+            revert Errors.ProposalCannotAdvance(_proposalId);
         }
     }
 
@@ -484,7 +460,7 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
         }
 
         pluginResults[_proposalId][proposal.currentStage][_proposalType][sender] = true;
-        emit ProposalResult(_proposalId, sender);
+        emit ProposalResultReported(_proposalId, sender);
     }
 
     /// @notice Creates proposals on the non-manual plugins of the `stageId`.
@@ -634,6 +610,35 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
             unchecked {
                 ++i;
             }
+        }
+    }
+
+    /// @notice Internal function to advance the proposal.
+    /// @dev Note that is assumes the proposal can advance.
+    /// @param _proposalId The proposal Id.
+    function _advanceProposal(uint256 _proposalId) internal virtual {
+        Proposal storage _proposal = proposals[_proposalId];
+        Stage[] storage _stages = stages[_proposal.stageConfigIndex];
+
+        _proposal.lastStageTransition = uint64(block.timestamp);
+
+        if (_proposal.currentStage < _stages.length - 1) {
+            uint16 newStage = _proposal.currentStage + 1;
+            _proposal.currentStage = newStage;
+
+            bytes[][] memory params = createProposalParams[_proposalId];
+
+            _createPluginProposals(
+                _proposalId,
+                newStage,
+                uint64(block.timestamp),
+                params.length > 0 ? params[newStage] : new bytes[](0)
+            );
+
+            emit ProposalAdvanced(_proposalId, newStage);
+        } else {
+            // always execute if it is the last stage
+            _executeProposal(_proposalId);
         }
     }
 
