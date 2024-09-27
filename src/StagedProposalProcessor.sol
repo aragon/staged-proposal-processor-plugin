@@ -616,7 +616,7 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
     /// @notice Internal function to advance the proposal.
     /// @dev Note that is assumes the proposal can advance.
     /// @param _proposalId The proposal Id.
-    function _advanceProposal(uint256 _proposalId) internal {
+    function _advanceProposal(uint256 _proposalId) internal virtual {
         Proposal storage _proposal = proposals[_proposalId];
         Stage[] storage _stages = stages[_proposal.stageConfigIndex];
 
