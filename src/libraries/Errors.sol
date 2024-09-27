@@ -33,6 +33,6 @@ library Errors {
     /// @notice Thrown when a plugin doesn't support IProposal interface.
     error InterfaceNotSupported();
 
-    /// @notice Thrown when a the proposal can not be advanced.
+    /// @notice Thrown when the proposal can not be advanced.
     error ProposalCannotAdvance(uint256 proposalId);
 }
