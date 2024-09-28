@@ -8,8 +8,8 @@ import {PluginC} from "../../../utils/dummy-plugins/PluginC.sol";
 import {StagedProposalProcessor as SPP} from "../../../../src/StagedProposalProcessor.sol";
 
 import {DaoUnauthorized} from "@aragon/osx/core/utils/auth.sol";
-import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
-import {PermissionLib} from "@aragon/osx-commons-contracts/src/permission/PermissionLib.sol";
+import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
+
 import {
     PluginUUPSUpgradeable as UUPSUpgradeable
 } from "@aragon/osx-commons-contracts/src/plugin/PluginUUPSUpgradeable.sol";
@@ -30,7 +30,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
             )
         );
         sppPlugin.createProposal({
-            _actions: new IDAO.Action[](0),
+            _actions: new Action[](0),
             _allowFailureMap: 0,
             _metadata: DUMMY_METADATA,
             _startDate: START_DATE,
@@ -106,7 +106,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         sppPlugin.updateStages(_stages);
 
         uint256 proposalId = sppPlugin.createProposal({
-            _actions: new IDAO.Action[](0),
+            _actions: new Action[](0),
             _allowFailureMap: 0,
             _metadata: DUMMY_METADATA,
             _startDate: START_DATE,
@@ -141,7 +141,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         // it should not create sub proposals on non zero stages.
 
         // create proposal
-        IDAO.Action[] memory actions = _createDummyActions();
+        Action[] memory actions = _createDummyActions();
 
         // check event
         vm.expectEmit({
@@ -228,7 +228,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         // it should not create sub proposals since extra param was not provided.
         // it should not store extra params.
 
-        IDAO.Action[] memory actions = _createDummyActions();
+        Action[] memory actions = _createDummyActions();
 
         uint256 proposalId = sppPlugin.createProposal({
             _actions: actions,
@@ -304,7 +304,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         // it should store non-manual sub proposal ids.
         // it should not create sub proposals on non zero stages.
 
-        IDAO.Action[] memory actions = _createDummyActions();
+        Action[] memory actions = _createDummyActions();
 
         // create custom params
         bytes[][] memory customCreationParam = new bytes[][](2);
@@ -417,7 +417,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         sppPlugin.updateStages(stages);
 
         // create proposal
-        IDAO.Action[] memory actions = _createDummyActions();
+        Action[] memory actions = _createDummyActions();
 
         // check event
         vm.expectEmit({
@@ -490,7 +490,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         sppPlugin.updateStages(stages);
 
         // create proposal
-        IDAO.Action[] memory actions = _createDummyActions();
+        Action[] memory actions = _createDummyActions();
 
         // check proposal start date
         SPP.Plugin memory _currentPlugin;
@@ -534,7 +534,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         sppPlugin.updateStages(stages);
 
         // create proposal
-        IDAO.Action[] memory actions = _createDummyActions();
+        Action[] memory actions = _createDummyActions();
 
         // check proposal start date
         SPP.Plugin memory _currentPlugin;
@@ -568,7 +568,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
 
         vm.expectRevert(abi.encodeWithSelector(Errors.StageCountZero.selector));
         sppPlugin.createProposal({
-            _actions: new IDAO.Action[](0),
+            _actions: new Action[](0),
             _allowFailureMap: 0,
             _metadata: DUMMY_METADATA,
             _startDate: START_DATE,

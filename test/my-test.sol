@@ -3,19 +3,18 @@ pragma solidity ^0.8.8;
 
 import {BaseTest} from "./BaseTest.t.sol";
 import {StagedProposalProcessor as SPP} from "../src/StagedProposalProcessor.sol";
+import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
 
-import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
 import "forge-std/console.sol";
 
 contract GIORGI_OE is BaseTest {
-
 
     function test_Giorgi() external {
         SPP.Stage[] memory stages = _createDummyStages(2, false, false, false);
         sppPlugin.updateStages(stages);
 
         // create proposal
-        IDAO.Action[] memory actions = _createDummyActions();
+        Action[] memory actions = _createDummyActions();
 
         uint256 g1 = gasleft();
         uint256 proposalId = sppPlugin.createProposal({

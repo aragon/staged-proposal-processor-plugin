@@ -3,7 +3,8 @@ pragma solidity ^0.8.8;
 
 import {TrustedForwarder} from "../../../src/utils/TrustedForwarder.sol";
 
-import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
+import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
+
 import {
     IProposal
 } from "@aragon/osx-commons-contracts/src/plugin/extensions/proposal/IProposal.sol";
@@ -14,7 +15,7 @@ contract PluginA is IProposal, IERC165 {
     bool public created;
     uint256 public proposalId;
     TrustedForwarder public trustedForwarder;
-    mapping(uint256 => IDAO.Action) public actions;
+    mapping(uint256 => Action) public actions;
     mapping(uint256 => bytes) public extraParams;
 
     bool public revertOnCreateProposal;
@@ -35,7 +36,7 @@ contract PluginA is IProposal, IERC165 {
 
     function createProposal(
         bytes calldata _metadata,
-        IDAO.Action[] calldata _actions,
+        Action[] calldata _actions,
         uint64 startDate,
         uint64 endDate,
         bytes memory data
@@ -61,7 +62,7 @@ contract PluginA is IProposal, IERC165 {
     }
 
     function createProposalId(
-        IDAO.Action[] memory,
+        Action[] memory,
         bytes memory
     ) public view override returns (uint256) {
         return proposalId;
@@ -78,7 +79,7 @@ contract PluginA is IProposal, IERC165 {
     function execute(
         uint256 _proposalId
     ) external returns (bytes[] memory execResults, uint256 failureMap) {
-        IDAO.Action[] memory mainActions = new IDAO.Action[](1);
+        Action[] memory mainActions = new Action[](1);
         mainActions[0] = actions[_proposalId];
         (execResults, failureMap) = trustedForwarder.execute(bytes32(_proposalId), mainActions, 0);
     }

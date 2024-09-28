@@ -48,7 +48,7 @@ contract Initialize_SPP_UnitTest is BaseTest {
         newSppPlugin.initialize(dao, address(trustedForwarder), new SPP.Stage[](0), DUMMY_METADATA, defaultTargetConfig);
 
         // check initialization values are correct
-        assertEq(newSppPlugin.trustedForwarder(), address(trustedForwarder));
+        assertEq(newSppPlugin.getTrustedForwarder(), address(trustedForwarder));
         assertEq(address(newSppPlugin.dao()), address(dao));
         assertEq(newSppPlugin.getMetadata(), DUMMY_METADATA);
     }

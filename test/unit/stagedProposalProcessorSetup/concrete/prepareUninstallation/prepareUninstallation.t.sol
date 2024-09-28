@@ -35,8 +35,8 @@ contract PrepareUninstallation_SPPSetup_UnitTest is BaseTest {
         );
 
         // check returned permissions list.
-        assertEq(permissions.length, 2, "permissionsLength");
-        for (uint256 i = 0; i < 2; i++) {
+        assertEq(permissions.length, 3, "permissionsLength");
+        for (uint256 i = 0; i < 3; i++) {
             assertEq(
                 uint256(permissions[i].operation),
                 uint256(PermissionLib.Operation.Revoke),
@@ -44,7 +44,8 @@ contract PrepareUninstallation_SPPSetup_UnitTest is BaseTest {
             );
             if (
                 permissions[i].permissionId != sppSetup.UPDATE_STAGES_PERMISSION_ID() &&
-                permissions[i].permissionId != DAO(payable(address(dao))).EXECUTE_PERMISSION_ID()
+                permissions[i].permissionId != DAO(payable(address(dao))).EXECUTE_PERMISSION_ID() &&
+                permissions[i].permissionId != sppSetup.SET_TRUSTED_FORWARDER_PERMISSION_ID()
             ) {
                 fail();
             }

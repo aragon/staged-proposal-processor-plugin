@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.8;
 
-import {TrustedForwarder} from "./utils/TrustedForwarder.sol";
 import {AlwaysTrueCondition} from "./utils/AlwaysTrueCondition.sol";
 import {StagedProposalProcessor as SPP} from "./StagedProposalProcessor.sol";
 
@@ -25,6 +24,9 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
     /// @notice The ID of the permission required to call the `updateStages` function.
     bytes32 public constant UPDATE_STAGES_PERMISSION_ID = keccak256("UPDATE_STAGES_PERMISSION");
 
+    /// @notice The ID of the permission required to call the `setTrustedForwarder` function.
+    bytes32 public constant SET_TRUSTED_FORWARDER_PERMISSION_ID = keccak256("SET_TRUSTED_FORWARDER_PERMISSION");
+
     /// @notice A special address encoding permissions that are valid for any address `who` or `where`.
     address internal constant ANY_ADDR = address(type(uint160).max);
 
@@ -47,18 +49,21 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
             PluginUUPSUpgradeable.TargetConfig memory targetConfig
         ) = abi.decode(_data, (SPP.Stage[], bytes, PluginUUPSUpgradeable.TargetConfig));
 
-        // TODO: shall we deploy this with proxy as well ?
-        TrustedForwarder trustedForwarder = new TrustedForwarder();
-
+        // Note that by default, we assume that sub-plugins will call the executor with
+        // a delegate call which will still make `msg.sender` to be sub-plugin on SPP, 
+        // so as default, we set trusted forwarder = address(0), but grantee of
+        // `SET_TRUSTED_FORWARDER_PERMISSION` can anytime set the actual address.
+        // Setting a user's passed trusted forwarder below is dangerous in case plugin
+        // installer is malicious.
         plugin = IMPLEMENTATION.deployUUPSProxy(
             abi.encodeCall(
                 SPP.initialize,
-                (IDAO(_dao), address(trustedForwarder), stages, metadata, targetConfig)
+                (IDAO(_dao), address(0), stages, metadata, targetConfig)
             )
         );
 
         PermissionLib.MultiTargetPermission[]
-            memory permissions = new PermissionLib.MultiTargetPermission[](2);
+            memory permissions = new PermissionLib.MultiTargetPermission[](3);
 
         permissions[0] = PermissionLib.MultiTargetPermission({
             operation: PermissionLib.Operation.Grant,
@@ -74,6 +79,14 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
             who: plugin,
             condition: PermissionLib.NO_CONDITION,
             permissionId: DAO(payable(_dao)).EXECUTE_PERMISSION_ID()
+        });
+
+        permissions[2] = PermissionLib.MultiTargetPermission({
+            operation: PermissionLib.Operation.Grant,
+            where: plugin,
+            who: _dao,
+            condition: PermissionLib.NO_CONDITION,
+            permissionId: SET_TRUSTED_FORWARDER_PERMISSION_ID
         });
 
         preparedSetupData.permissions = permissions;
@@ -95,7 +108,7 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
         address _dao,
         SetupPayload calldata _payload
     ) external view returns (PermissionLib.MultiTargetPermission[] memory permissions) {
-        permissions = new PermissionLib.MultiTargetPermission[](2);
+        permissions = new PermissionLib.MultiTargetPermission[](3);
 
         permissions[0] = PermissionLib.MultiTargetPermission({
             operation: PermissionLib.Operation.Revoke,
@@ -111,6 +124,14 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
             who: _payload.plugin,
             condition: PermissionLib.NO_CONDITION,
             permissionId: DAO(payable(_dao)).EXECUTE_PERMISSION_ID()
+        });
+
+         permissions[2] = PermissionLib.MultiTargetPermission({
+            operation: PermissionLib.Operation.Revoke,
+            where: _payload.plugin,
+            who: _dao,
+            condition: PermissionLib.NO_CONDITION,
+            permissionId: SET_TRUSTED_FORWARDER_PERMISSION_ID
         });
     }
 }

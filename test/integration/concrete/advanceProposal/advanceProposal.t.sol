@@ -7,8 +7,7 @@ import {PluginA} from "../../../utils/dummy-plugins/PluginA.sol";
 import {StagedProposalProcessor as SPP} from "../../../../src/StagedProposalProcessor.sol";
 
 import {DAO} from "@aragon/osx/core/dao/DAO.sol";
-import {DaoUnauthorized} from "@aragon/osx/core/utils/auth.sol";
-import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
+import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
 
 contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
     SPP.Stage[] stages;
@@ -83,7 +82,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         // it should not create sub proposals since extra param was not provided.
 
         // create proposal
-        IDAO.Action[] memory actions = _createDummyActions();
+        Action[] memory actions = _createDummyActions();
         uint256 proposalId = sppPlugin.createProposal({
             _actions: actions,
             _allowFailureMap: 0,
@@ -138,7 +137,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         customCreationParam[1][0] = abi.encodePacked("data3");
 
         // create proposal
-        IDAO.Action[] memory actions = _createDummyActions();
+        Action[] memory actions = _createDummyActions();
         uint256 proposalId = sppPlugin.createProposal({
             _actions: actions,
             _allowFailureMap: 0,
@@ -191,7 +190,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         // it should create sub proposals.
 
         // create proposal
-        IDAO.Action[] memory actions = _createDummyActions();
+        Action[] memory actions = _createDummyActions();
         uint256 proposalId = sppPlugin.createProposal({
             _actions: actions,
             _allowFailureMap: 0,
@@ -240,7 +239,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         sppPlugin.updateStages(stages);
 
         // create proposal
-        IDAO.Action[] memory actions = _createDummyActions();
+        Action[] memory actions = _createDummyActions();
         uint256 proposalId = sppPlugin.createProposal({
             _actions: actions,
             _allowFailureMap: 0,

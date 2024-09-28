@@ -15,8 +15,7 @@ import {
 import {
     ProposalUpgradeable
 } from "@aragon/osx-commons-contracts/src/plugin/extensions/proposal/ProposalUpgradeable.sol";
-
-import "forge-std/console.sol";
+import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
 
 contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
     using ERC165Checker for address;
@@ -26,6 +25,9 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
 
     /// @notice The ID of the permission required to call the `updateMetadata` function.
     bytes32 public constant UPDATE_METADATA_PERMISSION_ID = keccak256("UPDATE_METADATA_PERMISSION");
+
+    /// @notice The ID of the permission required to call the `setTrustedForwarder` function.
+    bytes32 public constant SET_TRUSTED_FORWARDER_PERMISSION_ID = keccak256("SET_TRUSTED_FORWARDER_PERMISSION");
 
     /// @notice The ID of the permission required to call the `updateStages` function.
     bytes32 public constant UPDATE_STAGES_PERMISSION_ID = keccak256("UPDATE_STAGES_PERMISSION");
@@ -57,7 +59,7 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
         address creator;
         uint64 lastStageTransition;
         bytes metadata;
-        IDAO.Action[] actions;
+        Action[] actions;
         uint16 currentStage; // At which stage the proposal is.
         uint16 stageConfigIndex; // What stage configuration the proposal is using
         bool executed;
@@ -79,12 +81,13 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
     bytes private metadata;
 
     uint16 private currentConfigIndex; // Index from `stages` storage mapping
-    address public trustedForwarder;
+    address private trustedForwarder;
 
     event ProposalAdvanced(uint256 indexed proposalId, uint256 indexed stageId);
     event ProposalResultReported(uint256 indexed proposalId, address indexed plugin);
     event MetadataUpdated(bytes releaseMetadata);
     event StagesUpdated(Stage[] stages);
+    event TrustedForwarderUpdated(address indexed forwarder);
 
     /// @notice Initializes the component.
     /// @dev This method is required to support [ERC-1822](https://eips.ethereum.org/EIPS/eip-1822).
@@ -108,10 +111,12 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
             _updateStages(_stages);
         }
 
+        if(_trustedForwarder != address(0)) {
+            _setTrustedForwarder(_trustedForwarder);
+        }
+
         _updateMetadata(_metadata);
         _setTargetConfig(_targetConfig);
-
-        trustedForwarder = _trustedForwarder;
     }
 
     /// @notice Checks if this or the parent contract supports an interface by its ID.
@@ -137,6 +142,17 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
     function updateMetadata(bytes calldata _metadata) external auth(UPDATE_METADATA_PERMISSION_ID) {
         _updateMetadata(_metadata);
     }
+    
+    /// @notice Sets a new trusted forwarder address.
+    /// @param _forwarder The trusted forwarder.
+    function setTrustedForwarder(address _forwarder) public virtual auth(SET_TRUSTED_FORWARDER_PERMISSION_ID) {
+        _setTrustedForwarder(_forwarder);
+    }
+
+    /// @return Returns the address of the trusted forwarder.
+    function getTrustedForwarder() public virtual view returns (address){
+        return trustedForwarder;
+    }
 
     /// @notice Creates a proposal only on non-manual plugins of the first stage.
     /// @param _metadata The metadata of the proposal.
@@ -149,7 +165,7 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
     /// @return proposalId The ID of the proposal.
     function createProposal(
         bytes memory _metadata,
-        IDAO.Action[] memory _actions,
+        Action[] memory _actions,
         uint256 _allowFailureMap,
         uint64 _startDate,
         bytes[][] memory _data
@@ -172,7 +188,7 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
 
         proposal.allowFailureMap = _allowFailureMap;
         proposal.metadata = _metadata;
-        proposal.creator = msg.sender;
+        proposal.creator = msg.sender; 
         proposal.targetConfig = getTargetConfig();
 
         // store stage configuration per proposal to avoid
@@ -217,7 +233,7 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
     /// @inheritdoc IProposal
     function createProposal(
         bytes memory _metadata,
-        IDAO.Action[] memory _actions,
+        Action[] memory _actions,
         uint64 _startDate,
         uint64 /** */,
         bytes memory _data
@@ -246,7 +262,7 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
     /// @param _metadata The metadata of the proposal.
     /// @return proposalId The ID of the proposal.
     function createProposalId(
-        IDAO.Action[] memory _actions,
+        Action[] memory _actions,
         bytes memory _metadata
     ) public pure virtual override returns (uint256) {
         return uint256(keccak256(abi.encode(_actions, _metadata)));
@@ -449,9 +465,10 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
         Proposal storage proposal = proposals[_proposalId];
 
         address sender = msg.sender;
-        // if sender is a trusted trustedForwarder, that means
-        // it would appended the sender in the calldata
-        if (msg.data.length >= 20 && msg.sender == trustedForwarder) {
+
+        // If sender is a trusted trustedForwarder, that means
+        // it would have appended the original sender in the calldata.
+        if (sender == trustedForwarder) {
             assembly {
                 // get the last 20 bytes as an address which was appended
                 // by the trustedForwarder before calling this function.
@@ -487,8 +504,8 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
                 (_proposalId, plugin.proposalType, stage.vetoThreshold == 0)
             );
 
-            IDAO.Action[] memory actions = new IDAO.Action[](1);
-            actions[0] = IDAO.Action({to: address(this), value: 0, data: actionData});
+            Action[] memory actions = new Action[](1);
+            actions[0] = Action({to: address(this), value: 0, data: actionData});
 
             bytes memory proposalMetadata = abi.encode(address(this), _proposalId, _stageId);
 
@@ -640,6 +657,14 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
             // always execute if it is the last stage
             _executeProposal(_proposalId);
         }
+    }
+
+    /// @notice Sets a new trusted forwarder address and emits the event.
+    /// @param _forwarder The trusted forwarder.
+    function _setTrustedForwarder(address _forwarder) internal virtual {
+        trustedForwarder = _forwarder;
+
+        emit TrustedForwarderUpdated(_forwarder);
     }
 
     /// @dev This empty reserved space is put in place to allow future versions to add new

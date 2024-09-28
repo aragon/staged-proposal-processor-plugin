@@ -3,18 +3,18 @@ pragma solidity ^0.8.8;
 
 import {TrustedForwarder} from "../../../src/utils/TrustedForwarder.sol";
 
-import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import {
     IProposal
 } from "@aragon/osx-commons-contracts/src/plugin/extensions/proposal/IProposal.sol";
+import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
 
 // dummy plugin that uses lot of gas when proposal is created
 contract GasExpensivePlugin is IProposal, IERC165 {
     bool public created;
     uint256 public proposalId;
     TrustedForwarder public trustedForwarder;
-    mapping(uint256 => IDAO.Action) public actions;
+    mapping(uint256 => Action) public actions;
 
     uint256 iterationsCount = 20;
     mapping(uint256 => uint256) public store;
@@ -31,7 +31,7 @@ contract GasExpensivePlugin is IProposal, IERC165 {
 
     function createProposal(
         bytes calldata,
-        IDAO.Action[] calldata,
+        Action[] calldata,
         uint64,
         uint64,
         bytes memory
@@ -48,7 +48,7 @@ contract GasExpensivePlugin is IProposal, IERC165 {
     }
 
     function createProposalId(
-        IDAO.Action[] memory _actions,
+        Action[] memory _actions,
         bytes memory _metadata
     ) public pure override returns (uint256) {}
 
@@ -60,7 +60,7 @@ contract GasExpensivePlugin is IProposal, IERC165 {
     function execute(
         uint256 _proposalId
     ) external returns (bytes[] memory execResults, uint256 failureMap) {
-        IDAO.Action[] memory mainActions = new IDAO.Action[](1);
+        Action[] memory mainActions = new Action[](1);
         mainActions[0] = actions[_proposalId];
         (execResults, failureMap) = trustedForwarder.execute(bytes32(_proposalId), mainActions, 0);
     }
