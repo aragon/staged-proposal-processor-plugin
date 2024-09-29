@@ -44,7 +44,7 @@
     "@aragon/osx-commons-contracts": "1.4.0-alpha.5",
     "@aragon/osx-commons-configs": "^0.5.0",
     "@ensdomains/ens-contracts": "^1.1.4",
-    "@openzeppelin/contracts": "4.8.1",
-    "@openzeppelin/contracts-upgradeable": "4.8.1"
+    "@openzeppelin/contracts": "^4.9.6",
+    "@openzeppelin/contracts-upgradeable": "^4.9.6"
   }
 }

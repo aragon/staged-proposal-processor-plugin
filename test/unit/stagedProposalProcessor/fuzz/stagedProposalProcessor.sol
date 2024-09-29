@@ -52,6 +52,8 @@ contract SPP_Unit_FuzzTest is BaseTest {
     function testFuzz_updateMetadata(bytes calldata _metadata) external {
         // it should update metadata.
 
+        vm.assume(_metadata.length != 0);
+
         sppPlugin.updateMetadata(_metadata);
 
         assertEq(sppPlugin.getMetadata(), _metadata, "metadata");

@@ -392,14 +392,19 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
             }
         }
 
-        // check sub proposals on non zero stage
+        // // check sub proposals on non zero stage
         for (uint256 i; i < stages[1].plugins.length; i++) {
             _currentPlugin = stages[1].plugins[i];
             assertEq(PluginA(_currentPlugin.pluginAddress).proposalCount(), 0, "proposalsCount");
         }
-
+        
+        bytes[][] memory tempData = new bytes[][](customCreationParam.length - 1);
+        for (uint i = 1; i < customCreationParam.length; i++) {
+            tempData[i - 1] = customCreationParam[i];
+        }
+                
         // check extra params are stored
-        assertEq(sppPlugin.getCreateProposalParams(proposalId), customCreationParam);
+        assertEq(sppPlugin.getCreateProposalParams(proposalId), tempData);
     }
 
     function test_GivenSomePluginsOnStageZeroAreManual()

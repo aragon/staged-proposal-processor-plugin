@@ -208,8 +208,14 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
             }
         }
 
-        if (_data.length > 0) {
-            createProposalParams[proposalId] = _data;
+        // No need to store the very first stage's data as it only 
+        // gets used in this very transaction. 
+        if (_data.length > 1) {
+            bytes[][] memory tempData = new bytes[][](_data.length - 1);
+            for (uint i = 1; i < _data.length; i++) {
+                tempData[i - 1] = _data[i];
+            }
+            createProposalParams[proposalId] = tempData;
         }
 
         _createPluginProposals(
@@ -640,8 +646,7 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
         _proposal.lastStageTransition = uint64(block.timestamp);
 
         if (_proposal.currentStage < _stages.length - 1) {
-            uint16 newStage = _proposal.currentStage + 1;
-            _proposal.currentStage = newStage;
+            uint16 newStage = ++_proposal.currentStage;
 
             bytes[][] memory params = createProposalParams[_proposalId];
 
@@ -649,7 +654,9 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
                 _proposalId,
                 newStage,
                 uint64(block.timestamp),
-                params.length > 0 ? params[newStage] : new bytes[](0)
+                // Because we don't store the very first stage's `_data`, 
+                // subtract 1 to retrieve next stage's data.
+                params.length > 0 ? params[newStage - 1] : new bytes[](0)
             );
 
             emit ProposalAdvanced(_proposalId, newStage);
