@@ -44,19 +44,20 @@ contract PrepareInstallation_SPPSetup_UnitTest is BaseTest {
         // todo check returned helpers
 
         // check returned permissions list.
-        assertEq(setupData.permissions.length, 3, "permissionsLength");
-        for (uint256 i = 0; i < 3; i++) {
+        assertEq(setupData.permissions.length, 4, "permissionsLength");
+        for (uint256 i = 0; i < 4; i++) {
             assertEq(
                 uint256(setupData.permissions[i].operation),
                 uint256(PermissionLib.Operation.Grant),
                 "operation"
             );
+            bytes32 permissionId = setupData.permissions[i].permissionId;
+
             if (
-                setupData.permissions[i].permissionId != sppSetup.UPDATE_STAGES_PERMISSION_ID() &&
-                setupData.permissions[i].permissionId !=
-                DAO(payable(address(dao))).EXECUTE_PERMISSION_ID() &&
-                setupData.permissions[i].permissionId !=
-                sppSetup.SET_TRUSTED_FORWARDER_PERMISSION_ID()
+                permissionId != sppSetup.UPDATE_STAGES_PERMISSION_ID() &&
+                permissionId != DAO(payable(address(dao))).EXECUTE_PERMISSION_ID() &&
+                permissionId != sppSetup.SET_TRUSTED_FORWARDER_PERMISSION_ID() &&
+                permissionId != sppSetup.SET_TARGET_CONFIG_PERMISSION_ID()
             ) {
                 fail();
             }

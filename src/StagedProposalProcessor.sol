@@ -403,6 +403,8 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
         return false;
     }
 
+    /// @param _proposalId The ID of the proposal.
+    /// @return The subplugins' createProposal's `data` parameter encoded. This doesn't include the very first stage's data.
     function getCreateProposalParams(uint256 _proposalId) public view returns (bytes[][] memory) {
         return createProposalParams[_proposalId];
     }

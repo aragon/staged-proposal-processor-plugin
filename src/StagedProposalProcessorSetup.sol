@@ -25,7 +25,12 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
     bytes32 public constant UPDATE_STAGES_PERMISSION_ID = keccak256("UPDATE_STAGES_PERMISSION");
 
     /// @notice The ID of the permission required to call the `setTrustedForwarder` function.
-    bytes32 public constant SET_TRUSTED_FORWARDER_PERMISSION_ID = keccak256("SET_TRUSTED_FORWARDER_PERMISSION");
+    bytes32 public constant SET_TRUSTED_FORWARDER_PERMISSION_ID =
+        keccak256("SET_TRUSTED_FORWARDER_PERMISSION");
+
+    /// @notice The ID of the permission required to call the `setTargetConfig` function.
+    bytes32 public constant SET_TARGET_CONFIG_PERMISSION_ID =
+        keccak256("SET_TARGET_CONFIG_PERMISSION");
 
     /// @notice A special address encoding permissions that are valid for any address `who` or `where`.
     address internal constant ANY_ADDR = address(type(uint160).max);
@@ -34,9 +39,6 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
     /// @dev The implementation address is used to deploy UUPS proxies referencing it and
     /// to verify the plugin on the respective block explorers.
     constructor() PluginUpgradeableSetup(address(new SPP())) {}
-
-    /// @notice The ID of the permission required to call the `storeNumber` function.
-    bytes32 internal constant STORE_PERMISSION_ID = keccak256("STORE_PERMISSION");
 
     /// @inheritdoc IPluginSetup
     function prepareInstallation(
@@ -50,20 +52,17 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
         ) = abi.decode(_data, (SPP.Stage[], bytes, PluginUUPSUpgradeable.TargetConfig));
 
         // Note that by default, we assume that sub-plugins will call the executor with
-        // a delegate call which will still make `msg.sender` to be sub-plugin on SPP, 
+        // a delegate call which will still make `msg.sender` to be sub-plugin on SPP,
         // so as default, we set trusted forwarder = address(0), but grantee of
         // `SET_TRUSTED_FORWARDER_PERMISSION` can anytime set the actual address.
         // Setting a user's passed trusted forwarder below is dangerous in case plugin
         // installer is malicious.
         plugin = IMPLEMENTATION.deployUUPSProxy(
-            abi.encodeCall(
-                SPP.initialize,
-                (IDAO(_dao), address(0), stages, metadata, targetConfig)
-            )
+            abi.encodeCall(SPP.initialize, (IDAO(_dao), address(0), stages, metadata, targetConfig))
         );
 
         PermissionLib.MultiTargetPermission[]
-            memory permissions = new PermissionLib.MultiTargetPermission[](3);
+            memory permissions = new PermissionLib.MultiTargetPermission[](4);
 
         permissions[0] = PermissionLib.MultiTargetPermission({
             operation: PermissionLib.Operation.Grant,
@@ -89,6 +88,14 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
             permissionId: SET_TRUSTED_FORWARDER_PERMISSION_ID
         });
 
+        permissions[3] = PermissionLib.MultiTargetPermission({
+            operation: PermissionLib.Operation.Grant,
+            where: plugin,
+            who: _dao,
+            condition: PermissionLib.NO_CONDITION,
+            permissionId: SET_TARGET_CONFIG_PERMISSION_ID
+        });
+
         preparedSetupData.permissions = permissions;
     }
 
@@ -108,7 +115,7 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
         address _dao,
         SetupPayload calldata _payload
     ) external view returns (PermissionLib.MultiTargetPermission[] memory permissions) {
-        permissions = new PermissionLib.MultiTargetPermission[](3);
+        permissions = new PermissionLib.MultiTargetPermission[](4);
 
         permissions[0] = PermissionLib.MultiTargetPermission({
             operation: PermissionLib.Operation.Revoke,
@@ -126,12 +133,20 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
             permissionId: DAO(payable(_dao)).EXECUTE_PERMISSION_ID()
         });
 
-         permissions[2] = PermissionLib.MultiTargetPermission({
+        permissions[2] = PermissionLib.MultiTargetPermission({
             operation: PermissionLib.Operation.Revoke,
             where: _payload.plugin,
             who: _dao,
             condition: PermissionLib.NO_CONDITION,
             permissionId: SET_TRUSTED_FORWARDER_PERMISSION_ID
+        });
+
+        permissions[3] = PermissionLib.MultiTargetPermission({
+            operation: PermissionLib.Operation.Revoke,
+            where: _payload.plugin,
+            who: _dao,
+            condition: PermissionLib.NO_CONDITION,
+            permissionId: SET_TARGET_CONFIG_PERMISSION_ID
         });
     }
 }
