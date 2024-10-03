@@ -13,3 +13,5 @@ docs/
 
 # Node modules
 node_modules/
+
+.idea/
