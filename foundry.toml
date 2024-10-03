@@ -6,7 +6,7 @@ solc = "0.8.17"
 fs_permissions = [{ access = "read", path = "./node_modules/@aragon/osx-commons-configs/dist/deployments/json"}]
 via-ir=true
 
-gas_reports = ["StagedProposalProcessor", "StagedProposalProcessorSetup"]
+# gas_reports = ["StagedProposalProcessor", "StagedProposalProcessorSetup"]
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
 
 [rpc_endpoints]
@@ -14,3 +14,8 @@ local = "http://127.0.0.1:8545"
 
 [fuzz]
 runs = 2
+
+# Add remappings outside the rpc_endpoints section
+remappings = [
+    "@aragon/osx-commons-contracts="
+]
