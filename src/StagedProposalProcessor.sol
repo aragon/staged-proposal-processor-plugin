@@ -37,7 +37,7 @@ contract StagedProposalProcessor is
     /// @notice The ID of the permission required to call the `updateStages` function.
     bytes32 public constant UPDATE_STAGES_PERMISSION_ID = keccak256("UPDATE_STAGES_PERMISSION");
 
-    /// @notice Used to distinguish if the SPP was not able to create a proposal on sub-plugin.
+    /// @notice Used to distinguish proposals where the SPP was not able to create a proposal on a sub-plugin.
     uint256 private constant MANUAL_CREATION_ID = type(uint256).max;
 
     enum ProposalType {
