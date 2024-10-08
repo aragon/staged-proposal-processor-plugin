@@ -2,7 +2,6 @@
 pragma solidity ^0.8.8;
 
 import {BaseTest} from "../../../../BaseTest.t.sol";
-import {Target} from "../../../../utils/Target.sol";
 import {Errors} from "../../../../../src/libraries/Errors.sol";
 import {PluginA} from "../../../../utils/dummy-plugins/PluginA.sol";
 import {SppHarness} from "../../../../utils/harness/SppHarness.sol";
@@ -36,7 +35,9 @@ contract CreatePluginProposals_64_63_Rule is BaseTest {
         });
     }
 
-    function test_createPluginProposals_63_64_Rule() external {
+    function test_RevertWhen_CreatingPluginProposalAnd_6364_Rule() external {
+        // it should revert.
+
         uint256 gasBefore = gasleft();
         sppHarness.exposed_createPluginProposals({
             _proposalId: proposalId,
