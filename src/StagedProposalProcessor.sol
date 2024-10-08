@@ -37,6 +37,9 @@ contract StagedProposalProcessor is
     /// @notice The ID of the permission required to call the `updateStages` function.
     bytes32 public constant UPDATE_STAGES_PERMISSION_ID = keccak256("UPDATE_STAGES_PERMISSION");
 
+    /// @notice Used to distinguish if the SPP was not able to create a proposal on sub-plugin.
+    uint256 private constant MANUAL_CREATION_ID = type(uint256).max;
+
     enum ProposalType {
         Approval,
         Veto
@@ -349,11 +352,11 @@ contract StagedProposalProcessor is
             revert Errors.ProposalNotExists(_proposalId);
         }
 
-        if(!_canProposalAdvance(_proposalId)) {
+        if (!_canProposalAdvance(_proposalId)) {
             revert Errors.ProposalCannotAdvance(_proposalId);
         }
 
-       _advanceProposal(_proposalId);
+        _advanceProposal(_proposalId);
     }
 
     /// @notice Decides if the proposal can be advanced to the next stage.
@@ -557,9 +560,9 @@ contract StagedProposalProcessor is
                     revert Errors.InsufficientGas();
                 }
 
-                pluginProposalIds[_proposalId][_stageId][stage.plugins[i].pluginAddress] = type(
-                    uint256
-                ).max;
+                pluginProposalIds[_proposalId][_stageId][
+                    stage.plugins[i].pluginAddress
+                ] = MANUAL_CREATION_ID;
             }
         }
     }
@@ -601,7 +604,7 @@ contract StagedProposalProcessor is
             return false;
         }
 
-        if(approvals < stage.approvalThreshold) {
+        if (approvals < stage.approvalThreshold) {
             return false;
         }
 
@@ -632,7 +635,7 @@ contract StagedProposalProcessor is
             if (pluginResults[_proposalId][currentStage][plugin.proposalType][allowedBody]) {
                 // result was already reported
                 plugin.proposalType == ProposalType.Approval ? ++votes : ++vetoes;
-            } else if (pluginProposalId != type(uint256).max && !plugin.isManual) {
+            } else if (pluginProposalId != MANUAL_CREATION_ID && !plugin.isManual) {
                 // result was not reported yet
                 if (IProposal(stage.plugins[i].pluginAddress).canExecute(pluginProposalId)) {
                     plugin.proposalType == ProposalType.Approval ? ++votes : ++vetoes;
