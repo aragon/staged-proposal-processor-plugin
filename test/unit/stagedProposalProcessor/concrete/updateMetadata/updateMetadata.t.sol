@@ -28,6 +28,19 @@ contract UpdateMetadata_SPP_UnitTest is BaseTest {
         _;
     }
 
+    function test_WhenMetadataIsEmpty() external whenCallerIsAllowed {
+        // it should update metadata.
+        // it should emit an event.
+
+        vm.expectEmit({emitter: address(sppPlugin)});
+        emit MetadataUpdated(EMPTY_METADATA);
+
+        sppPlugin.updateMetadata(EMPTY_METADATA);
+
+        bytes memory _newMetadata = sppPlugin.getMetadata();
+        assertEq(_newMetadata, EMPTY_METADATA);
+    }
+
     function test_WhenMetadataIsNotEmpty() external whenCallerIsAllowed {
         // it should emit an event.
         // it should update metadata.
