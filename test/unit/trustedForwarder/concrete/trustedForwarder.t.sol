@@ -10,7 +10,7 @@ contract TrustedForwarder_UnitTest is BaseTest {
     function test_RevertWhen_MoreThanOneActionIsExecuted() external {
         // it should revert.
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.NotPossible.selector));
+        vm.expectRevert(abi.encodeWithSelector(Errors.IncorrectActionCount.selector));
         trustedForwarder.execute(DUMMY_CALL_ID, _createDummyActions(), 0);
     }
 

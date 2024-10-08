@@ -50,7 +50,7 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
     function prepareInstallation(
         address _dao,
         bytes calldata _data
-    ) external returns (address plugin, PreparedSetupData memory preparedSetupData) {
+    ) external returns (address spp, PreparedSetupData memory preparedSetupData) {
         (
             SPP.Stage[] memory stages,
             bytes memory pluginMetadata,
@@ -63,7 +63,7 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
         // `SET_TRUSTED_FORWARDER_PERMISSION` can anytime set the actual address.
         // Setting a user's passed trusted forwarder below is dangerous in case plugin
         // installer is malicious.
-        plugin = IMPLEMENTATION.deployUUPSProxy(
+        spp = IMPLEMENTATION.deployUUPSProxy(
             abi.encodeCall(SPP.initialize, (IDAO(_dao), address(0), stages, pluginMetadata, targetConfig))
         );
 
@@ -72,7 +72,7 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
 
         permissions[0] = PermissionLib.MultiTargetPermission({
             operation: PermissionLib.Operation.Grant,
-            where: plugin,
+            where: spp,
             who: _dao,
             condition: PermissionLib.NO_CONDITION,
             permissionId: UPDATE_STAGES_PERMISSION_ID
@@ -81,14 +81,14 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
         permissions[1] = PermissionLib.MultiTargetPermission({
             operation: PermissionLib.Operation.Grant,
             where: _dao,
-            who: plugin,
+            who: spp,
             condition: PermissionLib.NO_CONDITION,
             permissionId: EXECUTE_PERMISSION_ID
         });
 
         permissions[2] = PermissionLib.MultiTargetPermission({
             operation: PermissionLib.Operation.Grant,
-            where: plugin,
+            where: spp,
             who: _dao,
             condition: PermissionLib.NO_CONDITION,
             permissionId: SET_TRUSTED_FORWARDER_PERMISSION_ID
@@ -96,7 +96,7 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
 
         permissions[3] = PermissionLib.MultiTargetPermission({
             operation: PermissionLib.Operation.Grant,
-            where: plugin,
+            where: spp,
             who: _dao,
             condition: PermissionLib.NO_CONDITION,
             permissionId: SET_TARGET_CONFIG_PERMISSION_ID
@@ -104,7 +104,7 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
 
         permissions[4] = PermissionLib.MultiTargetPermission({
             operation: PermissionLib.Operation.Grant,
-            where: plugin,
+            where: spp,
             who: _dao,
             condition: PermissionLib.NO_CONDITION,
             permissionId: UPDATE_METADATA_PERMISSION_ID
