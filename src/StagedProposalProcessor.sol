@@ -263,7 +263,7 @@ contract StagedProposalProcessor is
     /// @inheritdoc IProposal
     /// @dev Since SPP is also IProposal, it's required to override. Though, ABI can not be defined at compile time.
     function createProposalParamsABI() external pure virtual override returns (string memory) {
-        return "";
+        return "()";
     }
 
     /// @notice Hashing function used to (re)build the proposal id from the proposal details..
