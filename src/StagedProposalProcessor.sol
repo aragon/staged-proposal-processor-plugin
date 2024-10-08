@@ -38,7 +38,7 @@ contract StagedProposalProcessor is
     bytes32 public constant UPDATE_STAGES_PERMISSION_ID = keccak256("UPDATE_STAGES_PERMISSION");
 
     /// @notice Used to distinguish if the SPP was not able to create a proposal on sub-plugin.
-    uint256 private constant MANUAL_CREATION_ID = type(uint256).max;
+    uint256 private constant PROPOSAL_WITHOUT_ID = type(uint256).max;
 
     enum ProposalType {
         Approval,
@@ -563,7 +563,7 @@ contract StagedProposalProcessor is
 
                 pluginProposalIds[_proposalId][_stageId][
                     stage.plugins[i].pluginAddress
-                ] = MANUAL_CREATION_ID;
+                ] = PROPOSAL_WITHOUT_ID;
             }
         }
     }
@@ -636,7 +636,7 @@ contract StagedProposalProcessor is
             if (pluginResults[_proposalId][currentStage][plugin.proposalType][allowedBody]) {
                 // result was already reported
                 plugin.proposalType == ProposalType.Approval ? ++votes : ++vetoes;
-            } else if (pluginProposalId != MANUAL_CREATION_ID && !plugin.isManual) {
+            } else if (pluginProposalId != PROPOSAL_WITHOUT_ID && !plugin.isManual) {
                 // result was not reported yet
                 if (IProposal(stage.plugins[i].pluginAddress).canExecute(pluginProposalId)) {
                     plugin.proposalType == ProposalType.Approval ? ++votes : ++vetoes;
