@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.8;
 
-import {AlwaysTrueCondition} from "./utils/AlwaysTrueCondition.sol";
 import {StagedProposalProcessor as SPP} from "./StagedProposalProcessor.sol";
 
 import {DAO} from "@aragon/osx/core/dao/DAO.sol";
