@@ -16,15 +16,13 @@ import {
     ProposalUpgradeable
 } from "@aragon/osx-commons-contracts/src/plugin/extensions/proposal/ProposalUpgradeable.sol";
 import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
+import {MetadataExtensionUpgradeable} from "@aragon/osx-commons-contracts/src/utils/metadata/MetadataExtensionUpgradeable.sol";
 
-contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
+contract StagedProposalProcessor is ProposalUpgradeable, MetadataExtensionUpgradeable, PluginUUPSUpgradeable {
     using ERC165Checker for address;
 
     /// @notice The ID of the permission required to call the `createProposal` function.
     bytes32 public constant CREATE_PROPOSAL_PERMISSION_ID = keccak256("CREATE_PROPOSAL_PERMISSION");
-
-    /// @notice The ID of the permission required to call the `updateMetadata` function.
-    bytes32 public constant UPDATE_METADATA_PERMISSION_ID = keccak256("UPDATE_METADATA_PERMISSION");
 
     /// @notice The ID of the permission required to call the `setTrustedForwarder` function.
     bytes32 public constant SET_TRUSTED_FORWARDER_PERMISSION_ID = keccak256("SET_TRUSTED_FORWARDER_PERMISSION");
@@ -77,15 +75,11 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
     mapping(uint256 => Stage[]) private stages;
     mapping(uint256 => bytes[][]) private createProposalParams;
 
-    // the StagedProposalProcessor metadata cid
-    bytes private metadata;
-
     uint16 private currentConfigIndex; // Index from `stages` storage mapping
     address private trustedForwarder;
 
     event ProposalAdvanced(uint256 indexed proposalId, uint256 indexed stageId);
     event ProposalResultReported(uint256 indexed proposalId, address indexed plugin);
-    event MetadataUpdated(bytes releaseMetadata);
     event StagesUpdated(Stage[] stages);
     event TrustedForwarderUpdated(address indexed forwarder);
 
@@ -94,12 +88,12 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
     /// @param _dao The IDAO interface of the associated DAO.
     /// @param _trustedForwarder The trusted forwarder responsible for extracting the original sender.
     /// @param _stages The stages configuration.
-    /// @param _metadata The utf8 bytes of a content addressing cid that stores plugin's information.
+    /// @param _pluginMetadata The utf8 bytes of a content addressing cid that stores plugin's information.
     function initialize(
         IDAO _dao,
         address _trustedForwarder,
         Stage[] calldata _stages,
-        bytes calldata _metadata,
+        bytes calldata _pluginMetadata,
         TargetConfig calldata _targetConfig
     ) external initializer {
         __PluginUUPSUpgradeable_init(_dao);
@@ -115,7 +109,7 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
             _setTrustedForwarder(_trustedForwarder);
         }
 
-        _updateMetadata(_metadata);
+        _updateMetadata(_pluginMetadata);
         _setTargetConfig(_targetConfig);
     }
 
@@ -124,7 +118,7 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
     /// @return Returns `true` if the interface is supported.
     function supportsInterface(
         bytes4 _interfaceId
-    ) public view virtual override(PluginUUPSUpgradeable, ProposalUpgradeable) returns (bool) {
+    ) public view virtual override(PluginUUPSUpgradeable, MetadataExtensionUpgradeable, ProposalUpgradeable) returns (bool) {
         return super.supportsInterface(_interfaceId);
     }
 
@@ -135,12 +129,6 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
             revert Errors.StageCountZero();
         }
         _updateStages(_stages);
-    }
-
-    /// @notice Allows to update only the metadata.
-    /// @param _metadata The utf8 bytes of a content addressing cid that stores plugin's information.
-    function updateMetadata(bytes calldata _metadata) external auth(UPDATE_METADATA_PERMISSION_ID) {
-        _updateMetadata(_metadata);
     }
     
     /// @notice Sets a new trusted forwarder address.
@@ -301,14 +289,8 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
         return currentConfigIndex;
     }
 
-    /// @notice Returns the metadata currently applied.
-    /// @return The metadata.
-    function getMetadata() public view virtual returns (bytes memory) {
-        return metadata;
-    }
-
     /// @notice Returns the current stages.
-    /// @return The metadata.
+    /// @return The currently applied stages.
     function getStages() public view virtual returns (Stage[] memory) {
         return stages[getCurrentConfigIndex()];
     }
@@ -417,8 +399,10 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
     function _updateStages(Stage[] memory _stages) internal virtual {
         Stage[] storage storedStages = stages[++currentConfigIndex];
 
-        for (uint256 i = 0; i < _stages.length; i++) {
-            for (uint256 j = 0; j < _stages[i].plugins.length; j++) {
+        for (uint256 i = 0; i < _stages.length;) {
+            Stage storage stage = storedStages.push();
+
+            for (uint256 j = 0; j < _stages[i].plugins.length;) {
                 if (
                     !_stages[i].plugins[j].isManual &&
                     !_stages[i].plugins[j].pluginAddress.supportsInterface(
@@ -427,22 +411,28 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
                 ) {
                     revert Errors.InterfaceNotSupported();
                 }
+
+                // If not copied manually, requires via-ir compilation 
+                // pipeline which is still slow.
+                stage.plugins.push(_stages[i].plugins[j]);
+
+                unchecked {
+                    ++j;
+                }
             }
-            storedStages.push(_stages[i]);
+
+            stage.maxAdvance = _stages[i].maxAdvance;
+            stage.minAdvance = _stages[i].minAdvance;
+            stage.approvalThreshold = _stages[i].approvalThreshold;
+            stage.vetoThreshold = _stages[i].vetoThreshold;
+            stage.voteDuration = _stages[i].voteDuration;
+
+            unchecked {
+                ++i;
+            }
         }
 
         emit StagesUpdated(_stages);
-    }
-
-    /// @notice Internal function to update stage configuration.
-    /// @param _metadata The utf8 bytes of a content addressing cid that stores plugin's information.
-    function _updateMetadata(bytes calldata _metadata) internal virtual {
-        if (_metadata.length == 0) {
-            revert Errors.EmptyMetadata();
-        }
-
-        metadata = _metadata;
-        emit MetadataUpdated(_metadata);
     }
 
     /// @notice Internal function that executes the proposal's actions.
