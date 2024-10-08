@@ -349,13 +349,11 @@ contract StagedProposalProcessor is
             revert Errors.ProposalNotExists(_proposalId);
         }
 
-        if (_canProposalAdvance(_proposalId)) {
-            // advance
-            _advanceProposal(_proposalId);
-        } else {
-            //  revert
+        if(!_canProposalAdvance(_proposalId)) {
             revert Errors.ProposalCannotAdvance(_proposalId);
         }
+
+       _advanceProposal(_proposalId);
     }
 
     /// @notice Decides if the proposal can be advanced to the next stage.
@@ -603,11 +601,11 @@ contract StagedProposalProcessor is
             return false;
         }
 
-        if (approvals >= stage.approvalThreshold) {
-            return true;
+        if(approvals < stage.approvalThreshold) {
+            return false;
         }
 
-        return false;
+        return true;
     }
 
     /// @notice Internal function to calculate the votes and vetoes for a proposal.
