@@ -15,7 +15,7 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
             _allowFailureMap: 0,
             _metadata: DUMMY_METADATA,
             _startDate: START_DATE,
-            _data: defaultCreationParams
+            _proposalParams: defaultCreationParams
         });
         _;
     }
@@ -99,7 +99,7 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
             _allowFailureMap: 0,
             _metadata: "dummy metadata1",
             _startDate: START_DATE,
-            _data: defaultCreationParams
+            _proposalParams: defaultCreationParams
         });
         bool _tryAdvance = true;
 

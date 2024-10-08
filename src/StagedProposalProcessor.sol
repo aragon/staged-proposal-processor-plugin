@@ -167,14 +167,15 @@ contract StagedProposalProcessor is
     /// Uses bitmap representation.
     /// If the bit at index `x` is 1, the tx succeeds even if the action at `x` failed.
     /// Passing 0 will be treated as atomic execution.
-    /// @param _data The extra abi encoded parameters for each sub-plugin's createProposal function.
+    /// @param _startDate The date at which first stage's plugins' proposals must be started at. 
+    /// @param _proposalParams The extra abi encoded parameters for each sub-plugin's createProposal function.
     /// @return proposalId The ID of the proposal.
     function createProposal(
         bytes memory _metadata,
         Action[] memory _actions,
         uint256 _allowFailureMap,
         uint64 _startDate,
-        bytes[][] memory _data
+        bytes[][] memory _proposalParams
     ) public virtual auth(CREATE_PROPOSAL_PERMISSION_ID) returns (uint256 proposalId) {
         // If `currentConfigIndex` is 0, this means the plugin was installed
         // with empty configurations and still hasn't updated stages
@@ -216,10 +217,10 @@ contract StagedProposalProcessor is
 
         // No need to store the very first stage's data as it only
         // gets used in this very transaction.
-        if (_data.length > 1) {
-            bytes[][] memory tempData = new bytes[][](_data.length - 1);
-            for (uint i = 1; i < _data.length; i++) {
-                tempData[i - 1] = _data[i];
+        if (_proposalParams.length > 1) {
+            bytes[][] memory tempData = new bytes[][](_proposalParams.length - 1);
+            for (uint i = 1; i < _proposalParams.length; i++) {
+                tempData[i - 1] = _proposalParams[i];
             }
             createProposalParams[proposalId] = tempData;
         }
@@ -228,7 +229,7 @@ contract StagedProposalProcessor is
             proposalId,
             0,
             proposal.lastStageTransition,
-            _data.length > 0 ? _data[0] : new bytes[](0)
+            _proposalParams.length > 0 ? _proposalParams[0] : new bytes[](0)
         );
 
         emit ProposalCreated({
@@ -505,7 +506,7 @@ contract StagedProposalProcessor is
         uint256 _proposalId,
         uint16 _stageId,
         uint64 _startDate,
-        bytes[] memory _createProposalParams
+        bytes[] memory _stageProposalParams
     ) internal virtual {
         Proposal storage proposal = proposals[_proposalId];
 
@@ -542,7 +543,7 @@ contract StagedProposalProcessor is
                     actions,
                     _startDate,
                     _startDate + stage.voteDuration,
-                    _createProposalParams.length > 0 ? _createProposalParams[i] : bytes("")
+                    _stageProposalParams.length > 0 ? _stageProposalParams[i] : bytes("")
                 )
             returns (uint256 pluginProposalId) {
                 pluginProposalIds[_proposalId][_stageId][
