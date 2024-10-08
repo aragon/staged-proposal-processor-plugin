@@ -9,8 +9,6 @@ import {TrustedForwarder} from "../../../../../src/utils/TrustedForwarder.sol";
 import {GasExpensivePlugin} from "../../../../utils/dummy-plugins/GasExpensivePlugin.sol";
 import {StagedProposalProcessor as SPP} from "../../../../../src/StagedProposalProcessor.sol";
 
-import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
-
 contract CreatePluginProposals_64_63_Rule is BaseTest {
     uint256 proposalId;
     SppHarness sppHarness;
