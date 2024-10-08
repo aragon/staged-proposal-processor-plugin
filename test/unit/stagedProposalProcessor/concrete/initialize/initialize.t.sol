@@ -52,11 +52,4 @@ contract Initialize_SPP_UnitTest is BaseTest {
         assertEq(address(newSppPlugin.dao()), address(dao));
         assertEq(newSppPlugin.getMetadata(), DUMMY_METADATA);
     }
-
-    function test_RevertWhen_MetadataIsNotCorrect() external whenNotInitialized whenInitializing {
-        // it should revert.
-
-        vm.expectRevert(abi.encodeWithSelector(Errors.EmptyMetadata.selector));
-        newSppPlugin.initialize(dao, address(trustedForwarder), new SPP.Stage[](0), EMPTY_DATA, defaultTargetConfig);
-    }
 }

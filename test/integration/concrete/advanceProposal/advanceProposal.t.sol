@@ -10,7 +10,6 @@ import {DAO} from "@aragon/osx/core/dao/DAO.sol";
 import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
 
 contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
-    SPP.Stage[] stages;
 
     modifier givenProposalExists() {
         _;
@@ -57,7 +56,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
 
     modifier whenAllPluginsOnNextStageAreNonManual() {
         // configure stages (one of them non-manual)
-        stages = _createDummyStages(2, false, false, false);
+        SPP.Stage[] memory stages = _createDummyStages(2, false, false, false);
         sppPlugin.updateStages(stages);
 
         _;
@@ -104,7 +103,8 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         sppPlugin.advanceProposal(proposalId);
 
         SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
-
+        SPP.Stage[] memory stages = sppPlugin.getStages();
+        
         // check proposal advanced
         assertEq(proposal.currentStage, initialStage + 1, "currentStage");
 
@@ -163,6 +163,8 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         // check proposal advanced
         assertEq(proposal.currentStage, initialStage + 1, "currentStage");
 
+        SPP.Stage[] memory stages = sppPlugin.getStages();
+
         // check sub proposal created
         assertEq(
             PluginA(stages[initialStage + 1].plugins[0].pluginAddress).proposalCount(),
@@ -212,6 +214,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         sppPlugin.advanceProposal(proposalId);
 
         SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
+        SPP.Stage[] memory stages = sppPlugin.getStages();
 
         // check proposal advanced
         assertEq(proposal.currentStage, initialStage + 1, "currentStage");
@@ -235,7 +238,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         // it should not create sub proposals.
 
         // configure stages (one of them non-manual)
-        stages = _createDummyStages(2, false, true, true);
+        SPP.Stage[] memory stages = _createDummyStages(2, false, true, true);
         sppPlugin.updateStages(stages);
 
         // create proposal
@@ -276,7 +279,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         // it should revert.
 
         // configure stages
-        stages = _createDummyStages(2, false, false, false);
+        SPP.Stage[] memory stages = _createDummyStages(2, false, false, false);
         sppPlugin.updateStages(stages);
 
         // create proposal

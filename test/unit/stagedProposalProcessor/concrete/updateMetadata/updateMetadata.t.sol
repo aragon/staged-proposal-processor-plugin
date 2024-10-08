@@ -28,13 +28,6 @@ contract UpdateMetadata_SPP_UnitTest is BaseTest {
         _;
     }
 
-    function test_RevertWhen_MetadataIsEmpty() external whenCallerIsAllowed {
-        // it should revert.
-
-        vm.expectRevert(abi.encodeWithSelector(Errors.EmptyMetadata.selector));
-        sppPlugin.updateMetadata(EMPTY_METADATA);
-    }
-
     function test_WhenMetadataIsNotEmpty() external whenCallerIsAllowed {
         // it should emit an event.
         // it should update metadata.

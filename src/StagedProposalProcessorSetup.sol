@@ -21,6 +21,9 @@ import {
 contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
     using ProxyLib for address;
 
+     /// @notice The identifier of the `EXECUTE_PERMISSION` permission.
+    bytes32 public constant EXECUTE_PERMISSION_ID = keccak256("EXECUTE_PERMISSION");
+
     /// @notice The ID of the permission required to call the `updateStages` function.
     bytes32 public constant UPDATE_STAGES_PERMISSION_ID = keccak256("UPDATE_STAGES_PERMISSION");
 
@@ -31,6 +34,9 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
     /// @notice The ID of the permission required to call the `setTargetConfig` function.
     bytes32 public constant SET_TARGET_CONFIG_PERMISSION_ID =
         keccak256("SET_TARGET_CONFIG_PERMISSION");
+
+    /// @notice The ID of the permission required to call the `updateMetadata` function.
+    bytes32 public constant UPDATE_METADATA_PERMISSION_ID = keccak256("UPDATE_METADATA_PERMISSION");
 
     /// @notice A special address encoding permissions that are valid for any address `who` or `where`.
     address internal constant ANY_ADDR = address(type(uint160).max);
@@ -47,7 +53,7 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
     ) external returns (address plugin, PreparedSetupData memory preparedSetupData) {
         (
             SPP.Stage[] memory stages,
-            bytes memory metadata,
+            bytes memory pluginMetadata,
             PluginUUPSUpgradeable.TargetConfig memory targetConfig
         ) = abi.decode(_data, (SPP.Stage[], bytes, PluginUUPSUpgradeable.TargetConfig));
 
@@ -58,11 +64,11 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
         // Setting a user's passed trusted forwarder below is dangerous in case plugin
         // installer is malicious.
         plugin = IMPLEMENTATION.deployUUPSProxy(
-            abi.encodeCall(SPP.initialize, (IDAO(_dao), address(0), stages, metadata, targetConfig))
+            abi.encodeCall(SPP.initialize, (IDAO(_dao), address(0), stages, pluginMetadata, targetConfig))
         );
 
         PermissionLib.MultiTargetPermission[]
-            memory permissions = new PermissionLib.MultiTargetPermission[](4);
+            memory permissions = new PermissionLib.MultiTargetPermission[](5);
 
         permissions[0] = PermissionLib.MultiTargetPermission({
             operation: PermissionLib.Operation.Grant,
@@ -77,7 +83,7 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
             where: _dao,
             who: plugin,
             condition: PermissionLib.NO_CONDITION,
-            permissionId: DAO(payable(_dao)).EXECUTE_PERMISSION_ID()
+            permissionId: EXECUTE_PERMISSION_ID
         });
 
         permissions[2] = PermissionLib.MultiTargetPermission({
@@ -94,6 +100,14 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
             who: _dao,
             condition: PermissionLib.NO_CONDITION,
             permissionId: SET_TARGET_CONFIG_PERMISSION_ID
+        });
+
+        permissions[4] = PermissionLib.MultiTargetPermission({
+            operation: PermissionLib.Operation.Grant,
+            where: plugin,
+            who: _dao,
+            condition: PermissionLib.NO_CONDITION,
+            permissionId: UPDATE_METADATA_PERMISSION_ID
         });
 
         preparedSetupData.permissions = permissions;
@@ -114,8 +128,8 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
     function prepareUninstallation(
         address _dao,
         SetupPayload calldata _payload
-    ) external view returns (PermissionLib.MultiTargetPermission[] memory permissions) {
-        permissions = new PermissionLib.MultiTargetPermission[](4);
+    ) external pure returns (PermissionLib.MultiTargetPermission[] memory permissions) {
+        permissions = new PermissionLib.MultiTargetPermission[](5);
 
         permissions[0] = PermissionLib.MultiTargetPermission({
             operation: PermissionLib.Operation.Revoke,
@@ -130,7 +144,7 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
             where: _dao,
             who: _payload.plugin,
             condition: PermissionLib.NO_CONDITION,
-            permissionId: DAO(payable(_dao)).EXECUTE_PERMISSION_ID()
+            permissionId: EXECUTE_PERMISSION_ID
         });
 
         permissions[2] = PermissionLib.MultiTargetPermission({
@@ -147,6 +161,14 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
             who: _dao,
             condition: PermissionLib.NO_CONDITION,
             permissionId: SET_TARGET_CONFIG_PERMISSION_ID
+        });
+
+        permissions[4] = PermissionLib.MultiTargetPermission({
+            operation: PermissionLib.Operation.Revoke,
+            where: _payload.plugin,
+            who: _dao,
+            condition: PermissionLib.NO_CONDITION,
+            permissionId: UPDATE_METADATA_PERMISSION_ID
         });
     }
 }
