@@ -2,11 +2,16 @@
 pragma solidity ^0.8.8;
 
 import {Errors} from "../../../../../src/libraries/Errors.sol";
+import {PluginA} from "../../../../utils/dummy-plugins/PluginA.sol";
 import {StagedConfiguredSharedTest} from "../../../../StagedConfiguredSharedTest.t.sol";
 import {StagedProposalProcessor as SPP} from "../../../../../src/StagedProposalProcessor.sol";
 
+import {IPlugin} from "@aragon/osx-commons-contracts/src/plugin/IPlugin.sol";
+import {Executor} from "@aragon/osx-commons-contracts/src/executors/Executor.sol";
+
 contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
     uint256 internal proposalId;
+    bool _tryAdvance;
 
     modifier givenExistentProposal() {
         // create proposal
@@ -24,11 +29,103 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         _;
     }
 
+    function test_WhenCallerIsTrustedForwarder()
+        external
+        givenExistentProposal
+        whenVoteDurationHasNotPassed
+    {
+        // it should use the sender stored in the call data. (the sender should be the plugin address)
+        // it should record the result.
+        // it should emit event proposal result reported.
+
+        SPP.Stage[] memory stages = sppPlugin.getStages();
+        address pluginAddress = stages[0].plugins[0].pluginAddress;
+
+        // check event was emitted
+        vm.expectEmit({emitter: address(sppPlugin)});
+        emit ProposalResultReported(proposalId, pluginAddress);
+
+        // execute the sub proposal to report the result
+        PluginA(pluginAddress).execute({_proposalId: 0});
+
+        // check result was recorded
+        SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
+        assertTrue(
+            sppPlugin.getPluginResult(
+                proposalId,
+                proposal.currentStage,
+                SPP.ProposalType.Approval,
+                pluginAddress
+            ),
+            "pluginResult"
+        );
+    }
+
+    function test_WhenCallerIsExecutorUsingDelegatecall()
+        external
+        givenExistentProposal
+        whenVoteDurationHasNotPassed
+    {
+        // it should use the msg.sender that is the plugin.
+        // it should record the result.
+        // it should emit event proposal result reported.
+
+        // define new executor
+        Executor executor = new Executor();
+
+        // update stages to configure them with executor
+        sppPlugin.updateStages(
+            _createCustomStages({
+                _stageCount: 2,
+                _plugin1Manual: false,
+                _plugin2Manual: false,
+                _plugin3Manual: false,
+                _allowedBody: address(0),
+                executor: address(executor),
+                operation: IPlugin.Operation.DelegateCall
+            })
+        );
+
+        // create new proposal
+        proposalId = sppPlugin.createProposal({
+            _actions: _createDummyActions(),
+            _allowFailureMap: 0,
+            _metadata: "dummy metadata1",
+            _startDate: START_DATE,
+            _data: defaultCreationParams
+        });
+
+        SPP.Stage[] memory stages = sppPlugin.getStages();
+        address pluginAddress = stages[0].plugins[0].pluginAddress;
+
+        // check event was emitted
+        vm.expectEmit({emitter: address(sppPlugin)});
+        emit ProposalResultReported(proposalId, pluginAddress);
+
+        // execute the sub proposal to report the result
+        PluginA(pluginAddress).execute({_proposalId: 0});
+
+        // check result was recorded
+        SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
+        assertTrue(
+            sppPlugin.getPluginResult(
+                proposalId,
+                proposal.currentStage,
+                SPP.ProposalType.Approval,
+                pluginAddress
+            ),
+            "pluginResult"
+        );
+    }
+
     modifier whenTheCallerIsAnAllowedBody() {
+        // impersonate the allowed body
+        resetPrank(allowedBody);
         _;
     }
 
     modifier whenShouldTryAdvanceStage() {
+        _tryAdvance = true;
         _;
     }
 
@@ -43,7 +140,7 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         // it should emit event proposal result reported.
         // it should call advanceProposal function and emit event.
 
-        bool _tryAdvance = true;
+        SPP.Stage[] memory stages = sppPlugin.getStages();
 
         // check function was called
         // todo this function is not working with internal functions, wait for foundry support response.
@@ -55,8 +152,14 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
 
         // check event was emitted
         vm.expectEmit({emitter: address(sppPlugin)});
-        emit ProposalResultReported(proposalId, users.manager);
+        emit ProposalResultReported(proposalId, allowedBody);
+        vm.expectEmit({emitter: address(sppPlugin)});
         emit ProposalAdvanced(proposalId, 1);
+
+        SPP.Proposal memory proposalOld = sppPlugin.getProposal(proposalId);
+
+        // advance the timer
+        vm.warp(proposalOld.lastStageTransition + stages[0].minAdvance + 1);
 
         sppPlugin.reportProposalResult({
             _proposalId: proposalId,
@@ -65,16 +168,19 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         });
 
         // check result was recorded
-        SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
         assertTrue(
             sppPlugin.getPluginResult(
                 proposalId,
-                proposal.currentStage,
+                proposalOld.currentStage,
                 SPP.ProposalType.Approval,
-                users.manager
+                allowedBody
             ),
             "pluginResult"
         );
+
+        // check proposal was advanced
+        SPP.Proposal memory proposalNew = sppPlugin.getProposal(proposalId);
+        assertEq(proposalNew.currentStage, proposalOld.currentStage + 1, "currentStage");
     }
 
     function test_WhenProposalCanNotBeAdvanced()
@@ -88,24 +194,9 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         // it should emit event proposal result reported.
         // it should not call advanceProposal function nor emit event.
 
-        // configure stage that needs 2 approvals
-        approvalThreshold = 2;
-        SPP.Stage[] memory stages = _createDummyStages(2, false, false, false);
-        sppPlugin.updateStages(stages);
-
-        // create proposal
-        proposalId = sppPlugin.createProposal({
-            _actions: _createDummyActions(),
-            _allowFailureMap: 0,
-            _metadata: "dummy metadata1",
-            _startDate: START_DATE,
-            _data: defaultCreationParams
-        });
-        bool _tryAdvance = true;
-
         // check event was emitted
         vm.expectEmit({emitter: address(sppPlugin)});
-        emit ProposalResultReported(proposalId, users.manager);
+        emit ProposalResultReported(proposalId, allowedBody);
 
         sppPlugin.reportProposalResult({
             _proposalId: proposalId,
@@ -120,7 +211,7 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
                 proposalId,
                 proposal.currentStage,
                 SPP.ProposalType.Approval,
-                users.manager
+                allowedBody
             ),
             "pluginResult"
         );
@@ -138,7 +229,6 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         // it should record the result.
         // it should emit event.
         // it should not call advanceProposal function.
-        bool _tryAdvance = false;
 
         // todo this function is not working with internal functions, wait for foundry support response.
         // check function call was not made
@@ -150,7 +240,7 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
 
         // check event
         vm.expectEmit({emitter: address(sppPlugin)});
-        emit ProposalResultReported(proposalId, users.manager);
+        emit ProposalResultReported(proposalId, allowedBody);
 
         sppPlugin.reportProposalResult({
             _proposalId: proposalId,
@@ -165,10 +255,12 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
                 proposalId,
                 proposal.currentStage,
                 SPP.ProposalType.Approval,
-                users.manager
+                allowedBody
             ),
             "pluginResult"
         );
+        // check proposal stage is has not advanced
+        assertEq(proposal.currentStage, 0, "currentStage");
     }
 
     function test_WhenTheCallerIsNotAnAllowedBody()
@@ -179,6 +271,7 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         // it should record the result for historical data.
         // it should not record the result in the right proposal path.
 
+        // impersonate the unauthorized user
         resetPrank(users.unauthorized);
         sppPlugin.reportProposalResult({
             _proposalId: proposalId,
