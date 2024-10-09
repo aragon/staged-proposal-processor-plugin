@@ -18,8 +18,8 @@ import {DAO} from "@aragon/osx/core/dao/DAO.sol";
 import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
 import {PermissionLib} from "@aragon/osx/core/permission/PermissionLib.sol";
 import {
-    PluginUUPSUpgradeable
-} from "@aragon/osx-commons-contracts/src/plugin/PluginUUPSUpgradeable.sol";
+    IPlugin
+} from "@aragon/osx-commons-contracts/src/plugin/IPlugin.sol";
 
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
@@ -45,7 +45,7 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
 
     SPP.ProposalType internal proposalType = SPP.ProposalType.Approval;
 
-    PluginUUPSUpgradeable.TargetConfig internal defaultTargetConfig;
+    IPlugin.TargetConfig internal defaultTargetConfig;
 
     bytes[][] internal defaultCreationParams;
 
@@ -99,7 +99,7 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
         );
 
         defaultTargetConfig.target = address(dao);
-        defaultTargetConfig.operation = PluginUUPSUpgradeable.Operation.Call;
+        defaultTargetConfig.operation = IPlugin.Operation.Call;
 
         // create SPP plugin.
         sppPlugin = SPP(
@@ -146,7 +146,7 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
             where: address(sppPlugin),
             who: users.manager,
             condition: PermissionLib.NO_CONDITION,
-            permissionId: sppPlugin.UPDATE_METADATA_PERMISSION_ID()
+            permissionId: sppPlugin.SET_METADATA_PERMISSION_ID()
         });
 
         // grant permission for creating proposals on the spp to the manager

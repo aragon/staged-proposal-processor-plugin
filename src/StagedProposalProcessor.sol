@@ -119,7 +119,7 @@ contract StagedProposalProcessor is
             _setTrustedForwarder(_trustedForwarder);
         }
 
-        _updateMetadata(_pluginMetadata);
+        _setMetadata(_pluginMetadata);
         _setTargetConfig(_targetConfig);
     }
 

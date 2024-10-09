@@ -47,7 +47,7 @@ contract PrepareUninstallation_SPPSetup_UnitTest is BaseTest {
                 permissions[i].permissionId != DAO(payable(address(dao))).EXECUTE_PERMISSION_ID() &&
                 permissions[i].permissionId != sppSetup.SET_TRUSTED_FORWARDER_PERMISSION_ID() &&
                 permissions[i].permissionId != sppSetup.SET_TARGET_CONFIG_PERMISSION_ID() && 
-                permissions[i].permissionId != sppSetup.UPDATE_METADATA_PERMISSION_ID()
+                permissions[i].permissionId != sppSetup.SET_METADATA_PERMISSION_ID()
             ) {
                 fail();
             }
