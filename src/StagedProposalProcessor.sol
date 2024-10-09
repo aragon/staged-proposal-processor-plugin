@@ -16,16 +16,23 @@ import {
     ProposalUpgradeable
 } from "@aragon/osx-commons-contracts/src/plugin/extensions/proposal/ProposalUpgradeable.sol";
 import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
-import {MetadataExtensionUpgradeable} from "@aragon/osx-commons-contracts/src/utils/metadata/MetadataExtensionUpgradeable.sol";
+import {
+    MetadataExtensionUpgradeable
+} from "@aragon/osx-commons-contracts/src/utils/metadata/MetadataExtensionUpgradeable.sol";
 
-contract StagedProposalProcessor is ProposalUpgradeable, MetadataExtensionUpgradeable, PluginUUPSUpgradeable {
+contract StagedProposalProcessor is
+    ProposalUpgradeable,
+    MetadataExtensionUpgradeable,
+    PluginUUPSUpgradeable
+{
     using ERC165Checker for address;
 
     /// @notice The ID of the permission required to call the `createProposal` function.
     bytes32 public constant CREATE_PROPOSAL_PERMISSION_ID = keccak256("CREATE_PROPOSAL_PERMISSION");
 
     /// @notice The ID of the permission required to call the `setTrustedForwarder` function.
-    bytes32 public constant SET_TRUSTED_FORWARDER_PERMISSION_ID = keccak256("SET_TRUSTED_FORWARDER_PERMISSION");
+    bytes32 public constant SET_TRUSTED_FORWARDER_PERMISSION_ID =
+        keccak256("SET_TRUSTED_FORWARDER_PERMISSION");
 
     /// @notice The ID of the permission required to call the `updateStages` function.
     bytes32 public constant UPDATE_STAGES_PERMISSION_ID = keccak256("UPDATE_STAGES_PERMISSION");
@@ -105,11 +112,11 @@ contract StagedProposalProcessor is ProposalUpgradeable, MetadataExtensionUpgrad
             _updateStages(_stages);
         }
 
-        if(_trustedForwarder != address(0)) {
+        if (_trustedForwarder != address(0)) {
             _setTrustedForwarder(_trustedForwarder);
         }
 
-        _updateMetadata(_pluginMetadata);
+        _setMetadata(_pluginMetadata);
         _setTargetConfig(_targetConfig);
     }
 
@@ -118,7 +125,13 @@ contract StagedProposalProcessor is ProposalUpgradeable, MetadataExtensionUpgrad
     /// @return Returns `true` if the interface is supported.
     function supportsInterface(
         bytes4 _interfaceId
-    ) public view virtual override(PluginUUPSUpgradeable, MetadataExtensionUpgradeable, ProposalUpgradeable) returns (bool) {
+    )
+        public
+        view
+        virtual
+        override(PluginUUPSUpgradeable, MetadataExtensionUpgradeable, ProposalUpgradeable)
+        returns (bool)
+    {
         return super.supportsInterface(_interfaceId);
     }
 
@@ -130,15 +143,17 @@ contract StagedProposalProcessor is ProposalUpgradeable, MetadataExtensionUpgrad
         }
         _updateStages(_stages);
     }
-    
+
     /// @notice Sets a new trusted forwarder address.
     /// @param _forwarder The trusted forwarder.
-    function setTrustedForwarder(address _forwarder) public virtual auth(SET_TRUSTED_FORWARDER_PERMISSION_ID) {
+    function setTrustedForwarder(
+        address _forwarder
+    ) public virtual auth(SET_TRUSTED_FORWARDER_PERMISSION_ID) {
         _setTrustedForwarder(_forwarder);
     }
 
     /// @return Returns the address of the trusted forwarder.
-    function getTrustedForwarder() public virtual view returns (address){
+    function getTrustedForwarder() public view virtual returns (address) {
         return trustedForwarder;
     }
 
@@ -176,7 +191,7 @@ contract StagedProposalProcessor is ProposalUpgradeable, MetadataExtensionUpgrad
 
         proposal.allowFailureMap = _allowFailureMap;
         proposal.metadata = _metadata;
-        proposal.creator = msg.sender; 
+        proposal.creator = msg.sender;
         proposal.targetConfig = getTargetConfig();
 
         // store stage configuration per proposal to avoid
@@ -196,8 +211,8 @@ contract StagedProposalProcessor is ProposalUpgradeable, MetadataExtensionUpgrad
             }
         }
 
-        // No need to store the very first stage's data as it only 
-        // gets used in this very transaction. 
+        // No need to store the very first stage's data as it only
+        // gets used in this very transaction.
         if (_data.length > 1) {
             bytes[][] memory tempData = new bytes[][](_data.length - 1);
             for (uint i = 1; i < _data.length; i++) {
@@ -399,10 +414,10 @@ contract StagedProposalProcessor is ProposalUpgradeable, MetadataExtensionUpgrad
     function _updateStages(Stage[] memory _stages) internal virtual {
         Stage[] storage storedStages = stages[++currentConfigIndex];
 
-        for (uint256 i = 0; i < _stages.length;) {
+        for (uint256 i = 0; i < _stages.length; ) {
             Stage storage stage = storedStages.push();
 
-            for (uint256 j = 0; j < _stages[i].plugins.length;) {
+            for (uint256 j = 0; j < _stages[i].plugins.length; ) {
                 if (
                     !_stages[i].plugins[j].isManual &&
                     !_stages[i].plugins[j].pluginAddress.supportsInterface(
@@ -412,7 +427,7 @@ contract StagedProposalProcessor is ProposalUpgradeable, MetadataExtensionUpgrad
                     revert Errors.InterfaceNotSupported();
                 }
 
-                // If not copied manually, requires via-ir compilation 
+                // If not copied manually, requires via-ir compilation
                 // pipeline which is still slow.
                 stage.plugins.push(_stages[i].plugins[j]);
 
@@ -646,7 +661,7 @@ contract StagedProposalProcessor is ProposalUpgradeable, MetadataExtensionUpgrad
                 _proposalId,
                 newStage,
                 uint64(block.timestamp),
-                // Because we don't store the very first stage's `_data`, 
+                // Because we don't store the very first stage's `_data`,
                 // subtract 1 to retrieve next stage's data.
                 params.length > 0 ? params[newStage - 1] : new bytes[](0)
             );
