@@ -9,6 +9,8 @@ import {TrustedForwarder} from "../../../../../src/utils/TrustedForwarder.sol";
 import {GasExpensivePlugin} from "../../../../utils/dummy-plugins/GasExpensivePlugin.sol";
 import {StagedProposalProcessor as SPP} from "../../../../../src/StagedProposalProcessor.sol";
 
+import {IPlugin} from "@aragon/osx-commons-contracts/src/plugin/IPlugin.sol";
+
 contract CreatePluginProposals_64_63_Rule is BaseTest {
     uint256 proposalId;
     SppHarness sppHarness;
@@ -69,8 +71,10 @@ contract CreatePluginProposals_64_63_Rule is BaseTest {
     }
 
     function _setUpStages() internal returns (SPP.Stage[] memory stages) {
-        address _plugin1 = address(new PluginA(address(trustedForwarder)));
-        address _plugin2 = address(new GasExpensivePlugin(address(trustedForwarder)));
+        defaultTargetConfig.target = address(trustedForwarder);
+        defaultTargetConfig.operation = IPlugin.Operation.Call;
+        address _plugin1 = address(new PluginA(defaultTargetConfig));
+        address _plugin2 = address(new GasExpensivePlugin(defaultTargetConfig.target));
 
         SPP.Plugin[] memory _plugins1 = new SPP.Plugin[](1);
         _plugins1[0] = _createPluginStruct({_pluginAddr: _plugin1, _isManual: false});

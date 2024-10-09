@@ -17,10 +17,10 @@ contract UpdateMetadata_SPP_UnitTest is BaseTest {
                 address(dao),
                 address(sppPlugin),
                 users.unauthorized,
-                sppPlugin.UPDATE_METADATA_PERMISSION_ID()
+                sppPlugin.SET_METADATA_PERMISSION_ID()
             )
         );
-        sppPlugin.updateMetadata(DUMMY_METADATA);
+        sppPlugin.setMetadata(DUMMY_METADATA);
     }
 
     modifier whenCallerIsAllowed() {
@@ -32,9 +32,9 @@ contract UpdateMetadata_SPP_UnitTest is BaseTest {
         // it should emit an event.
 
         vm.expectEmit({emitter: address(sppPlugin)});
-        emit MetadataUpdated(EMPTY_METADATA);
+        emit MetadataSet(EMPTY_METADATA);
 
-        sppPlugin.updateMetadata(EMPTY_METADATA);
+        sppPlugin.setMetadata(EMPTY_METADATA);
 
         bytes memory _newMetadata = sppPlugin.getMetadata();
         assertEq(_newMetadata, EMPTY_METADATA);
@@ -45,9 +45,9 @@ contract UpdateMetadata_SPP_UnitTest is BaseTest {
         // it should update metadata.
 
         vm.expectEmit({emitter: address(sppPlugin)});
-        emit MetadataUpdated(DUMMY_METADATA);
+        emit MetadataSet(DUMMY_METADATA);
 
-        sppPlugin.updateMetadata(DUMMY_METADATA);
+        sppPlugin.setMetadata(DUMMY_METADATA);
 
         bytes memory _newMetadata = sppPlugin.getMetadata();
         assertEq(_newMetadata, DUMMY_METADATA);

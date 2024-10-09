@@ -10,9 +10,7 @@ import {StagedProposalProcessor as SPP} from "../../../../src/StagedProposalProc
 import {DaoUnauthorized} from "@aragon/osx/core/utils/auth.sol";
 import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
 
-import {
-    PluginUUPSUpgradeable as UUPSUpgradeable
-} from "@aragon/osx-commons-contracts/src/plugin/PluginUUPSUpgradeable.sol";
+import {IPlugin} from "@aragon/osx-commons-contracts/src/plugin/IPlugin.sol";
 
 contract CreateProposal_SPP_IntegrationTest is BaseTest {
     function test_RevertWhen_CallerIsNotAllowed() external {
@@ -252,9 +250,9 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
                 stageConfigIndex: 1,
                 currentStage: 0,
                 executed: false,
-                targetConfig: UUPSUpgradeable.TargetConfig({
+                targetConfig: IPlugin.TargetConfig({
                     target: address(trustedForwarder),
-                    operation: UUPSUpgradeable.Operation.Call
+                    operation: IPlugin.Operation.Call
                 })
             })
         );
@@ -353,9 +351,9 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
                 stageConfigIndex: 1,
                 currentStage: 0,
                 executed: false,
-                targetConfig: UUPSUpgradeable.TargetConfig({
+                targetConfig: IPlugin.TargetConfig({
                     target: address(trustedForwarder),
-                    operation: UUPSUpgradeable.Operation.Call
+                    operation: IPlugin.Operation.Call
                 })
             })
         );
@@ -397,12 +395,12 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
             _currentPlugin = stages[1].plugins[i];
             assertEq(PluginA(_currentPlugin.pluginAddress).proposalCount(), 0, "proposalsCount");
         }
-        
+
         bytes[][] memory tempData = new bytes[][](customCreationParam.length - 1);
         for (uint i = 1; i < customCreationParam.length; i++) {
             tempData[i - 1] = customCreationParam[i];
         }
-                
+
         // check extra params are stored
         assertEq(sppPlugin.getCreateProposalParams(proposalId), tempData);
     }

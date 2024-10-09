@@ -17,9 +17,7 @@ import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol"
 import {DAO} from "@aragon/osx/core/dao/DAO.sol";
 import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
 import {PermissionLib} from "@aragon/osx/core/permission/PermissionLib.sol";
-import {
-    PluginUUPSUpgradeable
-} from "@aragon/osx-commons-contracts/src/plugin/PluginUUPSUpgradeable.sol";
+import {IPlugin} from "@aragon/osx-commons-contracts/src/plugin/IPlugin.sol";
 
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
@@ -45,7 +43,7 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
 
     SPP.ProposalType internal proposalType = SPP.ProposalType.Approval;
 
-    PluginUUPSUpgradeable.TargetConfig internal defaultTargetConfig;
+    IPlugin.TargetConfig internal defaultTargetConfig;
 
     bytes[][] internal defaultCreationParams;
 
@@ -99,7 +97,7 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
         );
 
         defaultTargetConfig.target = address(dao);
-        defaultTargetConfig.operation = PluginUUPSUpgradeable.Operation.Call;
+        defaultTargetConfig.operation = IPlugin.Operation.Call;
 
         // create SPP plugin.
         sppPlugin = SPP(
@@ -146,7 +144,7 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
             where: address(sppPlugin),
             who: users.manager,
             condition: PermissionLib.NO_CONDITION,
-            permissionId: sppPlugin.UPDATE_METADATA_PERMISSION_ID()
+            permissionId: sppPlugin.SET_METADATA_PERMISSION_ID()
         });
 
         // grant permission for creating proposals on the spp to the manager
@@ -172,9 +170,11 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
         bool _plugin2Manual,
         bool _plugin3Manual
     ) internal returns (SPP.Stage[] memory stages) {
-        address _plugin1 = address(new PluginA(address(trustedForwarder)));
-        address _plugin2 = address(new PluginA(address(trustedForwarder)));
-        address _plugin3 = address(new PluginA(address(trustedForwarder)));
+        defaultTargetConfig.target = address(trustedForwarder);
+        defaultTargetConfig.operation = IPlugin.Operation.Call;
+        address _plugin1 = address(new PluginA(defaultTargetConfig));
+        address _plugin2 = address(new PluginA(defaultTargetConfig));
+        address _plugin3 = address(new PluginA(defaultTargetConfig));
 
         SPP.Plugin[] memory _plugins1 = new SPP.Plugin[](2);
         _plugins1[0] = _createPluginStruct(_plugin1, _plugin1Manual);
@@ -182,6 +182,37 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
 
         SPP.Plugin[] memory _plugins2 = new SPP.Plugin[](1);
         _plugins2[0] = _createPluginStruct(_plugin3, _plugin3Manual);
+
+        stages = new SPP.Stage[](_stageCount);
+        for (uint i; i < _stageCount; i++) {
+            if (i == 0) stages[i] = _createStageStruct(_plugins1);
+            else stages[i] = _createStageStruct(_plugins2);
+        }
+    }
+
+    function _createCustomStages(
+        uint256 _stageCount,
+        bool _plugin1Manual,
+        bool _plugin2Manual,
+        bool _plugin3Manual,
+        address _allowedBody,
+        address executor,
+        IPlugin.Operation operation
+    ) internal returns (SPP.Stage[] memory stages) {
+        IPlugin.TargetConfig memory targetConfig;
+        targetConfig.target = address(executor);
+        targetConfig.operation = operation;
+
+        address _plugin1 = address(new PluginA(targetConfig));
+        address _plugin2 = address(new PluginA(targetConfig));
+        address _plugin3 = address(new PluginA(targetConfig));
+
+        SPP.Plugin[] memory _plugins1 = new SPP.Plugin[](2);
+        _plugins1[0] = _createCustomPluginStruct(_plugin1, _plugin1Manual, _allowedBody);
+        _plugins1[1] = _createCustomPluginStruct(_plugin2, _plugin2Manual, _allowedBody);
+
+        SPP.Plugin[] memory _plugins2 = new SPP.Plugin[](1);
+        _plugins2[0] = _createCustomPluginStruct(_plugin3, _plugin3Manual, _allowedBody);
 
         stages = new SPP.Stage[](_stageCount);
         for (uint i; i < _stageCount; i++) {
@@ -198,6 +229,19 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
             pluginAddress: _pluginAddr,
             isManual: _isManual,
             allowedBody: _pluginAddr,
+            proposalType: proposalType
+        });
+    }
+
+    function _createCustomPluginStruct(
+        address _pluginAddr,
+        bool _isManual,
+        address _allowedBody
+    ) internal view virtual returns (SPP.Plugin memory plugin) {
+        plugin = SPP.Plugin({
+            pluginAddress: _pluginAddr,
+            isManual: _isManual,
+            allowedBody: _allowedBody != address(0) ? _allowedBody : _pluginAddr,
             proposalType: proposalType
         });
     }
