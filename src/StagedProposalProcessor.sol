@@ -16,6 +16,7 @@ import {
     ProposalUpgradeable
 } from "@aragon/osx-commons-contracts/src/plugin/extensions/proposal/ProposalUpgradeable.sol";
 import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
+import "forge-std/console.sol";
 
 contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
     using ERC165Checker for address;
@@ -625,6 +626,7 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
             if (pluginResults[_proposalId][currentStage][plugin.proposalType][allowedBody]) {
                 // result was already reported
                 plugin.proposalType == ProposalType.Approval ? ++votes : ++vetoes;
+
             } else if (pluginProposalId != type(uint256).max && !plugin.isManual) {
                 // result was not reported yet
                 if (IProposal(stage.plugins[i].pluginAddress).canExecute(pluginProposalId)) {
@@ -646,6 +648,8 @@ contract StagedProposalProcessor is ProposalUpgradeable, PluginUUPSUpgradeable {
         Stage[] storage _stages = stages[_proposal.stageConfigIndex];
 
         _proposal.lastStageTransition = uint64(block.timestamp);
+
+        console.log("Proposal advanced to stage %s", _proposal.currentStage);
 
         if (_proposal.currentStage < _stages.length - 1) {
             uint16 newStage = ++_proposal.currentStage;

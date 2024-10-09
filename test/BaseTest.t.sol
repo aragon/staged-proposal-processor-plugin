@@ -182,6 +182,7 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
 
         SPP.Plugin[] memory _plugins2 = new SPP.Plugin[](1);
         _plugins2[0] = _createPluginStruct(_plugin3, _plugin3Manual);
+        _plugins2[0].allowedBody = _plugin3;
 
         stages = new SPP.Stage[](_stageCount);
         for (uint i; i < _stageCount; i++) {
@@ -197,7 +198,7 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
         plugin = SPP.Plugin({
             pluginAddress: _pluginAddr,
             isManual: _isManual,
-            allowedBody: _pluginAddr,
+            allowedBody: address(dao),
             proposalType: proposalType
         });
     }

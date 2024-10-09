@@ -4,8 +4,13 @@ ds-test/=node_modules/ds-test/src
 @openzeppelin/contracts-upgradeable/=node_modules/@openzeppelin/contracts-upgradeable/
 
 @aragon/osx/=node_modules/@aragon/osx/
-@aragon/osx-new/=node_modules/@aragon/osx-new/packages/contracts/src/
 
 @aragon/osx-commons-contracts/=/home/sishir/Projects/aragon/osx-commons/contracts/
 
 @ensdomains/ens-contracts/=node_modules/@ensdomains/ens-contracts/
+
+@aragon/admin/=lib/admin-plugin/packages/contracts/src/
+@aragon/token-voting/=lib/token-voting-plugin/packages/contracts/src/
+@aragon/multisig/=lib/multisig-plugin/packages/contracts/src/
+
+@aragon/osx-new/=lib/osx/packages/contracts/src/
