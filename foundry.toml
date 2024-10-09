@@ -4,7 +4,6 @@ out = "out"
 libs = ["lib"]
 solc = "0.8.17"
 fs_permissions = [{ access = "read", path = "./node_modules/@aragon/osx-commons-configs/dist/deployments/json"}]
-via-ir=true
 
 # gas_reports = ["StagedProposalProcessor", "StagedProposalProcessorSetup"]
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

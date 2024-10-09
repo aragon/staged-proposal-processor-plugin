@@ -2,7 +2,6 @@
 pragma solidity ^0.8.8;
 
 import {BaseTest} from "../../../../BaseTest.t.sol";
-import {Errors} from "../../../../../src/libraries/Errors.sol";
 
 import {DaoUnauthorized} from "@aragon/osx/core/utils/auth.sol";
 
@@ -28,11 +27,17 @@ contract UpdateMetadata_SPP_UnitTest is BaseTest {
         _;
     }
 
-    function test_RevertWhen_MetadataIsEmpty() external whenCallerIsAllowed {
-        // it should revert.
+    function test_WhenMetadataIsEmpty() external whenCallerIsAllowed {
+        // it should update metadata.
+        // it should emit an event.
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.EmptyMetadata.selector));
+        vm.expectEmit({emitter: address(sppPlugin)});
+        emit MetadataUpdated(EMPTY_METADATA);
+
         sppPlugin.updateMetadata(EMPTY_METADATA);
+
+        bytes memory _newMetadata = sppPlugin.getMetadata();
+        assertEq(_newMetadata, EMPTY_METADATA);
     }
 
     function test_WhenMetadataIsNotEmpty() external whenCallerIsAllowed {

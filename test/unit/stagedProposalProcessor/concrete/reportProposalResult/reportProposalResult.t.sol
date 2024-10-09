@@ -5,8 +5,6 @@ import {Errors} from "../../../../../src/libraries/Errors.sol";
 import {StagedConfiguredSharedTest} from "../../../../StagedConfiguredSharedTest.t.sol";
 import {StagedProposalProcessor as SPP} from "../../../../../src/StagedProposalProcessor.sol";
 
-import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
-
 contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
     uint256 internal proposalId;
 
@@ -17,7 +15,7 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
             _allowFailureMap: 0,
             _metadata: DUMMY_METADATA,
             _startDate: START_DATE,
-            _data: defaultCreationParams
+            _proposalParams: defaultCreationParams
         });
         _;
     }
@@ -101,7 +99,7 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
             _allowFailureMap: 0,
             _metadata: "dummy metadata1",
             _startDate: START_DATE,
-            _data: defaultCreationParams
+            _proposalParams: defaultCreationParams
         });
         bool _tryAdvance = true;
 

@@ -29,7 +29,7 @@ contract TrustedForwarder {
     {
         (_callId, _allowFailureMap, failureMap, execResults);
         if (_actions.length != 1) {
-            revert Errors.NotPossible();
+            revert Errors.IncorrectActionCount();
         }
 
         // append msg.sender in the end of the actual calldata

@@ -2,15 +2,12 @@
 pragma solidity ^0.8.8;
 
 import {BaseTest} from "../../../../BaseTest.t.sol";
-import {Target} from "../../../../utils/Target.sol";
 import {Errors} from "../../../../../src/libraries/Errors.sol";
 import {PluginA} from "../../../../utils/dummy-plugins/PluginA.sol";
 import {SppHarness} from "../../../../utils/harness/SppHarness.sol";
 import {TrustedForwarder} from "../../../../../src/utils/TrustedForwarder.sol";
 import {GasExpensivePlugin} from "../../../../utils/dummy-plugins/GasExpensivePlugin.sol";
 import {StagedProposalProcessor as SPP} from "../../../../../src/StagedProposalProcessor.sol";
-
-import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
 
 contract CreatePluginProposals_64_63_Rule is BaseTest {
     uint256 proposalId;
@@ -32,11 +29,13 @@ contract CreatePluginProposals_64_63_Rule is BaseTest {
             _allowFailureMap: 0,
             _metadata: DUMMY_METADATA,
             _startDate: START_DATE,
-            _data: defaultCreationParams
+            _proposalParams: defaultCreationParams
         });
     }
 
-    function test_createPluginProposals_63_64_Rule() external {
+    function test_RevertWhen_CreatingPluginProposalAnd_6364_Rule() external {
+        // it should revert.
+
         uint256 gasBefore = gasleft();
         sppHarness.exposed_createPluginProposals({
             _proposalId: proposalId,

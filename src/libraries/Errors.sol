@@ -28,7 +28,7 @@ library Errors {
 
     // Trusted Forwarder
     /// @notice Thrown when trusted forwarder can not execute the actions.
-    error NotPossible();
+    error IncorrectActionCount();
 
     /// @notice Thrown when a plugin doesn't support IProposal interface.
     error InterfaceNotSupported();
