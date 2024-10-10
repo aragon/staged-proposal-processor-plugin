@@ -283,7 +283,7 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
             _allowFailureMap: 0,
             _metadata: _metadata,
             _startDate: START_DATE,
-            _data: defaultCreationParams
+            _proposalParams: defaultCreationParams
         });
     }
 

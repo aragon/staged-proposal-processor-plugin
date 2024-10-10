@@ -87,7 +87,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
             _allowFailureMap: 0,
             _metadata: DUMMY_METADATA,
             _startDate: START_DATE,
-            _data: defaultCreationParams
+            _proposalParams: defaultCreationParams
         });
         uint256 initialStage;
 
@@ -143,7 +143,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
             _allowFailureMap: 0,
             _metadata: DUMMY_METADATA,
             _startDate: START_DATE,
-            _data: customCreationParam
+            _proposalParams: customCreationParam
         });
         uint256 initialStage;
 
@@ -198,7 +198,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
             _allowFailureMap: 0,
             _metadata: DUMMY_METADATA,
             _startDate: START_DATE,
-            _data: defaultCreationParams
+            _proposalParams: defaultCreationParams
         });
         uint256 initialStage;
 
@@ -248,7 +248,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
             _allowFailureMap: 0,
             _metadata: DUMMY_METADATA,
             _startDate: START_DATE,
-            _data: defaultCreationParams
+            _proposalParams: defaultCreationParams
         });
 
         uint256 initialStage;
@@ -288,7 +288,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
             _allowFailureMap: 0,
             _metadata: DUMMY_METADATA,
             _startDate: START_DATE,
-            _data: defaultCreationParams
+            _proposalParams: defaultCreationParams
         });
 
         // check proposal can not advance

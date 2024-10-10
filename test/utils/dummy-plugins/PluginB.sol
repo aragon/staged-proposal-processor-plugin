@@ -6,8 +6,6 @@ import {TrustedForwarder} from "../../../src/utils/TrustedForwarder.sol";
 import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
 
 contract PluginB {
-    error NotPossible();
-
     TrustedForwarder public trustedForwarder;
 
     constructor(address _trustedForwarder) {

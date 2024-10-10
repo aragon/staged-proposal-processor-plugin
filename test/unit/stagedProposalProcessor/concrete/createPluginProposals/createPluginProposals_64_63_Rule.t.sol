@@ -31,7 +31,7 @@ contract CreatePluginProposals_64_63_Rule is BaseTest {
             _allowFailureMap: 0,
             _metadata: DUMMY_METADATA,
             _startDate: START_DATE,
-            _data: defaultCreationParams
+            _proposalParams: defaultCreationParams
         });
     }
 

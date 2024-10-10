@@ -36,6 +36,9 @@ contract StagedProposalProcessor is
     /// @notice The ID of the permission required to call the `updateStages` function.
     bytes32 public constant UPDATE_STAGES_PERMISSION_ID = keccak256("UPDATE_STAGES_PERMISSION");
 
+    /// @notice Used to distinguish proposals where the SPP was not able to create a proposal on a sub-plugin.
+    uint256 private constant PROPOSAL_WITHOUT_ID = type(uint256).max;
+
     enum ProposalType {
         Approval,
         Veto
@@ -163,14 +166,15 @@ contract StagedProposalProcessor is
     /// Uses bitmap representation.
     /// If the bit at index `x` is 1, the tx succeeds even if the action at `x` failed.
     /// Passing 0 will be treated as atomic execution.
-    /// @param _data The extra abi encoded parameters for each sub-plugin's createProposal function.
+    /// @param _startDate The date at which first stage's plugins' proposals must be started at.
+    /// @param _proposalParams The extra abi encoded parameters for each sub-plugin's createProposal function.
     /// @return proposalId The ID of the proposal.
     function createProposal(
         bytes memory _metadata,
         Action[] memory _actions,
         uint256 _allowFailureMap,
         uint64 _startDate,
-        bytes[][] memory _data
+        bytes[][] memory _proposalParams
     ) public virtual auth(CREATE_PROPOSAL_PERMISSION_ID) returns (uint256 proposalId) {
         // If `currentConfigIndex` is 0, this means the plugin was installed
         // with empty configurations and still hasn't updated stages
@@ -212,10 +216,10 @@ contract StagedProposalProcessor is
 
         // No need to store the very first stage's data as it only
         // gets used in this very transaction.
-        if (_data.length > 1) {
-            bytes[][] memory tempData = new bytes[][](_data.length - 1);
-            for (uint i = 1; i < _data.length; i++) {
-                tempData[i - 1] = _data[i];
+        if (_proposalParams.length > 1) {
+            bytes[][] memory tempData = new bytes[][](_proposalParams.length - 1);
+            for (uint i = 1; i < _proposalParams.length; i++) {
+                tempData[i - 1] = _proposalParams[i];
             }
             createProposalParams[proposalId] = tempData;
         }
@@ -224,7 +228,7 @@ contract StagedProposalProcessor is
             proposalId,
             0,
             proposal.lastStageTransition,
-            _data.length > 0 ? _data[0] : new bytes[](0)
+            _proposalParams.length > 0 ? _proposalParams[0] : new bytes[](0)
         );
 
         emit ProposalCreated({
@@ -246,15 +250,19 @@ contract StagedProposalProcessor is
         uint64 /** */,
         bytes memory _data
     ) public virtual override returns (uint256 proposalId) {
-        proposalId = uint256(
-            createProposal(_metadata, _actions, 0, _startDate, abi.decode(_data, (bytes[][])))
+        proposalId = createProposal(
+            _metadata,
+            _actions,
+            0,
+            _startDate,
+            abi.decode(_data, (bytes[][]))
         );
     }
 
     /// @inheritdoc IProposal
     /// @dev Since SPP is also IProposal, it's required to override. Though, ABI can not be defined at compile time.
     function createProposalParamsABI() external pure virtual override returns (string memory) {
-        return "";
+        return "()";
     }
 
     /// @notice Hashing function used to (re)build the proposal id from the proposal details..
@@ -344,13 +352,11 @@ contract StagedProposalProcessor is
             revert Errors.ProposalNotExists(_proposalId);
         }
 
-        if (_canProposalAdvance(_proposalId)) {
-            // advance
-            _advanceProposal(_proposalId);
-        } else {
-            //  revert
+        if (!_canProposalAdvance(_proposalId)) {
             revert Errors.ProposalCannotAdvance(_proposalId);
         }
+
+        _advanceProposal(_proposalId);
     }
 
     /// @notice Decides if the proposal can be advanced to the next stage.
@@ -499,7 +505,7 @@ contract StagedProposalProcessor is
         uint256 _proposalId,
         uint16 _stageId,
         uint64 _startDate,
-        bytes[] memory _createProposalParams
+        bytes[] memory _stageProposalParams
     ) internal virtual {
         Proposal storage proposal = proposals[_proposalId];
 
@@ -536,7 +542,7 @@ contract StagedProposalProcessor is
                     actions,
                     _startDate,
                     _startDate + stage.voteDuration,
-                    _createProposalParams.length > 0 ? _createProposalParams[i] : bytes("")
+                    _stageProposalParams.length > 0 ? _stageProposalParams[i] : bytes("")
                 )
             returns (uint256 pluginProposalId) {
                 pluginProposalIds[_proposalId][_stageId][
@@ -554,9 +560,9 @@ contract StagedProposalProcessor is
                     revert Errors.InsufficientGas();
                 }
 
-                pluginProposalIds[_proposalId][_stageId][stage.plugins[i].pluginAddress] = type(
-                    uint256
-                ).max;
+                pluginProposalIds[_proposalId][_stageId][
+                    stage.plugins[i].pluginAddress
+                ] = PROPOSAL_WITHOUT_ID;
             }
         }
     }
@@ -598,11 +604,11 @@ contract StagedProposalProcessor is
             return false;
         }
 
-        if (approvals >= stage.approvalThreshold) {
-            return true;
+        if (approvals < stage.approvalThreshold) {
+            return false;
         }
 
-        return false;
+        return true;
     }
 
     /// @notice Internal function to calculate the votes and vetoes for a proposal.
@@ -629,7 +635,7 @@ contract StagedProposalProcessor is
             if (pluginResults[_proposalId][currentStage][plugin.proposalType][allowedBody]) {
                 // result was already reported
                 plugin.proposalType == ProposalType.Approval ? ++votes : ++vetoes;
-            } else if (pluginProposalId != type(uint256).max && !plugin.isManual) {
+            } else if (pluginProposalId != PROPOSAL_WITHOUT_ID && !plugin.isManual) {
                 // result was not reported yet
                 if (IProposal(stage.plugins[i].pluginAddress).canExecute(pluginProposalId)) {
                     plugin.proposalType == ProposalType.Approval ? ++votes : ++vetoes;
