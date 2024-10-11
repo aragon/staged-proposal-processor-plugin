@@ -81,9 +81,10 @@ contract StagedProposalProcessor is
     // proposalId => stageId => allowedBody => resultType
     mapping(uint256 => mapping(uint16 => mapping(address => ResultType))) private pluginResults;
 
+    mapping(uint256 => mapping(uint16 => mapping(uint256 => bytes))) private createProposalParams;
+
     mapping(uint256 => Proposal) private proposals;
     mapping(uint256 => Stage[]) private stages;
-    mapping(uint256 => bytes[][]) private createProposalParams;
 
     uint16 private currentConfigIndex; // Index from `stages` storage mapping
     address private trustedForwarder;
@@ -222,11 +223,13 @@ contract StagedProposalProcessor is
         // No need to store the very first stage's data as it only
         // gets used in this very transaction.
         if (_proposalParams.length > 1) {
-            bytes[][] memory tempData = new bytes[][](_proposalParams.length - 1);
             for (uint i = 1; i < _proposalParams.length; i++) {
-                tempData[i - 1] = _proposalParams[i];
+                for (uint j = 0; j < _proposalParams[i].length; j++) {
+                    if (_proposalParams[i][j].length != 0) {
+                        createProposalParams[proposalId][uint16(i)][j] = _proposalParams[i][j];
+                    }
+                }
             }
-            createProposalParams[proposalId] = tempData;
         }
 
         _createPluginProposals(
@@ -267,7 +270,7 @@ contract StagedProposalProcessor is
     /// @inheritdoc IProposal
     /// @dev Since SPP is also IProposal, it's required to override. Though, ABI can not be defined at compile time.
     function customProposalParamsABI() external pure virtual override returns (string memory) {
-        return "()";
+        return "(bytes[][])";
     }
 
     /// @notice Returns all information for a proposal by its ID.
@@ -400,8 +403,8 @@ contract StagedProposalProcessor is
 
     /// @param _proposalId The ID of the proposal.
     /// @return The subplugins' createProposal's `data` parameter encoded. This doesn't include the very first stage's data.
-    function getCreateProposalParams(uint256 _proposalId) public view returns (bytes[][] memory) {
-        return createProposalParams[_proposalId];
+    function getCreateProposalParams(uint256 _proposalId, uint16 _stageId, uint256 _index) public view returns (bytes memory) {
+        return createProposalParams[_proposalId][_stageId][_index];
     }
 
     // =========================== INTERNAL/PRIVATE FUNCTIONS =============================
@@ -542,13 +545,17 @@ contract StagedProposalProcessor is
             // the remaining 1/64 gas are sufficient to successfully finish the call.
             uint256 gasBefore = gasleft();
 
+            bytes memory customParams = _stageId == 0 && _stageProposalParams.length > 0
+                ? _stageProposalParams[i]
+                : createProposalParams[_proposalId][_stageId][i];
+
             try
                 IProposal(stage.plugins[i].pluginAddress).createProposal(
                     proposalMetadata,
                     actions,
                     _startDate,
                     _startDate + stage.voteDuration,
-                    _stageProposalParams.length > 0 ? _stageProposalParams[i] : bytes("")
+                    customParams
                 )
             returns (uint256 pluginProposalId) {
                 pluginProposalIds[_proposalId][_stageId][
@@ -669,15 +676,13 @@ contract StagedProposalProcessor is
         if (_proposal.currentStage < _stages.length - 1) {
             uint16 newStage = ++_proposal.currentStage;
 
-            bytes[][] memory params = createProposalParams[_proposalId];
-
             _createPluginProposals(
                 _proposalId,
                 newStage,
                 uint64(block.timestamp),
                 // Because we don't store the very first stage's `_data`,
                 // subtract 1 to retrieve next stage's data.
-                params.length > 0 ? params[newStage - 1] : new bytes[](0)
+                new bytes[](0)
             );
 
             emit ProposalAdvanced(_proposalId, newStage);
