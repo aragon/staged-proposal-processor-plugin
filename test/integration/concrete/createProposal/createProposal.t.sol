@@ -286,8 +286,12 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
             assertEq(PluginA(_currentPlugin.pluginAddress).proposalCount(), 0, "proposalsCount");
         }
 
-        // check extra params was not stored since was not provided
-        assertEq(sppPlugin.getCreateProposalParams(proposalId), defaultCreationParams);
+        // check extra params was not stored since was not provided.
+        for (uint256 i; i < stages.length; i++) {
+            for (uint256 j; j < stages[i].plugins.length; j++) {
+                assertEq(sppPlugin.getCreateProposalParams(proposalId, uint16(i), j), bytes(""));
+            }
+        }
     }
 
     function test_WhenExtraParamsAreProvided()
@@ -392,19 +396,18 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
             }
         }
 
-        // // check sub proposals on non zero stage
+        // check sub proposals on non zero stage
         for (uint256 i; i < stages[1].plugins.length; i++) {
             _currentPlugin = stages[1].plugins[i];
             assertEq(PluginA(_currentPlugin.pluginAddress).proposalCount(), 0, "proposalsCount");
         }
         
-        bytes[][] memory tempData = new bytes[][](customCreationParam.length - 1);
-        for (uint i = 1; i < customCreationParam.length; i++) {
-            tempData[i - 1] = customCreationParam[i];
+        // check extra params was not stored since was not provided.
+        for (uint256 i = 1; i < stages.length; i++) {
+            for (uint256 j; j < stages[i].plugins.length; j++) {
+                assertEq(sppPlugin.getCreateProposalParams(proposalId, uint16(i), j), customCreationParam[i][j]);
+            }
         }
-                
-        // check extra params are stored
-        assertEq(sppPlugin.getCreateProposalParams(proposalId), tempData);
     }
 
     function test_GivenSomePluginsOnStageZeroAreManual()

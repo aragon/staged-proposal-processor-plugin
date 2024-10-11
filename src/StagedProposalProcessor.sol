@@ -268,9 +268,9 @@ contract StagedProposalProcessor is
     }
 
     /// @inheritdoc IProposal
-    /// @dev Since SPP is also IProposal, it's required to override. Though, ABI can not be defined at compile time.
+    /// @dev Since SPP is also IProposal, it's required to override.
     function customProposalParamsABI() external pure virtual override returns (string memory) {
-        return "(bytes[][])";
+        return "(bytes[][] subPluginsCustomProposalParamsABI)";
     }
 
     /// @notice Returns all information for a proposal by its ID.
@@ -403,7 +403,11 @@ contract StagedProposalProcessor is
 
     /// @param _proposalId The ID of the proposal.
     /// @return The subplugins' createProposal's `data` parameter encoded. This doesn't include the very first stage's data.
-    function getCreateProposalParams(uint256 _proposalId, uint16 _stageId, uint256 _index) public view returns (bytes memory) {
+    function getCreateProposalParams(
+        uint256 _proposalId,
+        uint16 _stageId,
+        uint256 _index
+    ) public view returns (bytes memory) {
         return createProposalParams[_proposalId][_stageId][_index];
     }
 
@@ -411,7 +415,7 @@ contract StagedProposalProcessor is
 
     /// @notice Internal function to update stage configuration.
     /// @dev It's a caller's responsibility not to call this in case `_stages` are empty.
-    /// This function can not be overriden as it's crucial to not allow duplicating plugins
+    /// This function can not be overridden as it's crucial to not allow duplicating plugins
     //  in the same stage, because proposal creation and report functions depend on this assumption.
     /// @param _stages The stages configuration.
     function _updateStages(Stage[] memory _stages) internal {
@@ -528,15 +532,22 @@ contract StagedProposalProcessor is
             // If plugin proposal creation should be manual, skip it.
             if (plugin.isManual) continue;
 
-            bytes memory actionData = abi.encodeCall(
-                this.reportProposalResult,
-                (_proposalId, _stageId, plugin.resultType, stage.vetoThreshold == 0)
-            );
-
             Action[] memory actions = new Action[](1);
-            actions[0] = Action({to: address(this), value: 0, data: actionData});
+
+            bytes memory customParams = _stageId == 0 && _stageProposalParams.length > 0
+                ? _stageProposalParams[i]
+                : createProposalParams[_proposalId][_stageId][i];
 
             bytes memory proposalMetadata = abi.encode(address(this), _proposalId, _stageId);
+
+            {
+                bytes memory actionData = abi.encodeCall(
+                    this.reportProposalResult,
+                    (_proposalId, _stageId, plugin.resultType, stage.vetoThreshold == 0)
+                );
+
+                actions[0] = Action({to: address(this), value: 0, data: actionData});
+            }
 
             // Make sure that the `createProposal` call did not fail because
             // 63/64 of `gasleft()` was insufficient to execute the external call.
@@ -544,10 +555,6 @@ contract StagedProposalProcessor is
             // where 63/64 is insufficient causing it to fail, but where
             // the remaining 1/64 gas are sufficient to successfully finish the call.
             uint256 gasBefore = gasleft();
-
-            bytes memory customParams = _stageId == 0 && _stageProposalParams.length > 0
-                ? _stageProposalParams[i]
-                : createProposalParams[_proposalId][_stageId][i];
 
             try
                 IProposal(stage.plugins[i].pluginAddress).createProposal(
