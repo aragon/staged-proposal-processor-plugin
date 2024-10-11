@@ -94,14 +94,14 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         _;
     }
 
-    modifier proposalTypeVeto() {
-        proposalType = SPP.ProposalType.Veto;
+    modifier resultTypeVeto() {
+        resultType = SPP.ResultType.Veto;
         _;
     }
 
     function test_whenMinAdvanceIsLowerThanVoteDuration_WhenVetoThresholdIsMet()
         external
-        proposalTypeVeto
+        resultTypeVeto
         whenMinAdvanceIsLowerThanVoteDuration
         whenVetoStageThresholdIsNotZero
         whenVoteDurationIsReached
@@ -244,7 +244,7 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
 
     function test_whenMinAdvanceIsBiggerThanVoteDuration_WhenVetoThresholdIsMet()
         external
-        proposalTypeVeto
+        resultTypeVeto
         whenMinAdvanceIsBiggerThanVoteDuration
         whenVoteDurationAndMinAdvanceAreReached
         whenVetoStageThresholdIsNotZero

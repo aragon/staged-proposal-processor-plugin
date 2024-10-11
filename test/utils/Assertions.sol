@@ -11,6 +11,7 @@ abstract contract Assertions is StdAssertions {
     event log_named_array(string key, SPP.Stage[] stage);
     event log_named_array(string key, Action[] action);
     event log_named_array(string key, bytes[][] value);
+    event log_named_array(string key, SPP.ResultType value);
 
     /// @dev Compares two {SPP.Stage} arrays.
     function assertEq(SPP.Stage[] memory a, SPP.Stage[] memory b) internal {
@@ -48,6 +49,16 @@ abstract contract Assertions is StdAssertions {
     function assertEq(bytes[][] memory a, bytes[][] memory b) internal {
         if (keccak256(abi.encode(a)) != keccak256(abi.encode(b))) {
             emit log("Error: a == b not satisfied [bytes[][]]");
+            emit log_named_array("   Left", a);
+            emit log_named_array("  Right", b);
+            fail();
+        }
+    }
+
+    // @dev Compares two SPP.ResultType enums.
+    function assertEq(SPP.ResultType a, SPP.ResultType b) internal {
+        if (a != b) {
+            emit log("Error: a == b not satisfied [SPP.ResultType]");
             emit log_named_array("   Left", a);
             emit log_named_array("  Right", b);
             fail();
