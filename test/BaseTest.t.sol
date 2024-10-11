@@ -43,7 +43,7 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
     uint16 internal approvalThreshold = 1;
     uint16 internal vetoThreshold = 1;
 
-    SPP.ProposalType internal proposalType = SPP.ProposalType.Approval;
+    SPP.ResultType internal resultType = SPP.ResultType.Approval;
 
     IPlugin.TargetConfig internal defaultTargetConfig;
 
@@ -198,7 +198,7 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
             pluginAddress: _pluginAddr,
             isManual: _isManual,
             allowedBody: _pluginAddr,
-            proposalType: proposalType
+            resultType: resultType
         });
     }
 

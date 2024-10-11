@@ -12,7 +12,7 @@ contract GetProposalTally_SPP_IntegrationTest is BaseTest {
     uint256 proposalId;
 
     modifier whenExistentProposal() {
-        proposalType = SPP.ProposalType.Veto;
+        resultType = SPP.ResultType.Veto;
         proposalId = _configureStagesAndCreateDummyProposal(DUMMY_METADATA);
 
         _;
@@ -42,7 +42,7 @@ contract GetProposalTally_SPP_IntegrationTest is BaseTest {
     {
         // it should not count unreported results.
 
-        proposalType = SPP.ProposalType.Veto;
+        resultType = SPP.ResultType.Veto;
         // setup stages
         SPP.Stage[] memory stages = _createDummyStages({
             _stageCount: 2,
