@@ -408,7 +408,7 @@ contract StagedProposalProcessor is
 
     /// @notice Internal function to update stage configuration.
     /// @dev It's a caller's responsibility not to call this in case `_stages` are empty.
-    /// This function can not be overriden as it's crucial to not allow duplicating plugins
+    /// This function can not be overridden as it's crucial to not allow duplicating plugins
     //  in the same stage, because proposal creation and report functions depend on this assumption.
     /// @param _stages The stages configuration.
     function _updateStages(Stage[] memory _stages) internal {
