@@ -540,6 +540,7 @@ contract StagedProposalProcessor is
 
             bytes memory proposalMetadata = abi.encode(address(this), _proposalId, _stageId);
 
+            // avoid stack too deep.
             {
                 bytes memory actionData = abi.encodeCall(
                     this.reportProposalResult,
@@ -687,8 +688,6 @@ contract StagedProposalProcessor is
                 _proposalId,
                 newStage,
                 uint64(block.timestamp),
-                // Because we don't store the very first stage's `_data`,
-                // subtract 1 to retrieve next stage's data.
                 new bytes[](0)
             );
 
