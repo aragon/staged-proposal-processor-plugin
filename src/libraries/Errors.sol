@@ -28,8 +28,8 @@ library Errors {
 
     /// @notice Thrown when the body tries to submit report for the stage id that has not yet become active.
     /// @param currentStageId The stage id that proposal is currently at.
-    /// @param submittedStageId The stage id for which the report is being submitted.
-    error StageIdInvalid(uint64 currentStageId, uint64 submittedStageId);
+    /// @param reportedStageId The stage id for which the report is being submitted.
+    error StageIdInvalid(uint64 currentStageId, uint64 reportedStageId);
 
     /// @notice Thrown when the metadata is empty.
     error EmptyMetadata();
