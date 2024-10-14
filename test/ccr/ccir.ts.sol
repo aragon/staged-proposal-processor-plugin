@@ -5,13 +5,13 @@ import {Test, Vm} from "forge-std/Test.sol";
 
 import {StagedProposalProcessor as SPP} from "../../src/StagedProposalProcessor.sol";
 import {PluginSetupProcessor} from "@aragon/osx-new/framework/plugin/setup/PluginSetupProcessor.sol";
+import {ENSSubdomainRegistrar} from "@aragon/osx-new/framework/utils/ens/ENSSubdomainRegistrar.sol";
+
 import {PluginRepo} from "@aragon/osx-new/framework/plugin/repo/PluginRepo.sol";
-import {PluginRepoFactory} from "@aragon/osx-new/framework/plugin/repo/PluginRepoFactory.sol";
 import {MajorityVotingBase} from "@aragon/token-voting/MajorityVotingBase.sol";
 import {Action, IExecutor} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
 import {IPluginSetup} from "@aragon/osx-commons-contracts/src/plugin/setup/IPluginSetup.sol";
 import {PermissionLib} from "@aragon/osx-commons-contracts/src/permission/PermissionLib.sol";
-
 
 
 import {
@@ -35,6 +35,7 @@ import {AdminSetup} from "@aragon/admin/AdminSetup.sol";
 
 //TokenVoting imports
 import {TokenVoting} from "@aragon/token-voting/TokenVoting.sol";
+import {IMajorityVoting} from "@aragon/token-voting/IMajorityVoting.sol";
 import {TokenVotingSetup} from "@aragon/token-voting/TokenVotingSetup.sol";
 import {GovernanceERC20} from "@aragon/token-voting/ERC20/governance/GovernanceERC20.sol";
 
@@ -57,6 +58,9 @@ import {PermissionManager} from "@aragon/osx-new/core/permission/PermissionManag
 import {PluginRepoFactory as IPluginRepoFactory} from "@aragon/osx-new/framework/plugin/repo/PluginRepoFactory.sol";
 import "forge-std/console.sol";
 import {BaseTest} from "./../BaseTest.t.sol";
+import {TrustedForwarder} from "../../src/utils/TrustedForwarder.sol";
+import {Target} from '../utils/Target.sol';
+import {PluginRepoRegistry} from "@aragon/osx-new/framework/plugin/repo/PluginRepoRegistry.sol";
 
 contract SppIntegrationTest is BaseTest {
 
@@ -78,15 +82,41 @@ contract SppIntegrationTest is BaseTest {
 
     address public adminPlugin;
 
-    address private trusteeForwarder;
-
     error LogNotFound(bytes32 topic);
-
 
     function setUp() override public {
         setupPluginRepo();
         createDaoWithAuthPlugin();
+        trustedForwarder = new TrustedForwarder();
+        target = new Target();
+//        setupDaoRegistry();
     }
+
+//    function setupDaoRegistry() internal {
+//        IDAO managementDao = IDAO(
+//            createProxyAndCall(
+//                address(new DAO()),
+//                abi.encodeCall(DAO.initialize, ("", address(this), address(0x0), ""))
+//            )
+//        );
+//
+//        daoRegistry = createProxyAndCall(
+//            address(new DAORegistry()),
+//            abi.encodeCall(DAORegistry.initialize, (address(managementDao), ENSSubdomainRegistrar(0x11C12ECfdDa98e19D765904DCe1Ac2C0504F64c5)))
+//        );
+//
+//        PluginRepoRegistry repoRegistry = createProxyAndCall(
+//            address(new PluginRepoRegistry()),
+//            abi.encodeCall(PluginRepoRegistry.initialize, (address(managementDao), ENSSubdomainRegistrar(0x11C12ECfdDa98e19D765904DCe1Ac2C0504F64c5)))
+//        );
+//
+//        IPluginRepoFactory pluginRepoFactory = new IPluginRepoFactory(repoRegistry);
+//
+//        daoFactory = new DAOFactory(daoRegistry, psp);
+//
+//        managementDao.grant(address(daoRegistry), address(daoFactory), keccak256("REGISTER_DAO_PERMISSION"));
+//        managementDao.grant(address(repoRegistry), address(pluginRepoFactory), keccak256("REGISTER_PLUGIN_REPO_PERMISSION"));
+//    }
 
     function setupPluginRepo() internal {
         console.log("Setting up Plugin Repos");
@@ -203,7 +233,7 @@ contract SppIntegrationTest is BaseTest {
         return
             PluginSetupProcessor.PrepareInstallationParams(
             PluginSetupRef(PluginRepo.Tag(1, 1), PluginRepo(multisigPluginRepo)),
-            abi.encode(members, settings, targetConfig)
+            abi.encode(members, settings, targetConfig, bytes("0x11"))
         );
     }
 
@@ -217,7 +247,7 @@ contract SppIntegrationTest is BaseTest {
             votingMode: MajorityVotingBase.VotingMode.EarlyExecution,
             supportThreshold: 1,
             minParticipation: 1,
-            minDuration: 100 minutes,
+            minDuration: 61 minutes,
             minProposerVotingPower: 0
         });
 
@@ -256,7 +286,7 @@ contract SppIntegrationTest is BaseTest {
     returns (PluginSetupProcessor.PrepareInstallationParams memory)
     {
         PluginUUPSUpgradeable.TargetConfig memory targetConfig = PluginUUPSUpgradeable
-            .TargetConfig({target: address(dao), operation: PluginUUPSUpgradeable.Operation.Call});
+            .TargetConfig({target: address(0), operation: PluginUUPSUpgradeable.Operation.Call});
 
         SPP.Stage[] memory stages = new SPP.Stage[](0);
 
@@ -381,7 +411,7 @@ contract SppIntegrationTest is BaseTest {
             plugins: stage2Plugins,
             minAdvance: 10 minutes,
             maxAdvance: 20 minutes,
-            voteDuration: 15 minutes,
+            voteDuration: 100 minutes,
             approvalThreshold: 1,
             vetoThreshold: 0
         });
@@ -410,7 +440,7 @@ contract SppIntegrationTest is BaseTest {
         console.log("Dao Address: %s", address(dao));
 
         PermissionLib.MultiTargetPermission[]
-        memory permissions = new PermissionLib.MultiTargetPermission[](4);
+        memory permissions = new PermissionLib.MultiTargetPermission[](5);
 
         permissions[0] = PermissionLib.MultiTargetPermission({
             operation: PermissionLib.Operation.Grant,
@@ -443,6 +473,14 @@ contract SppIntegrationTest is BaseTest {
             who: address(sppPlugin),
             condition: PermissionLib.NO_CONDITION,
             permissionId: SPP(sppPlugin).CREATE_PROPOSAL_PERMISSION_ID()
+        });
+
+        permissions[4] = PermissionLib.MultiTargetPermission({
+            operation: PermissionLib.Operation.Grant,
+            where: sppPlugin,
+            who: address(this),
+            condition: PermissionLib.NO_CONDITION,
+            permissionId: SPP(sppPlugin).SET_TRUSTED_FORWARDER_PERMISSION_ID()
         });
 
         Action[] memory setPermissionActions = new Action[](1);
@@ -482,13 +520,24 @@ contract SppIntegrationTest is BaseTest {
             multisigPluginAddr
         );
 
-        Multisig(multisigPluginAddr).approve(subProposalIdStage1, false);
-        Multisig(multisigPluginAddr).execute(subProposalIdStage1);
+        tagBlockTimestamp = tagBlockTimestamp + 10 minutes + 1 seconds;
 
-        vm.warp(tagBlockTimestamp  + 10 minutes + 1 seconds);
+        vm.warp(tagBlockTimestamp);
 
-        bool canAdvance = SPP(sppPlugin).canProposalAdvance(proposalId);
+        Multisig(multisigPluginAddr).approve(subProposalIdStage1, true);
 
-        console.log("Can Advance: %s", canAdvance);
+        vm.warp(tagBlockTimestamp + 11 minutes);
+
+        uint256 subProposalIdStage2 = SPP(sppPluginAddress).pluginProposalIds(
+            proposalId,
+            1,
+            tokenvotingPluginAddr
+        );
+
+        TokenVoting(tokenvotingPluginAddr).vote(
+            subProposalIdStage2,
+            IMajorityVoting.VoteOption.Yes,
+            true
+        );
     }
 }
