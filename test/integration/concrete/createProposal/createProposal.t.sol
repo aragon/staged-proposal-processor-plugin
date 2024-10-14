@@ -11,8 +11,8 @@ import {DaoUnauthorized} from "@aragon/osx/core/utils/auth.sol";
 import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
 
 import {
-    PluginUUPSUpgradeable as UUPSUpgradeable
-} from "@aragon/osx-commons-contracts/src/plugin/PluginUUPSUpgradeable.sol";
+    IPlugin
+} from "@aragon/osx-commons-contracts/src/plugin/IPlugin.sol";
 
 contract CreateProposal_SPP_IntegrationTest is BaseTest {
     function test_RevertWhen_CallerIsNotAllowed() external {
@@ -252,9 +252,9 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
                 stageConfigIndex: 1,
                 currentStage: 0,
                 executed: false,
-                targetConfig: UUPSUpgradeable.TargetConfig({
+                targetConfig: IPlugin.TargetConfig({
                     target: address(trustedForwarder),
-                    operation: UUPSUpgradeable.Operation.Call
+                    operation: IPlugin.Operation.Call
                 })
             })
         );
@@ -353,9 +353,9 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
                 stageConfigIndex: 1,
                 currentStage: 0,
                 executed: false,
-                targetConfig: UUPSUpgradeable.TargetConfig({
+                targetConfig: IPlugin.TargetConfig({
                     target: address(trustedForwarder),
-                    operation: UUPSUpgradeable.Operation.Call
+                    operation: IPlugin.Operation.Call
                 })
             })
         );
