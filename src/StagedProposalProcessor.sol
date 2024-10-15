@@ -220,16 +220,25 @@ contract StagedProposalProcessor is
             }
         }
 
-        // No need to store the very first stage's data as it only
-        // gets used in this very transaction.
-        if (_proposalParams.length > 1) {
-            for (uint i = 1; i < _proposalParams.length; i++) {
-                for (uint j = 0; j < _proposalParams[i].length; j++) {
-                    if (_proposalParams[i][j].length != 0) {
-                        createProposalParams[proposalId][uint16(i)][j] = _proposalParams[i][j];
-                    }
+        // To reduce the gas costs significantly, don't store the very 
+        // first stage's params as they only get used in this current tx 
+        // and will not be needed later on for advancing.
+        for (uint i = 1; i < _proposalParams.length; i++) {
+            for (uint j = 0; j < _proposalParams[i].length; j++) {
+                if (_proposalParams[i][j].length != 0) {
+                    createProposalParams[proposalId][uint16(i)][j] = _proposalParams[i][j];
                 }
             }
+        }
+
+        // Avoid out-of-bounds error in `_createPluginProposals` and
+        // fail early to avoid more costs than necessary.
+        if (
+            _proposalParams.length > 0 &&
+            _proposalParams[0].length > 0 &&
+            stages[index][0].plugins.length != _proposalParams[0].length
+        ) {
+            revert Errors.InvalidCustomParamsForFirstStage();
         }
 
         _createPluginProposals(
@@ -526,6 +535,11 @@ contract StagedProposalProcessor is
 
         Stage storage stage = stages[proposal.stageConfigIndex][_stageId];
 
+        // `_stageProposalParams` is only non-empty for non-zero stage ids, 
+        // since we don't store the params for first stage. If stageId is non-zero,
+        // grab the params from the storage.
+        bool isZeroStageParamsNonEmpty = _stageId == 0 && _stageProposalParams.length > 0;
+
         for (uint256 i = 0; i < stage.plugins.length; i++) {
             Plugin storage plugin = stage.plugins[i];
 
@@ -534,21 +548,18 @@ contract StagedProposalProcessor is
 
             Action[] memory actions = new Action[](1);
 
-            bytes memory customParams = _stageId == 0 && _stageProposalParams.length > 0
+            bytes memory customParams = isZeroStageParamsNonEmpty
                 ? _stageProposalParams[i]
                 : createProposalParams[_proposalId][_stageId][i];
 
-            bytes memory proposalMetadata = abi.encode(address(this), _proposalId, _stageId);
-
-            // avoid stack too deep.
-            {
-                bytes memory actionData = abi.encodeCall(
+            actions[0] = Action({
+                to: address(this),
+                value: 0,
+                data: abi.encodeCall(
                     this.reportProposalResult,
                     (_proposalId, _stageId, plugin.resultType, stage.vetoThreshold == 0)
-                );
-
-                actions[0] = Action({to: address(this), value: 0, data: actionData});
-            }
+                )
+            });
 
             // Make sure that the `createProposal` call did not fail because
             // 63/64 of `gasleft()` was insufficient to execute the external call.
@@ -559,7 +570,7 @@ contract StagedProposalProcessor is
 
             try
                 IProposal(stage.plugins[i].pluginAddress).createProposal(
-                    proposalMetadata,
+                    abi.encode(address(this), _proposalId, _stageId),
                     actions,
                     _startDate,
                     _startDate + stage.voteDuration,
@@ -684,12 +695,7 @@ contract StagedProposalProcessor is
         if (_proposal.currentStage < _stages.length - 1) {
             uint16 newStage = ++_proposal.currentStage;
 
-            _createPluginProposals(
-                _proposalId,
-                newStage,
-                uint64(block.timestamp),
-                new bytes[](0)
-            );
+            _createPluginProposals(_proposalId, newStage, uint64(block.timestamp), new bytes[](0));
 
             emit ProposalAdvanced(_proposalId, newStage);
         } else {
