@@ -76,7 +76,8 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         whenAllPluginsOnNextStageAreNonManual
         whenSomeSubProposalNeedExtraParams
     {
-        // it should create proposal.
+        // it should emit event.
+        // it should advance proposal.
         // it should not create sub proposals since extra param was not provided.
 
         // create proposal
