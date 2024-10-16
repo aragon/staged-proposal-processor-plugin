@@ -7,12 +7,19 @@ AdvanceProposal_SPP_IntegrationTest
 │   │       ├── when all plugins on next stage are non manual
 │   │       │   ├── when some sub proposal need extra params
 │   │       │   │   ├── when extra params are not provided
-│   │       │   │   │   ├── it should create proposal.
 │   │       │   │   │   └── it should not create sub proposals since extra param was not provided.
-│   │       │   │   └── when extra params are provided
+│   │       │   │   ├── when extra params are provided
+│   │       │   │   │   ├── it should emit event.
+│   │       │   │   │   ├── it should advance proposal.
+│   │       │   │   │   └── it should create sub proposals with correct extra params.
+│   │       │   │   ├── when extra params are provided and are big
+│   │       │   │   │   ├── it should emit event.
+│   │       │   │   │   ├── it should advance proposal.
+│   │       │   │   │   └── it should create sub proposals with correct extra params.
+│   │       │   │   └── when extra params are provided but not enough params // there are more sub plugins than extra params
 │   │       │   │       ├── it should emit event.
 │   │       │   │       ├── it should advance proposal.
-│   │       │   │       └── it should create sub proposals with correct extra params.
+│   │       │   │       └── it should not create sub proposals since extra param was not provided.
 │   │       │   └── when none sub proposal need extra params
 │   │       │       ├── it should emit event.
 │   │       │       ├── it should advance proposal.

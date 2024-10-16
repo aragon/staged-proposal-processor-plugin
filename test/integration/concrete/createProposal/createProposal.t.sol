@@ -8,11 +8,8 @@ import {PluginC} from "../../../utils/dummy-plugins/PluginC.sol";
 import {StagedProposalProcessor as SPP} from "../../../../src/StagedProposalProcessor.sol";
 
 import {DaoUnauthorized} from "@aragon/osx/core/utils/auth.sol";
+import {IPlugin} from "@aragon/osx-commons-contracts/src/plugin/IPlugin.sol";
 import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
-
-import {
-    IPlugin
-} from "@aragon/osx-commons-contracts/src/plugin/IPlugin.sol";
 
 contract CreateProposal_SPP_IntegrationTest is BaseTest {
     function test_RevertWhen_CallerIsNotAllowed() external {
@@ -335,6 +332,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
             actions: actions,
             allowFailureMap: 0
         });
+
         uint256 proposalId = sppPlugin.createProposal({
             _actions: actions,
             _allowFailureMap: 0,
@@ -401,11 +399,260 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
             _currentPlugin = stages[1].plugins[i];
             assertEq(PluginA(_currentPlugin.pluginAddress).proposalCount(), 0, "proposalsCount");
         }
-        
+
         // check extra params was not stored since was not provided.
         for (uint256 i = 1; i < stages.length; i++) {
             for (uint256 j; j < stages[i].plugins.length; j++) {
-                assertEq(sppPlugin.getCreateProposalParams(proposalId, uint16(i), j), customCreationParam[i][j]);
+                assertEq(
+                    sppPlugin.getCreateProposalParams(proposalId, uint16(i), j),
+                    customCreationParam[i][j]
+                );
+            }
+        }
+    }
+
+    function test_WhenExtraParamsAreProvidedAndAreBig()
+        external
+        whenStagesAreConfigured
+        whenProposalDoesNotExist
+        givenAllPluginsOnStageZeroAreNonManual
+        whenSubProposalCanBeCreated
+        whenSomeSubProposalNeedExtraParams
+    {
+        // it should emit events.
+        // it should create proposal.
+        // it should create non-manual sub proposals on stage zero with all needed params.
+        // it should store non-manual sub proposal ids.
+        // it should not create sub proposals on non zero stages.
+
+        Action[] memory actions = _createDummyActions();
+
+        // create custom params
+        bytes[][] memory customCreationParam = new bytes[][](2);
+        customCreationParam[0] = new bytes[](2);
+        customCreationParam[0][0] = abi.encodePacked(
+            "data1data1data1data1data1data1data1data1data1data1data1data1data1data1data1data1data1data1data1data1data1"
+        );
+        customCreationParam[0][1] = abi.encodePacked(
+            "data2data1data1data1data1data1data1data1data1data1data1data1data1data1data1data1data1data1data1data1data1data1"
+        );
+        customCreationParam[1] = new bytes[](1);
+        customCreationParam[1][0] = abi.encodePacked(
+            "data3data1data1data1data1data1data1data1data1data1data1data1data1data1data1data1data1data1data1data1data1data1data1data1"
+        );
+
+        // check event
+        vm.expectEmit({
+            checkTopic1: false,
+            checkTopic2: true,
+            checkTopic3: true,
+            checkData: true,
+            emitter: address(sppPlugin)
+        });
+        emit ProposalCreated({
+            proposalId: 0,
+            creator: users.manager,
+            startDate: START_DATE,
+            endDate: 0,
+            metadata: DUMMY_METADATA,
+            actions: actions,
+            allowFailureMap: 0
+        });
+
+        uint256 proposalId = sppPlugin.createProposal({
+            _actions: actions,
+            _allowFailureMap: 0,
+            _metadata: DUMMY_METADATA,
+            _startDate: START_DATE,
+            _proposalParams: customCreationParam
+        });
+
+        // check proposal
+        SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
+
+        assertEq(
+            proposal,
+            SPP.Proposal({
+                allowFailureMap: 0,
+                creator: users.manager,
+                lastStageTransition: START_DATE,
+                metadata: DUMMY_METADATA,
+                actions: actions,
+                stageConfigIndex: 1,
+                currentStage: 0,
+                executed: false,
+                targetConfig: IPlugin.TargetConfig({
+                    target: address(trustedForwarder),
+                    operation: IPlugin.Operation.Call
+                })
+            })
+        );
+
+        // check sub proposals on stage zero
+        SPP.Stage[] memory stages = sppPlugin.getStages();
+        SPP.Plugin memory _currentPlugin;
+        uint256 _currentPluginProposalsCount;
+        for (uint256 i; i < stages[0].plugins.length; i++) {
+            _currentPlugin = stages[0].plugins[i];
+            _currentPluginProposalsCount = PluginA(_currentPlugin.pluginAddress).proposalCount();
+            if (_currentPlugin.isManual) {
+                // should not be created since it is manual
+                assertEq(_currentPluginProposalsCount, 0, "proposalsCount");
+            } else {
+                // should be created since it is non-manual
+                assertEq(_currentPluginProposalsCount, 1, "proposalsCount");
+
+                // check sub proposal id was stored
+                uint256 subProposalId = sppPlugin.pluginProposalIds(
+                    proposalId,
+                    0,
+                    _currentPlugin.pluginAddress
+                );
+
+                assertEq(subProposalId, _currentPluginProposalsCount - 1, "subProposalId");
+
+                // should set the extra params on sub proposals
+                assertEq(
+                    PluginA(_currentPlugin.pluginAddress).extraParams(subProposalId),
+                    customCreationParam[0][i],
+                    "extraParams"
+                );
+            }
+        }
+
+        // check sub proposals on non zero stage
+        for (uint256 i; i < stages[1].plugins.length; i++) {
+            _currentPlugin = stages[1].plugins[i];
+            assertEq(PluginA(_currentPlugin.pluginAddress).proposalCount(), 0, "proposalsCount");
+        }
+
+        // check extra params was not stored since was not provided.
+        for (uint256 i = 1; i < stages.length; i++) {
+            for (uint256 j; j < stages[i].plugins.length; j++) {
+                assertEq(
+                    sppPlugin.getCreateProposalParams(proposalId, uint16(i), j),
+                    customCreationParam[i][j]
+                );
+            }
+        }
+    }
+
+    function test_WhenExtraParamsAreProvidedButNotEnoughParams1()
+        external
+        whenStagesAreConfigured
+        whenProposalDoesNotExist
+        givenAllPluginsOnStageZeroAreNonManual
+        whenSubProposalCanBeCreated
+        whenSomeSubProposalNeedExtraParams
+    {
+        // it should emit events.
+        // it should create parent proposal.
+        // it should not create sub proposals since extra param was not provided.
+        // it should not create sub proposals on non zero stages.
+
+        Action[] memory actions = _createDummyActions();
+
+        // create custom params
+        bytes[][] memory customCreationParam = new bytes[][](2);
+        // the stage has two plugins but set extra params only for first one
+        customCreationParam[0] = new bytes[](1);
+        customCreationParam[0][0] = abi.encodePacked("data1");
+        customCreationParam[1] = new bytes[](1);
+        customCreationParam[1][0] = abi.encodePacked("data3");
+
+        // check event
+        vm.expectEmit({
+            checkTopic1: false,
+            checkTopic2: true,
+            checkTopic3: true,
+            checkData: true,
+            emitter: address(sppPlugin)
+        });
+        emit ProposalCreated({
+            proposalId: 0,
+            creator: users.manager,
+            startDate: START_DATE,
+            endDate: 0,
+            metadata: DUMMY_METADATA,
+            actions: actions,
+            allowFailureMap: 0
+        });
+
+        uint256 proposalId = sppPlugin.createProposal({
+            _actions: actions,
+            _allowFailureMap: 0,
+            _metadata: DUMMY_METADATA,
+            _startDate: START_DATE,
+            _proposalParams: customCreationParam
+        });
+
+        // check proposal
+        SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
+
+        assertEq(
+            proposal,
+            SPP.Proposal({
+                allowFailureMap: 0,
+                creator: users.manager,
+                lastStageTransition: START_DATE,
+                metadata: DUMMY_METADATA,
+                actions: actions,
+                stageConfigIndex: 1,
+                currentStage: 0,
+                executed: false,
+                targetConfig: IPlugin.TargetConfig({
+                    target: address(trustedForwarder),
+                    operation: IPlugin.Operation.Call
+                })
+            })
+        );
+
+        // check sub proposals on stage zero, first one should be created second one not
+        SPP.Stage[] memory stages = sppPlugin.getStages();
+
+        // stage zero first sub proposal should be created, the extra params were provided
+        address _stageZeroFirstPlugin = stages[0].plugins[0].pluginAddress;
+        uint256 _currentPluginProposalsCount = PluginA(_stageZeroFirstPlugin).proposalCount();
+
+        // should not be created since the extra params are not provided
+        assertEq(_currentPluginProposalsCount, 1, "proposalsCount");
+
+        // check sub proposal invalid id was stored
+        assertEq(
+            sppPlugin.pluginProposalIds(proposalId, 0, _stageZeroFirstPlugin),
+            _currentPluginProposalsCount - 1,
+            "subProposalId"
+        );
+
+        // stage zero second sub proposal should not be created, the extra params were not provided
+        address _stageZeroSecondPlugin = stages[0].plugins[1].pluginAddress;
+
+        // should not be created since the extra params are not provided
+        assertEq(PluginA(_stageZeroSecondPlugin).proposalCount(), 0, "proposalsCount");
+
+        // check sub proposal invalid id was stored
+        assertEq(
+            sppPlugin.pluginProposalIds(proposalId, 0, _stageZeroSecondPlugin),
+            type(uint256).max,
+            "subProposalId"
+        );
+
+        // check sub proposals on non zero stage
+        for (uint256 i; i < stages[1].plugins.length; i++) {
+            assertEq(
+                PluginA(stages[1].plugins[i].pluginAddress).proposalCount(),
+                0,
+                "proposalsCount"
+            );
+        }
+
+        // check extra params was not stored since was not provided.
+        for (uint256 i = 1; i < stages.length; i++) {
+            for (uint256 j; j < stages[i].plugins.length; j++) {
+                assertEq(
+                    sppPlugin.getCreateProposalParams(proposalId, uint16(i), j),
+                    customCreationParam[i][j]
+                );
             }
         }
     }

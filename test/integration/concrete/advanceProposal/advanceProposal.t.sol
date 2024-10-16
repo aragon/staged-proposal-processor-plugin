@@ -10,7 +10,6 @@ import {DAO} from "@aragon/osx/core/dao/DAO.sol";
 import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
 
 contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
-
     modifier givenProposalExists() {
         _;
     }
@@ -104,7 +103,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
 
         SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
         SPP.Stage[] memory stages = sppPlugin.getStages();
-        
+
         // check proposal advanced
         assertEq(proposal.currentStage, initialStage + 1, "currentStage");
 
@@ -177,6 +176,133 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
             PluginA(stages[initialStage + 1].plugins[0].pluginAddress).extraParams(0),
             customCreationParam[1][0],
             "extraParams"
+        );
+    }
+
+    function test_WhenExtraParamsAreProvidedAndAreBig()
+        external
+        givenProposalExists
+        whenProposalCanAdvance
+        whenProposalIsNotInLastStage
+        whenAllPluginsOnNextStageAreNonManual
+        whenSomeSubProposalNeedExtraParams
+    {
+        // it should emit event.
+        // it should advance proposal.
+        // it should create sub proposals with correct extra params.
+
+        // create custom params
+        bytes[][] memory customCreationParam = new bytes[][](2);
+        customCreationParam[0] = new bytes[](2);
+        customCreationParam[0][0] = abi.encodePacked(
+            "data1data1data1data1data1data1data1data1data1data1data1data1data1data1data1data1data1data1data1data1data1"
+        );
+        customCreationParam[0][1] = abi.encodePacked(
+            "data2data1data1data1data1data1data1data1data1data1data1data1data1data1data1data1data1data1data1data1data1data1"
+        );
+        customCreationParam[1] = new bytes[](1);
+        customCreationParam[1][0] = abi.encodePacked(
+            "data3data1data1data1data1data1data1data1data1data1data1data1data1data1data1data1data1data1data1data1data1data1data1data1"
+        );
+
+        // create proposal
+        Action[] memory actions = _createDummyActions();
+        uint256 proposalId = sppPlugin.createProposal({
+            _actions: actions,
+            _allowFailureMap: 0,
+            _metadata: DUMMY_METADATA,
+            _startDate: START_DATE,
+            _proposalParams: customCreationParam
+        });
+        uint256 initialStage;
+
+        // execute proposals on first stage
+        _executeStageProposals(initialStage);
+
+        vm.warp(VOTE_DURATION + START_DATE);
+
+        // check event emitted
+        vm.expectEmit({emitter: address(sppPlugin)});
+        emit ProposalAdvanced(proposalId, initialStage + 1);
+
+        sppPlugin.advanceProposal(proposalId);
+
+        SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
+
+        // check proposal advanced
+        assertEq(proposal.currentStage, initialStage + 1, "currentStage");
+
+        SPP.Stage[] memory stages = sppPlugin.getStages();
+
+        // check sub proposal created
+        assertEq(
+            PluginA(stages[initialStage + 1].plugins[0].pluginAddress).proposalCount(),
+            1,
+            "proposalsCount"
+        );
+
+        // should set the extra params on sub proposals
+        assertEq(
+            PluginA(stages[initialStage + 1].plugins[0].pluginAddress).extraParams(0),
+            customCreationParam[1][0],
+            "extraParams"
+        );
+    }
+
+    function test_WhenExtraParamsAreProvidedButNotEnoughParams()
+        external
+        givenProposalExists
+        whenProposalCanAdvance
+        whenProposalIsNotInLastStage
+        whenAllPluginsOnNextStageAreNonManual
+        whenSomeSubProposalNeedExtraParams
+    {
+        // it should emit event.
+        // it should advance proposal.
+        // it should not create sub proposals since extra param was not provided.
+
+        // create custom params
+        bytes[][] memory customCreationParam = new bytes[][](2);
+        customCreationParam[0] = new bytes[](2);
+        customCreationParam[0][0] = abi.encodePacked("data1");
+        customCreationParam[0][1] = abi.encodePacked("data2");
+        // second stage has a plugin but set no extra params
+        customCreationParam[1] = new bytes[](0);
+
+        // create proposal
+        Action[] memory actions = _createDummyActions();
+        uint256 proposalId = sppPlugin.createProposal({
+            _actions: actions,
+            _allowFailureMap: 0,
+            _metadata: DUMMY_METADATA,
+            _startDate: START_DATE,
+            _proposalParams: customCreationParam
+        });
+        uint256 initialStage;
+
+        // execute proposals on first stage
+        _executeStageProposals(initialStage);
+
+        vm.warp(VOTE_DURATION + START_DATE);
+
+        // check event emitted
+        vm.expectEmit({emitter: address(sppPlugin)});
+        emit ProposalAdvanced(proposalId, initialStage + 1);
+
+        sppPlugin.advanceProposal(proposalId);
+
+        SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
+
+        // check proposal advanced
+        assertEq(proposal.currentStage, initialStage + 1, "currentStage");
+
+        SPP.Stage[] memory stages = sppPlugin.getStages();
+
+        // check sub proposal was not created
+        assertEq(
+            PluginA(stages[initialStage + 1].plugins[0].pluginAddress).proposalCount(),
+            0,
+            "proposalsCount"
         );
     }
 
