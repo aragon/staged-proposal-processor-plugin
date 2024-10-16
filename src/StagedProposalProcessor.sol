@@ -223,18 +223,17 @@ contract StagedProposalProcessor is
         // To reduce the gas costs significantly, don't store the very
         // first stage's params in storage as they only get used in this
         // current tx and will not be needed later on for advancing.
-        bytes[] memory customParams = new bytes[](stages[index][0].plugins.length);
-        if (_proposalParams.length > 0) {
-            for (uint256 i = 0; i < _proposalParams[0].length; i++)
-                customParams[i] = _proposalParams[0][i];
-
-            for (uint256 i = 1; i < _proposalParams.length; i++) {
-                for (uint256 j = 0; j < _proposalParams[i].length; j++)
-                    createProposalParams[proposalId][uint16(i)][j] = _proposalParams[i][j];
-            }
+        for (uint256 i = 1; i < _proposalParams.length; i++) {
+            for (uint256 j = 0; j < _proposalParams[i].length; j++)
+                createProposalParams[proposalId][uint16(i)][j] = _proposalParams[i][j];
         }
 
-        _createPluginProposals(proposalId, 0, proposal.lastStageTransition, customParams);
+        _createPluginProposals(
+            proposalId,
+            0,
+            proposal.lastStageTransition,
+            _proposalParams.length > 0 ? _proposalParams[0] : new bytes[](0)
+        );
 
         emit ProposalCreated({
             proposalId: proposalId,
@@ -553,7 +552,7 @@ contract StagedProposalProcessor is
                     actions,
                     _startDate,
                     _startDate + stage.voteDuration,
-                    _stageProposalParams[i]
+                    _stageProposalParams.length > i ? _stageProposalParams[i] : new bytes(0)
                 )
             returns (uint256 pluginProposalId) {
                 pluginProposalIds[_proposalId][_stageId][
