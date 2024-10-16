@@ -39,7 +39,8 @@ abstract contract Fuzzers is StdUtils {
                 pluginAddress: _plugins[i].pluginAddress,
                 isManual: _plugins[i].isManual,
                 allowedBody: _plugins[i].allowedBody,
-                resultType: SPP.ResultType(bound(_plugins[i].resultType, 0, 1))
+                resultType: SPP.ResultType(bound(_plugins[i].resultType, 0, 1)),
+                tryAdvance: _plugins[i].tryAdvance
             });
         }
     }

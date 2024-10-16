@@ -198,7 +198,8 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
             pluginAddress: _pluginAddr,
             isManual: _isManual,
             allowedBody: _pluginAddr,
-            resultType: resultType
+            resultType: resultType,
+            tryAdvance: false
         });
     }
 
