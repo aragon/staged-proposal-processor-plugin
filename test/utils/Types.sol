@@ -17,6 +17,7 @@ struct Plugin {
     bool isManual;
     address allowedBody;
     uint8 resultType;
+    bool tryAdvance;
 }
 
 struct Stage {

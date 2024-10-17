@@ -50,6 +50,7 @@ contract StagedProposalProcessor is
         bool isManual;
         address allowedBody;
         ResultType resultType;
+        bool tryAdvance;
     }
 
     // Stage Settings
@@ -534,7 +535,7 @@ contract StagedProposalProcessor is
                 value: 0,
                 data: abi.encodeCall(
                     this.reportProposalResult,
-                    (_proposalId, _stageId, plugin.resultType, stage.vetoThreshold == 0)
+                    (_proposalId, _stageId, plugin.resultType, plugin.tryAdvance)
                 )
             });
 
