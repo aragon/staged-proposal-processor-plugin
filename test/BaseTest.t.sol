@@ -195,23 +195,39 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
         bool _plugin2Manual,
         bool _plugin3Manual,
         address _allowedBody,
-        address executor,
-        IPlugin.Operation operation
+        address _executor,
+        IPlugin.Operation _operation,
+        bool _tryAdvance
     ) internal returns (SPP.Stage[] memory stages) {
         IPlugin.TargetConfig memory targetConfig;
-        targetConfig.target = address(executor);
-        targetConfig.operation = operation;
+        targetConfig.target = address(_executor);
+        targetConfig.operation = _operation;
 
         address _plugin1 = address(new PluginA(targetConfig));
         address _plugin2 = address(new PluginA(targetConfig));
         address _plugin3 = address(new PluginA(targetConfig));
 
         SPP.Plugin[] memory _plugins1 = new SPP.Plugin[](2);
-        _plugins1[0] = _createCustomPluginStruct(_plugin1, _plugin1Manual, _allowedBody);
-        _plugins1[1] = _createCustomPluginStruct(_plugin2, _plugin2Manual, _allowedBody);
+        _plugins1[0] = _createCustomPluginStruct(
+            _plugin1,
+            _plugin1Manual,
+            _allowedBody,
+            _tryAdvance
+        );
+        _plugins1[1] = _createCustomPluginStruct(
+            _plugin2,
+            _plugin2Manual,
+            _allowedBody,
+            _tryAdvance
+        );
 
         SPP.Plugin[] memory _plugins2 = new SPP.Plugin[](1);
-        _plugins2[0] = _createCustomPluginStruct(_plugin3, _plugin3Manual, _allowedBody);
+        _plugins2[0] = _createCustomPluginStruct(
+            _plugin3,
+            _plugin3Manual,
+            _allowedBody,
+            _tryAdvance
+        );
 
         stages = new SPP.Stage[](_stageCount);
         for (uint i; i < _stageCount; i++) {
@@ -229,20 +245,22 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
             isManual: _isManual,
             allowedBody: _pluginAddr,
             resultType: resultType,
-            tryAdvance: false
+            tryAdvance: true
         });
     }
 
     function _createCustomPluginStruct(
         address _pluginAddr,
         bool _isManual,
-        address _allowedBody
+        address _allowedBody,
+        bool _tryAdvance
     ) internal view virtual returns (SPP.Plugin memory plugin) {
         plugin = SPP.Plugin({
             pluginAddress: _pluginAddr,
             isManual: _isManual,
             allowedBody: _allowedBody != address(0) ? _allowedBody : _pluginAddr,
-            resultType: resultType
+            resultType: resultType,
+            tryAdvance: _tryAdvance
         });
     }
 

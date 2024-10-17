@@ -18,8 +18,9 @@ abstract contract StagedConfiguredSharedTest is BaseTest {
             _plugin2Manual: false,
             _plugin3Manual: false,
             _allowedBody: allowedBody,
-            executor: address(trustedForwarder),
-            operation: IPlugin.Operation.Call
+            _executor: address(trustedForwarder),
+            _operation: IPlugin.Operation.Call,
+            _tryAdvance: true
         });
         sppPlugin.updateStages(stages);
     }

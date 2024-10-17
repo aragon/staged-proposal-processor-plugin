@@ -1,16 +1,18 @@
 ReportProposalResult_SPP_UnitTest
 ├── given existent proposal
 │   ├── when voteDuration has not passed
-│   │   ├── when caller is trusted forwarder
-│   │   │   ├── it should use the sender stored in the call data.
-│   │   │   ├── it should record the result.
-│   │   │   └── it should emit event proposal result reported.
-│   │   ├── when caller is executor using delegatecall
-│   │   │   ├── it should use the msg.sender that is the plugin.
-│   │   │   ├── it should record the result.
-│   │   │   └── it should emit event proposal result reported.
 │   │   ├── when the caller is an allowed body
 │   │   │   ├── when should try advance stage
+│   │   │   │   ├── when caller is trusted forwarder
+│   │   │   │   │   ├── it should use the sender stored in the call data.
+│   │   │   │   │   ├── it should record the result.
+│   │   │   │   │   ├── it should emit event proposal result reported.
+│   │   │   │   │   └── it should call advanceProposal function and emit event.
+│   │   │   │   ├── when caller is executor using delegatecall
+│   │   │   │   │   ├── it should use the msg.sender that is the plugin.
+│   │   │   │   │   ├── it should record the result.
+│   │   │   │   │   ├── it should emit event proposal result reported.
+│   │   │   │   │   └── it should call advanceProposal function and emit event.
 │   │   │   │   ├── when proposal can be advanced
 │   │   │   │   │   ├── it should record the result.
 │   │   │   │   │   ├── it should emit event proposal result reported.
@@ -20,6 +22,16 @@ ReportProposalResult_SPP_UnitTest
 │   │   │   │       ├── it should emit event proposal result reported.
 │   │   │   │       └── it should not call advanceProposal function nor emit event.
 │   │   │   └── when should not try advance stage
+│   │   │       ├── given caller is trusted forwarder
+│   │   │       │   ├── it should use the sender stored in the call data.
+│   │   │       │   ├── it should record the result.
+│   │   │       │   ├── it should emit event proposal result reported.
+│   │   │       │   └── it should call advanceProposal function and emit event.
+│   │   │       ├── given caller is executor using delegatecall
+│   │   │       │   ├── it should use the msg.sender that is the plugin.
+│   │   │       │   ├── it should record the result.
+│   │   │       │   ├── it should emit event proposal result reported.
+│   │   │       │   └── it should call advanceProposal function and emit event.
 │   │   │       ├── it should record the result.
 │   │   │       ├── it should emit event.
 │   │   │       └── it should not call advanceProposal function.
