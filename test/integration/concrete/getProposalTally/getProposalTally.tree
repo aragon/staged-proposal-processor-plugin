@@ -3,18 +3,15 @@ GetProposalTally_SPP_IntegrationTest
 │   ├── when all results are reported
 │   │   └── it should return the correct tally.
 │   └── when some results are not reported
-│       ├── when veto threshold is zero
+│       ├── when unreported proposal is manual
 │       │   └── it should not count unreported results.
-│       └── when veto threshold is not zero
-│           ├── when unreported proposal is non optimistic
-│           │   └── it should not count unreported results of non optimistic proposals.
-│           └── when unreported proposal is optimistic
-│               ├── when unreported proposal is manual
-│               │   └── it should not count unreported results of manual proposals.
-│               └── when unreported proposal is non manual
-│                   ├── when stored proposal id is not valid
-│                   │   └── it should not count unreported results of proposals with no valid id.
-│                   └── when stored proposal id is valid
-│                       └── it should count unreported results of non manual, optimistic proposals with valid id.
+│       └── when unreported proposal is non manual
+│           ├── when stored proposal id is not valid
+│           │   └── it should not count unreported results.
+│           └── when stored proposal id is valid
+│               ├── when unreported plugin result can be executed
+│               │   └── it should count unreported results.
+│               └── when unreported plugin result can not be executed
+│                   └── it should not count unreported results.
 └── when non existent proposal
     └── it should revert.

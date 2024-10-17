@@ -3,7 +3,8 @@ UpdateMetadata_SPP_UnitTest
 │   └── it should revert.
 └── when caller is allowed
     ├── when metadata is empty
-    │   └── it should revert.
+    │   ├── it should update metadata.
+    │   └── it should emit an event.
     └── when metadata is not empty
         ├── it should update metadata.
         └── it should emit an event.

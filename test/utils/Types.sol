@@ -16,7 +16,7 @@ struct Plugin {
     address pluginAddress;
     bool isManual;
     address allowedBody;
-    uint8 proposalType;
+    uint8 resultType;
 }
 
 struct Stage {

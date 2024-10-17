@@ -1,19 +1,18 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.8;
 
+import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
+
 import {BaseTest} from "../../../BaseTest.t.sol";
-import {PluginA} from "../../../utils/dummy-plugins/PluginA.sol";
 import {Errors} from "../../../../src/libraries/Errors.sol";
-
+import {PluginA} from "../../../utils/dummy-plugins/PluginA.sol";
 import {StagedProposalProcessor as SPP} from "../../../../src/StagedProposalProcessor.sol";
-
-import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
 
 contract GetProposalTally_SPP_IntegrationTest is BaseTest {
     uint256 proposalId;
 
     modifier whenExistentProposal() {
-        proposalType = SPP.ProposalType.Veto;
+        resultType = SPP.ResultType.Veto;
         proposalId = _configureStagesAndCreateDummyProposal(DUMMY_METADATA);
 
         _;
@@ -36,60 +35,14 @@ contract GetProposalTally_SPP_IntegrationTest is BaseTest {
         _;
     }
 
-    function test_WhenVetoThresholdIsZero()
+    function test_WhenUnreportedProposalIsManual()
         external
         whenExistentProposal
         whenSomeResultsAreNotReported
     {
         // it should not count unreported results.
 
-        vetoThreshold = 0;
-        proposalType = SPP.ProposalType.Veto;
-        proposalId = _configureStagesAndCreateDummyProposal(abi.encode(DUMMY_METADATA, "0x01"));
-
-        (uint256 votes, uint256 vetos) = sppPlugin.getProposalTally(proposalId);
-
-        // there should be no votes and 2 vetos but they should not be counted
-        assertEq(vetos, 0, "vetos");
-        assertEq(votes, 0, "votes");
-    }
-
-    modifier whenVetoThresholdIsNotZero() {
-        _;
-    }
-
-    function test_WhenUnreportedProposalIsNonOptimistic()
-        external
-        whenExistentProposal
-        whenSomeResultsAreNotReported
-        whenVetoThresholdIsNotZero
-    {
-        // it should not count unreported results of non optimistic proposals.
-
-        // set non optimistic stages
-        proposalType = SPP.ProposalType.Approval;
-        proposalId = _configureStagesAndCreateDummyProposal(abi.encode(DUMMY_METADATA, "0x01"));
-
-        (uint256 votes, uint256 vetos) = sppPlugin.getProposalTally(proposalId);
-
-        // there should be no vote and no veto
-        assertEq(vetos, 0, "vetos");
-        assertEq(votes, 0, "votes");
-    }
-
-    modifier whenUnreportedProposalIsOptimistic() {
-        _;
-    }
-
-    function test_WhenUnreportedProposalIsManual()
-        external
-        whenExistentProposal
-        whenSomeResultsAreNotReported
-        whenVetoThresholdIsNotZero
-        whenUnreportedProposalIsOptimistic
-    {
-        // it should not count unreported results of manual proposals.
-        proposalType = SPP.ProposalType.Veto;
+        resultType = SPP.ResultType.Veto;
         // setup stages
         SPP.Stage[] memory stages = _createDummyStages({
             _stageCount: 2,
@@ -100,12 +53,13 @@ contract GetProposalTally_SPP_IntegrationTest is BaseTest {
         sppPlugin.updateStages(stages);
 
         // create proposal
-        IDAO.Action[] memory actions = _createDummyActions();
+        Action[] memory actions = _createDummyActions();
         proposalId = sppPlugin.createProposal({
             _actions: actions,
             _allowFailureMap: 0,
             _metadata: abi.encode(DUMMY_METADATA, "0x01"),
-            _startDate: START_DATE
+            _startDate: START_DATE,
+            _proposalParams: defaultCreationParams
         });
 
         (uint256 votes, uint256 vetos) = sppPlugin.getProposalTally(proposalId);
@@ -123,49 +77,52 @@ contract GetProposalTally_SPP_IntegrationTest is BaseTest {
         external
         whenExistentProposal
         whenSomeResultsAreNotReported
-        whenVetoThresholdIsNotZero
-        whenUnreportedProposalIsOptimistic
         whenUnreportedProposalIsNonManual
     {
-        // it should not count unreported results of proposals with no valid id.
+        // it should not count unreported results.
 
         // make a plugin revet when creating proposal so the proposal id is not valid
         address secondPluginAddr = sppPlugin.getStages()[0].plugins[1].pluginAddress;
         PluginA(secondPluginAddr).setRevertOnCreateProposal(true);
 
         // create proposal
-        IDAO.Action[] memory actions = _createDummyActions();
+        Action[] memory actions = _createDummyActions();
         proposalId = sppPlugin.createProposal({
             _actions: actions,
             _allowFailureMap: 0,
             _metadata: abi.encode(DUMMY_METADATA, "0x01"),
-            _startDate: START_DATE
+            _startDate: START_DATE,
+            _proposalParams: defaultCreationParams
         });
 
         SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
 
-        (uint256 votes, uint256 vetos) = sppPlugin.getProposalTally(proposalId);
-
-        // there should be no votes and 1 vetos because one of the sub proposals id not valid
-        assertEq(vetos, 1, "vetos");
-        assertEq(votes, 0, "votes");
         // check sub proposal id is not valid
         assertEq(
             sppPlugin.pluginProposalIds(proposalId, proposal.currentStage, secondPluginAddr),
             type(uint256).max,
             "invalid subProposalId"
         );
+
+        (uint256 votes, uint256 vetos) = sppPlugin.getProposalTally(proposalId);
+
+        // there should be no votes and 1 vetos because one of the sub proposals id not valid
+        assertEq(vetos, 1, "vetos");
+        assertEq(votes, 0, "votes");
     }
 
-    function test_WhenStoredProposalIdIsValid()
+    modifier whenStoredProposalIdIsValid() {
+        _;
+    }
+
+    function test_WhenUnreportedPluginResultCanBeExecuted()
         external
         whenExistentProposal
         whenSomeResultsAreNotReported
-        whenVetoThresholdIsNotZero
-        whenUnreportedProposalIsOptimistic
         whenUnreportedProposalIsNonManual
+        whenStoredProposalIdIsValid
     {
-        // it should count unreported results of non manual, optimistic proposals with valid id.
+        // it should count unreported results.
 
         (uint256 votes, uint256 vetos) = sppPlugin.getProposalTally(proposalId);
 
@@ -174,13 +131,33 @@ contract GetProposalTally_SPP_IntegrationTest is BaseTest {
         assertEq(votes, 0, "votes");
     }
 
-    function test_WhenNonExistentProposal() external {
+    function test_WhenUnreportedPluginResultCanNotBeExecuted()
+        external
+        whenExistentProposal
+        whenSomeResultsAreNotReported
+        whenUnreportedProposalIsNonManual
+        whenStoredProposalIdIsValid
+    {
+        // it should count unreported results.
+
+        // set the can execute on sub plugin to false
+        address secondPluginAddr = sppPlugin.getStages()[0].plugins[1].pluginAddress;
+        PluginA(secondPluginAddr).setCanExecuteResult(false);
+
+        (uint256 votes, uint256 vetos) = sppPlugin.getProposalTally(proposalId);
+
+        // there should be 1 vetos and no vote, because second plugin can not execute
+        assertEq(vetos, 1, "vetos");
+        assertEq(votes, 0, "votes");
+    }
+
+    function test_RevertWhen_NonExistentProposal() external {
         // it should revert.
+
         vm.expectRevert(
             abi.encodeWithSelector(Errors.ProposalNotExists.selector, NON_EXISTENT_PROPOSAL_ID)
         );
 
-        // it should have zero tally.
         sppPlugin.getProposalTally(NON_EXISTENT_PROPOSAL_ID);
     }
 }

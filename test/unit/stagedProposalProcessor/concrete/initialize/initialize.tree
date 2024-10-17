@@ -4,7 +4,5 @@ Initialize_SPP_UnitTest
 │       └── it should revert.
 └── when not initialized
     └── when initializing
-        ├── when metadata is not correct
-        │   └── it should revert.
         ├── it should emit events.
         └── it should initialize the contract.

@@ -24,7 +24,7 @@ contract GetMetadata_SPP_UnitTest is BaseTest {
         // it should return correct metadata.
 
         // configure metadata
-        sppPlugin.updateMetadata(DUMMY_METADATA);
+        sppPlugin.setMetadata(DUMMY_METADATA);
 
         bytes memory _metadata = sppPlugin.getMetadata();
         assertEq(_metadata, DUMMY_METADATA);

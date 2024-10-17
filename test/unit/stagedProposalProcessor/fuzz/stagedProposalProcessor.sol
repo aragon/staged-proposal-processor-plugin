@@ -22,10 +22,10 @@ contract SPP_Unit_FuzzTest is BaseTest {
                 address(dao),
                 address(sppPlugin),
                 _randomAddress,
-                sppPlugin.UPDATE_METADATA_PERMISSION_ID()
+                sppPlugin.SET_METADATA_PERMISSION_ID()
             )
         );
-        sppPlugin.updateMetadata(DUMMY_METADATA);
+        sppPlugin.setMetadata(DUMMY_METADATA);
     }
 
     function testFuzz_updateStage_RevertWhen_IsNotAllowed(address _randomAddress) external {
@@ -52,7 +52,9 @@ contract SPP_Unit_FuzzTest is BaseTest {
     function testFuzz_updateMetadata(bytes calldata _metadata) external {
         // it should update metadata.
 
-        sppPlugin.updateMetadata(_metadata);
+        vm.assume(_metadata.length != 0);
+
+        sppPlugin.setMetadata(_metadata);
 
         assertEq(sppPlugin.getMetadata(), _metadata, "metadata");
     }

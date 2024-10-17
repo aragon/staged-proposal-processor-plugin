@@ -41,7 +41,7 @@ CanProposalAdvance_SPP_IntegrationTest
 │               └── given approval threshold is not met 2 // ! dupp
 │                   └── it should return false.
 └── when non existent proposal
-    └── it should return false.  // TBD
+    └── it should revert.
 
 
 

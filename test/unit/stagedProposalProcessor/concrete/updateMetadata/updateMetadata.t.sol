@@ -2,7 +2,6 @@
 pragma solidity ^0.8.8;
 
 import {BaseTest} from "../../../../BaseTest.t.sol";
-import {Errors} from "../../../../../src/libraries/Errors.sol";
 
 import {DaoUnauthorized} from "@aragon/osx/core/utils/auth.sol";
 
@@ -18,21 +17,27 @@ contract UpdateMetadata_SPP_UnitTest is BaseTest {
                 address(dao),
                 address(sppPlugin),
                 users.unauthorized,
-                sppPlugin.UPDATE_METADATA_PERMISSION_ID()
+                sppPlugin.SET_METADATA_PERMISSION_ID()
             )
         );
-        sppPlugin.updateMetadata(DUMMY_METADATA);
+        sppPlugin.setMetadata(DUMMY_METADATA);
     }
 
     modifier whenCallerIsAllowed() {
         _;
     }
 
-    function test_RevertWhen_MetadataIsEmpty() external whenCallerIsAllowed {
-        // it should revert.
+    function test_WhenMetadataIsEmpty() external whenCallerIsAllowed {
+        // it should update metadata.
+        // it should emit an event.
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.EmptyMetadata.selector));
-        sppPlugin.updateMetadata(EMPTY_METADATA);
+        vm.expectEmit({emitter: address(sppPlugin)});
+        emit MetadataSet(EMPTY_METADATA);
+
+        sppPlugin.setMetadata(EMPTY_METADATA);
+
+        bytes memory _newMetadata = sppPlugin.getMetadata();
+        assertEq(_newMetadata, EMPTY_METADATA);
     }
 
     function test_WhenMetadataIsNotEmpty() external whenCallerIsAllowed {
@@ -40,9 +45,9 @@ contract UpdateMetadata_SPP_UnitTest is BaseTest {
         // it should update metadata.
 
         vm.expectEmit({emitter: address(sppPlugin)});
-        emit MetadataUpdated(DUMMY_METADATA);
+        emit MetadataSet(DUMMY_METADATA);
 
-        sppPlugin.updateMetadata(DUMMY_METADATA);
+        sppPlugin.setMetadata(DUMMY_METADATA);
 
         bytes memory _newMetadata = sppPlugin.getMetadata();
         assertEq(_newMetadata, DUMMY_METADATA);
