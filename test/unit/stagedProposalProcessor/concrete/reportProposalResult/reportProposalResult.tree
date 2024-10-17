@@ -26,12 +26,12 @@ ReportProposalResult_SPP_UnitTest
 │   │   │       │   ├── it should use the sender stored in the call data.
 │   │   │       │   ├── it should record the result.
 │   │   │       │   ├── it should emit event proposal result reported.
-│   │   │       │   └── it should call advanceProposal function and emit event.
+│   │   │       │   └── it should not call advanceProposal function nor emit event.
 │   │   │       ├── given caller is executor using delegatecall
 │   │   │       │   ├── it should use the msg.sender that is the plugin.
 │   │   │       │   ├── it should record the result.
 │   │   │       │   ├── it should emit event proposal result reported.
-│   │   │       │   └── it should call advanceProposal function and emit event.
+│   │   │       │   └── it should not call advanceProposal function nor emit event.
 │   │   │       ├── it should record the result.
 │   │   │       ├── it should emit event.
 │   │   │       └── it should not call advanceProposal function.

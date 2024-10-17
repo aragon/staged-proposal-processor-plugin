@@ -29,85 +29,6 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         _;
     }
 
-    function test_WhenCallerIsTrustedForwarder()
-        external
-        givenExistentProposal
-        whenVoteDurationHasNotPassed
-    {
-        // it should use the sender stored in the call data. (the sender should be the plugin address)
-        // it should record the result.
-        // it should emit event proposal result reported.
-
-        SPP.Stage[] memory stages = sppPlugin.getStages();
-        address pluginAddress = stages[0].plugins[0].pluginAddress;
-
-        // check event was emitted
-        vm.expectEmit({emitter: address(sppPlugin)});
-        emit ProposalResultReported(proposalId, 0, pluginAddress);
-
-        // execute the sub proposal to report the result
-        PluginA(pluginAddress).execute({_proposalId: 0});
-
-        // check result was recorded
-        SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
-        assertEq(
-            sppPlugin.getPluginResult(proposalId, proposal.currentStage, pluginAddress),
-            SPP.ResultType.Approval
-        );
-    }
-
-    function test_WhenCallerIsExecutorUsingDelegatecall()
-        external
-        givenExistentProposal
-        whenVoteDurationHasNotPassed
-    {
-        // it should use the msg.sender that is the plugin.
-        // it should record the result.
-        // it should emit event proposal result reported.
-
-        // define new executor
-        Executor executor = new Executor();
-
-        // update stages to configure them with executor
-        sppPlugin.updateStages(
-            _createCustomStages({
-                _stageCount: 2,
-                _plugin1Manual: false,
-                _plugin2Manual: false,
-                _plugin3Manual: false,
-                _allowedBody: address(0),
-                executor: address(executor),
-                operation: IPlugin.Operation.DelegateCall
-            })
-        );
-
-        // create new proposal
-        proposalId = sppPlugin.createProposal({
-            _actions: _createDummyActions(),
-            _allowFailureMap: 0,
-            _metadata: "dummy metadata1",
-            _startDate: START_DATE,
-            _proposalParams: defaultCreationParams
-        });
-
-        SPP.Stage[] memory stages = sppPlugin.getStages();
-        address pluginAddress = stages[0].plugins[0].pluginAddress;
-
-        // check event was emitted
-        vm.expectEmit({emitter: address(sppPlugin)});
-        emit ProposalResultReported(proposalId, 0, pluginAddress);
-
-        // execute the sub proposal to report the result
-        PluginA(pluginAddress).execute({_proposalId: 0});
-
-        // check result was recorded
-        SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
-        assertEq(
-            sppPlugin.getPluginResult(proposalId, proposal.currentStage, pluginAddress),
-            SPP.ResultType.Approval
-        );
-    }
-
     modifier whenTheCallerIsAnAllowedBody() {
         // impersonate the allowed body
         resetPrank(allowedBody);
@@ -117,6 +38,93 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
     modifier whenShouldTryAdvanceStage() {
         _tryAdvance = true;
         _;
+    }
+
+    function test_WhenCallerIsTrustedForwarder()
+        external
+        givenExistentProposal
+        whenVoteDurationHasNotPassed
+        whenTheCallerIsAnAllowedBody
+        whenShouldTryAdvanceStage
+    {
+        // it should use the sender stored in the call data.
+        // it should record the result.
+        // it should emit event proposal result reported.
+        // it should call advanceProposal function and emit event.
+
+        SPP.Stage[] memory stages = sppPlugin.getStages();
+        address pluginAddress = stages[0].plugins[0].pluginAddress;
+
+        SPP.Proposal memory oldProposal = sppPlugin.getProposal(proposalId);
+        // advance the timer to allow the proposal to be advanced
+        vm.warp(oldProposal.lastStageTransition + stages[0].minAdvance + 1);
+
+        // check event was emitted
+        vm.expectEmit({emitter: address(sppPlugin)});
+        emit ProposalResultReported(proposalId, 0, pluginAddress);
+        vm.expectEmit({emitter: address(sppPlugin)});
+        emit ProposalAdvanced(proposalId, 1);
+
+        // execute the sub proposal to report the result
+        PluginA(pluginAddress).execute({_proposalId: 0});
+
+        // check result was recorded
+        SPP.Proposal memory newProposal = sppPlugin.getProposal(proposalId);
+        assertEq(
+            sppPlugin.getPluginResult(proposalId, oldProposal.currentStage, pluginAddress),
+            SPP.ResultType.Approval
+        );
+
+        // check proposal was advanced
+        assertEq(newProposal.currentStage, oldProposal.currentStage + 1, "currentStage");
+    }
+
+    function test_WhenCallerIsExecutorUsingDelegatecall()
+        external
+        givenExistentProposal
+        whenVoteDurationHasNotPassed
+        whenTheCallerIsAnAllowedBody
+        whenShouldTryAdvanceStage
+    {
+        // it should use the msg.sender that is the plugin.
+        // it should record the result.
+        // it should emit event proposal result reported.
+        // it should call advanceProposal function and emit event.
+
+        // define new executor
+        Executor executor = new Executor();
+
+        // update stages to configure them with executor and create new proposal
+        proposalId = _updateStagesAndCreateNewProposal(
+            address(executor),
+            IPlugin.Operation.DelegateCall
+        );
+
+        SPP.Stage[] memory stages = sppPlugin.getStages();
+        address pluginAddress = stages[0].plugins[0].pluginAddress;
+
+        SPP.Proposal memory oldProposal = sppPlugin.getProposal(proposalId);
+        // advance the timer to allow the proposal to be advanced
+        vm.warp(oldProposal.lastStageTransition + stages[0].minAdvance + 1);
+
+        // check event was emitted
+        vm.expectEmit({emitter: address(sppPlugin)});
+        emit ProposalResultReported(proposalId, 0, pluginAddress);
+        vm.expectEmit({emitter: address(sppPlugin)});
+        emit ProposalAdvanced(proposalId, 1);
+
+        // execute the sub proposal to report the result
+        PluginA(pluginAddress).execute({_proposalId: 0});
+
+        // check result was recorded
+        SPP.Proposal memory newProposal = sppPlugin.getProposal(proposalId);
+        assertEq(
+            sppPlugin.getPluginResult(proposalId, oldProposal.currentStage, pluginAddress),
+            SPP.ResultType.Approval
+        );
+
+        // check proposal was advanced
+        assertEq(newProposal.currentStage, oldProposal.currentStage + 1, "currentStage");
     }
 
     function test_WhenProposalCanBeAdvanced()
@@ -202,6 +210,11 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         assertEq(proposal.currentStage, 0, "currentStage");
     }
 
+    modifier whenShouldNotTryAdvanceStage() {
+        _tryAdvance = false;
+        _;
+    }
+
     function test_WhenShouldNotTryAdvanceStage()
         external
         givenExistentProposal
@@ -241,6 +254,93 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         assertEq(proposal.currentStage, 0, "currentStage");
     }
 
+    function test_GivenCallerIsTrustedForwarder()
+        external
+        givenExistentProposal
+        whenVoteDurationHasNotPassed
+        whenTheCallerIsAnAllowedBody
+        whenShouldNotTryAdvanceStage
+    {
+        // it should use the sender stored in the call data.
+        // it should record the result.
+        // it should emit event proposal result reported.
+        // it should not call advanceProposal function nor emit event.
+
+        // update stages to configure them with tryAdvance = false and create new proposal
+        proposalId = _updateStagesAndCreateNewProposal(
+            address(trustedForwarder),
+            IPlugin.Operation.Call
+        );
+
+        SPP.Stage[] memory stages = sppPlugin.getStages();
+        address pluginAddress = stages[0].plugins[0].pluginAddress;
+
+        SPP.Proposal memory oldProposal = sppPlugin.getProposal(proposalId);
+
+        // check event was emitted
+        vm.expectEmit({emitter: address(sppPlugin)});
+        emit ProposalResultReported(proposalId, 0, pluginAddress);
+
+        // execute the sub proposal to report the result
+        PluginA(pluginAddress).execute({_proposalId: 0});
+
+        // check result was recorded
+        SPP.Proposal memory newProposal = sppPlugin.getProposal(proposalId);
+        assertEq(
+            sppPlugin.getPluginResult(proposalId, oldProposal.currentStage, pluginAddress),
+            SPP.ResultType.Approval
+        );
+
+        // check proposal was advanced
+        assertEq(newProposal.currentStage, oldProposal.currentStage, "currentStage");
+    }
+
+    function test_GivenCallerIsExecutorUsingDelegatecall()
+        external
+        givenExistentProposal
+        whenVoteDurationHasNotPassed
+        whenTheCallerIsAnAllowedBody
+        whenShouldNotTryAdvanceStage
+    {
+        // it should use the msg.sender that is the plugin.
+        // it should record the result.
+        // it should emit event proposal result reported.
+        // it should not call advanceProposal function nor emit event.
+
+        // define new executor
+        Executor executor = new Executor();
+
+        // update stages to configure them with executor and create new proposal
+        proposalId = _updateStagesAndCreateNewProposal(
+            address(executor),
+            IPlugin.Operation.DelegateCall
+        );
+
+        SPP.Stage[] memory stages = sppPlugin.getStages();
+        address pluginAddress = stages[0].plugins[0].pluginAddress;
+
+        SPP.Proposal memory oldProposal = sppPlugin.getProposal(proposalId);
+        // advance the timer to allow the proposal to be advanced
+        vm.warp(oldProposal.lastStageTransition + stages[0].minAdvance + 1);
+
+        // check event was emitted
+        vm.expectEmit({emitter: address(sppPlugin)});
+        emit ProposalResultReported(proposalId, 0, pluginAddress);
+
+        // execute the sub proposal to report the result
+        PluginA(pluginAddress).execute({_proposalId: 0});
+
+        // check result was recorded
+        SPP.Proposal memory newProposal = sppPlugin.getProposal(proposalId);
+        assertEq(
+            sppPlugin.getPluginResult(proposalId, oldProposal.currentStage, pluginAddress),
+            SPP.ResultType.Approval
+        );
+
+        // check proposal was not advanced
+        assertEq(newProposal.currentStage, oldProposal.currentStage, "currentStage");
+    }
+
     function test_WhenTheCallerIsNotAnAllowedBody()
         external
         givenExistentProposal
@@ -255,7 +355,7 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
             _proposalId: proposalId,
             _stageId: 0,
             _resultType: SPP.ResultType.Approval,
-            _tryAdvance: false
+            _tryAdvance: _tryAdvance
         });
 
         // check result was recorded
@@ -287,7 +387,7 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
             _proposalId: proposalId,
             _stageId: 0,
             _resultType: SPP.ResultType.Approval,
-            _tryAdvance: false
+            _tryAdvance: _tryAdvance
         });
 
         // check result was recorded
@@ -308,7 +408,35 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
             _proposalId: NON_EXISTENT_PROPOSAL_ID,
             _stageId: 0,
             _resultType: SPP.ResultType.Approval,
-            _tryAdvance: false
+            _tryAdvance: _tryAdvance
+        });
+    }
+
+    function _updateStagesAndCreateNewProposal(
+        address _executor,
+        IPlugin.Operation _operation
+    ) internal returns (uint256 _proposalId) {
+        // update stages to customize the configuration
+        sppPlugin.updateStages(
+            _createCustomStages({
+                _stageCount: 2,
+                _plugin1Manual: false,
+                _plugin2Manual: false,
+                _plugin3Manual: false,
+                _allowedBody: address(0),
+                _executor: _executor,
+                _operation: _operation,
+                _tryAdvance: _tryAdvance
+            })
+        );
+
+        // create new proposal
+        _proposalId = sppPlugin.createProposal({
+            _actions: _createDummyActions(),
+            _allowFailureMap: 0,
+            _metadata: "dummy metadata1",
+            _startDate: START_DATE,
+            _proposalParams: defaultCreationParams
         });
     }
 }
