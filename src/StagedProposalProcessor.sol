@@ -39,7 +39,8 @@ contract StagedProposalProcessor is
     /// @notice Used to distinguish proposals where the SPP was not able to create a proposal on a sub-plugin.
     uint256 private constant PROPOSAL_WITHOUT_ID = type(uint256).max;
 
-    enum ProposalType {
+    enum ResultType {
+        None,
         Approval,
         Veto
     }
@@ -48,7 +49,7 @@ contract StagedProposalProcessor is
         address pluginAddress;
         bool isManual;
         address allowedBody;
-        ProposalType proposalType;
+        ResultType resultType;
     }
 
     // Stage Settings
@@ -76,19 +77,23 @@ contract StagedProposalProcessor is
     // proposalId => stageId => pluginAddress => subProposalId
     mapping(uint256 => mapping(uint256 => mapping(address => uint256))) public pluginProposalIds;
 
-    // proposalId => stageId => proposalType => allowedBody => true/false
-    mapping(uint256 => mapping(uint16 => mapping(ProposalType => mapping(address => bool))))
-        private pluginResults;
+    // proposalId => stageId => allowedBody => resultType
+    mapping(uint256 => mapping(uint16 => mapping(address => ResultType))) private pluginResults;
+
+    mapping(uint256 => mapping(uint16 => mapping(uint256 => bytes))) private createProposalParams;
 
     mapping(uint256 => Proposal) private proposals;
     mapping(uint256 => Stage[]) private stages;
-    mapping(uint256 => bytes[][]) private createProposalParams;
 
     uint16 private currentConfigIndex; // Index from `stages` storage mapping
     address private trustedForwarder;
 
     event ProposalAdvanced(uint256 indexed proposalId, uint256 indexed stageId);
-    event ProposalResultReported(uint256 indexed proposalId, address indexed plugin);
+    event ProposalResultReported(
+        uint256 indexed proposalId,
+        uint16 indexed stageId,
+        address indexed plugin
+    );
     event StagesUpdated(Stage[] stages);
     event TrustedForwarderUpdated(address indexed forwarder);
 
@@ -184,7 +189,7 @@ contract StagedProposalProcessor is
             revert Errors.StageCountZero();
         }
 
-        proposalId = createProposalId(_actions, _metadata);
+        proposalId = _createProposalId(keccak256(abi.encode(_actions, _metadata)));
 
         Proposal storage proposal = proposals[proposalId];
 
@@ -214,14 +219,12 @@ contract StagedProposalProcessor is
             }
         }
 
-        // No need to store the very first stage's data as it only
-        // gets used in this very transaction.
-        if (_proposalParams.length > 1) {
-            bytes[][] memory tempData = new bytes[][](_proposalParams.length - 1);
-            for (uint i = 1; i < _proposalParams.length; i++) {
-                tempData[i - 1] = _proposalParams[i];
-            }
-            createProposalParams[proposalId] = tempData;
+        // To reduce the gas costs significantly, don't store the very
+        // first stage's params in storage as they only get used in this
+        // current tx and will not be needed later on for advancing.
+        for (uint256 i = 1; i < _proposalParams.length; i++) {
+            for (uint256 j = 0; j < _proposalParams[i].length; j++)
+                createProposalParams[proposalId][uint16(i)][j] = _proposalParams[i][j];
         }
 
         _createPluginProposals(
@@ -260,28 +263,9 @@ contract StagedProposalProcessor is
     }
 
     /// @inheritdoc IProposal
-    /// @dev Since SPP is also IProposal, it's required to override. Though, ABI can not be defined at compile time.
-    function createProposalParamsABI() external pure virtual override returns (string memory) {
-        return "()";
-    }
-
-    /// @notice Hashing function used to (re)build the proposal id from the proposal details..
-    /// @dev The proposal id is produced by hashing the ABI encoded `targets` array, the `values` array, the `calldatas` array
-    /// and the descriptionHash (bytes32 which itself is the keccak256 hash of the description string). This proposal id
-    /// can be produced from the proposal data which is part of the {ProposalCreated} event. It can even be computed in
-    /// advance, before the proposal is submitted.
-    /// The chainId and the governor address are not part of the proposal id computation. Consequently, the
-    /// same proposal (with same operation and same description) will have the same id if submitted on multiple governors
-    /// across multiple networks. This also means that in order to execute the same operation twice (on the same
-    /// governor) the proposer will have to change the description in order to avoid proposal id conflicts.
-    /// @param _actions The actions that will be executed after the proposal passes.
-    /// @param _metadata The metadata of the proposal.
-    /// @return proposalId The ID of the proposal.
-    function createProposalId(
-        Action[] memory _actions,
-        bytes memory _metadata
-    ) public pure virtual override returns (uint256) {
-        return uint256(keccak256(abi.encode(_actions, _metadata)));
+    /// @dev Since SPP is also IProposal, it's required to override.
+    function customProposalParamsABI() external pure virtual override returns (string memory) {
+        return "(bytes[][] subPluginsCustomProposalParamsABI)";
     }
 
     /// @notice Returns all information for a proposal by its ID.
@@ -294,15 +278,13 @@ contract StagedProposalProcessor is
     /// @notice Returns whether the plugin has submitted its result or not.
     /// @param _proposalId The ID of the proposal.
     /// @param _stageId Stage number in the stages array.
-    /// @param _proposalType The type setting that plugin is assigned(veto/approval).
-    /// @return bool Returns true if the plugin already reported the result.
+    /// @return ResultType Returns what resultType the plugin reported the result with. 0 if no result provided yet.
     function getPluginResult(
         uint256 _proposalId,
         uint16 _stageId,
-        ProposalType _proposalType,
         address _body
-    ) public view virtual returns (bool) {
-        return pluginResults[_proposalId][_stageId][_proposalType][_body];
+    ) public view virtual returns (ResultType) {
+        return pluginResults[_proposalId][_stageId][_body];
     }
 
     /// @notice Returns the current config index at which current configurations of stages are stored.
@@ -321,11 +303,12 @@ contract StagedProposalProcessor is
     // `canProposalAdvance` is where it checks whether addresses that reported are actually in the stage configuration.
     /// @notice Reports and records the result.
     /// @param _proposalId The ID of the proposal.
-    /// @param _proposalType Whether to include report as a veto or approval.
+    /// @param _resultType Whether to include report as a veto or approval.
     /// @param _tryAdvance If true, tries to advance the proposal if it can be advanced.
     function reportProposalResult(
         uint256 _proposalId,
-        ProposalType _proposalType,
+        uint16 _stageId,
+        ResultType _resultType,
         bool _tryAdvance
     ) external virtual {
         Proposal storage proposal = proposals[_proposalId];
@@ -334,7 +317,15 @@ contract StagedProposalProcessor is
             revert Errors.ProposalNotExists(_proposalId);
         }
 
-        _processProposalResult(_proposalId, _proposalType);
+        uint16 currentStage = proposal.currentStage;
+
+        // Ensure that result can not be submitted
+        // for the stage that has not yet become active.
+        if (_stageId > currentStage) {
+            revert Errors.StageIdInvalid(currentStage, _stageId);
+        }
+
+        _processProposalResult(_proposalId, _stageId, _resultType);
 
         if (_tryAdvance && _canProposalAdvance(_proposalId)) {
             // advance proposal
@@ -407,34 +398,52 @@ contract StagedProposalProcessor is
 
     /// @param _proposalId The ID of the proposal.
     /// @return The subplugins' createProposal's `data` parameter encoded. This doesn't include the very first stage's data.
-    function getCreateProposalParams(uint256 _proposalId) public view returns (bytes[][] memory) {
-        return createProposalParams[_proposalId];
+    function getCreateProposalParams(
+        uint256 _proposalId,
+        uint16 _stageId,
+        uint256 _index
+    ) public view returns (bytes memory) {
+        return createProposalParams[_proposalId][_stageId][_index];
     }
 
     // =========================== INTERNAL/PRIVATE FUNCTIONS =============================
 
     /// @notice Internal function to update stage configuration.
     /// @dev It's a caller's responsibility not to call this in case `_stages` are empty.
+    /// This function can not be overridden as it's crucial to not allow duplicating plugins
+    //  in the same stage, because proposal creation and report functions depend on this assumption.
     /// @param _stages The stages configuration.
-    function _updateStages(Stage[] memory _stages) internal virtual {
+    function _updateStages(Stage[] memory _stages) internal {
         Stage[] storage storedStages = stages[++currentConfigIndex];
 
         for (uint256 i = 0; i < _stages.length; ) {
             Stage storage stage = storedStages.push();
+            Plugin[] memory plugins = _stages[i].plugins;
 
-            for (uint256 j = 0; j < _stages[i].plugins.length; ) {
+            for (uint256 j = 0; j < plugins.length; ) {
+                // Ensure that plugin addresses are not duplicated in the same stage.
+                for (uint k = j + 1; k < plugins.length; ) {
+                    if (plugins[j].pluginAddress == plugins[k].pluginAddress) {
+                        revert Errors.DuplicatePluginAddress(i, plugins[j].pluginAddress);
+                    }
+
+                    unchecked {
+                        ++k;
+                    }
+                }
+
+                // If the sub-plugin accepts an automatic creation by SPP,
+                // then it must obey `IProposal` interface.
                 if (
-                    !_stages[i].plugins[j].isManual &&
-                    !_stages[i].plugins[j].pluginAddress.supportsInterface(
-                        type(IProposal).interfaceId
-                    )
+                    !plugins[j].isManual &&
+                    !plugins[j].pluginAddress.supportsInterface(type(IProposal).interfaceId)
                 ) {
                     revert Errors.InterfaceNotSupported();
                 }
 
                 // If not copied manually, requires via-ir compilation
                 // pipeline which is still slow.
-                stage.plugins.push(_stages[i].plugins[j]);
+                stage.plugins.push(plugins[j]);
 
                 unchecked {
                     ++j;
@@ -473,18 +482,18 @@ contract StagedProposalProcessor is
     }
 
     /// @notice Records the result by the caller.
+    /// @dev Assumes that plugins are not duplicated in the same stage. See `_updateStages` function.
     /// @dev Results can be recorded at any time, but only once per plugin.
     /// @param _proposalId The ID of the proposal.
-    /// @param _proposalType which method to use when reporting(veto or approval)
+    /// @param _resultType which method to use when reporting(veto or approval)
     function _processProposalResult(
         uint256 _proposalId,
-        ProposalType _proposalType
+        uint16 _stageId,
+        ResultType _resultType
     ) internal virtual {
-        Proposal storage proposal = proposals[_proposalId];
-
         address sender = msg.sender;
 
-        // If sender is a trusted trustedForwarder, that means
+        // If sender is a trusted Forwarder, that means
         // it would have appended the original sender in the calldata.
         if (sender == trustedForwarder) {
             assembly {
@@ -494,11 +503,12 @@ contract StagedProposalProcessor is
             }
         }
 
-        pluginResults[_proposalId][proposal.currentStage][_proposalType][sender] = true;
-        emit ProposalResultReported(_proposalId, sender);
+        pluginResults[_proposalId][_stageId][sender] = _resultType;
+        emit ProposalResultReported(_proposalId, _stageId, sender);
     }
 
     /// @notice Creates proposals on the non-manual plugins of the `stageId`.
+    /// @dev Assumes that plugins are not duplicated in the same stage. See `_updateStages` function.
     /// @param _proposalId The ID of the proposal.
     /// @param _stageId stage number of the stages configuration array.
     function _createPluginProposals(
@@ -514,18 +524,19 @@ contract StagedProposalProcessor is
         for (uint256 i = 0; i < stage.plugins.length; i++) {
             Plugin storage plugin = stage.plugins[i];
 
-            // If plugin proposal creation should be manual, skip it
+            // If plugin proposal creation should be manual, skip it.
             if (plugin.isManual) continue;
 
-            bytes memory actionData = abi.encodeCall(
-                this.reportProposalResult,
-                (_proposalId, plugin.proposalType, stage.vetoThreshold == 0)
-            );
-
             Action[] memory actions = new Action[](1);
-            actions[0] = Action({to: address(this), value: 0, data: actionData});
 
-            bytes memory proposalMetadata = abi.encode(address(this), _proposalId, _stageId);
+            actions[0] = Action({
+                to: address(this),
+                value: 0,
+                data: abi.encodeCall(
+                    this.reportProposalResult,
+                    (_proposalId, _stageId, plugin.resultType, stage.vetoThreshold == 0)
+                )
+            });
 
             // Make sure that the `createProposal` call did not fail because
             // 63/64 of `gasleft()` was insufficient to execute the external call.
@@ -534,15 +545,13 @@ contract StagedProposalProcessor is
             // the remaining 1/64 gas are sufficient to successfully finish the call.
             uint256 gasBefore = gasleft();
 
-            // TODO: in the createProposal standardization, shall we rename it to `data` instead of `metadata` ?
-            // This way, people would understand that it could be anything.
             try
                 IProposal(stage.plugins[i].pluginAddress).createProposal(
-                    proposalMetadata,
+                    abi.encode(address(this), _proposalId, _stageId),
                     actions,
                     _startDate,
                     _startDate + stage.voteDuration,
-                    _stageProposalParams.length > 0 ? _stageProposalParams[i] : bytes("")
+                    _stageProposalParams.length > i ? _stageProposalParams[i] : new bytes(0)
                 )
             returns (uint256 pluginProposalId) {
                 pluginProposalIds[_proposalId][_stageId][
@@ -550,8 +559,8 @@ contract StagedProposalProcessor is
                 ] = pluginProposalId;
             } catch {
                 // Handles the edge case where:
-                // on success: it could return 0
-                // on failure: default 0 would be used
+                // on success: it could return 0.
+                // on failure: default 0 would be used.
                 // In order to differentiate, we store `uint256.max` on failure.
 
                 uint256 gasAfter = gasleft();
@@ -612,6 +621,7 @@ contract StagedProposalProcessor is
     }
 
     /// @notice Internal function to calculate the votes and vetoes for a proposal.
+    /// @dev Assumes that plugins are not duplicated in the same stage. See `_updateStages` function.
     /// @param _proposalId The proposal Id.
     /// @return votes The number of votes for the proposal.
     /// @return vetoes The number of vetoes for the proposal.
@@ -632,13 +642,15 @@ contract StagedProposalProcessor is
                 plugin.pluginAddress
             ];
 
-            if (pluginResults[_proposalId][currentStage][plugin.proposalType][allowedBody]) {
+            ResultType resultType = pluginResults[_proposalId][currentStage][allowedBody];
+
+            if (resultType != ResultType.None) {
                 // result was already reported
-                plugin.proposalType == ProposalType.Approval ? ++votes : ++vetoes;
+                resultType == ResultType.Approval ? ++votes : ++vetoes;
             } else if (pluginProposalId != PROPOSAL_WITHOUT_ID && !plugin.isManual) {
                 // result was not reported yet
                 if (IProposal(stage.plugins[i].pluginAddress).canExecute(pluginProposalId)) {
-                    plugin.proposalType == ProposalType.Approval ? ++votes : ++vetoes;
+                    plugin.resultType == ResultType.Approval ? ++votes : ++vetoes;
                 }
             }
 
@@ -660,16 +672,13 @@ contract StagedProposalProcessor is
         if (_proposal.currentStage < _stages.length - 1) {
             uint16 newStage = ++_proposal.currentStage;
 
-            bytes[][] memory params = createProposalParams[_proposalId];
+            // Grab the next stage's plugins' custom params of `createProposal`.
+            bytes[] memory customParams = new bytes[](_stages[newStage].plugins.length);
+            for (uint256 i = 0; i < _stages[newStage].plugins.length; i++) {
+                customParams[i] = createProposalParams[_proposalId][newStage][i];
+            }
 
-            _createPluginProposals(
-                _proposalId,
-                newStage,
-                uint64(block.timestamp),
-                // Because we don't store the very first stage's `_data`,
-                // subtract 1 to retrieve next stage's data.
-                params.length > 0 ? params[newStage - 1] : new bytes[](0)
-            );
+            _createPluginProposals(_proposalId, newStage, uint64(block.timestamp), customParams);
 
             emit ProposalAdvanced(_proposalId, newStage);
         } else {

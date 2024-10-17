@@ -10,8 +10,11 @@ import {IExecutor} from "@aragon/osx-commons-contracts/src/executors/IExecutor.s
 import {
     IProposal
 } from "@aragon/osx-commons-contracts/src/plugin/extensions/proposal/IProposal.sol";
+import {Proposal} from "@aragon/osx-commons-contracts/src/plugin/extensions/proposal/Proposal.sol";
 
-contract PluginA is IProposal, IERC165 {
+import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+
+contract PluginA is IERC165, Proposal {
     bool public created;
     uint256 public proposalId;
     // TrustedForwarder public trustedForwarder;
@@ -31,7 +34,9 @@ contract PluginA is IProposal, IERC165 {
 
     event ProposalCreated(uint256 proposalId, uint64 startDate, uint64 endDate);
 
-    function supportsInterface(bytes4 _interfaceId) public view virtual override returns (bool) {
+    function supportsInterface(
+        bytes4 _interfaceId
+    ) public view virtual override(Proposal, IERC165) returns (bool) {
         return
             _interfaceId == type(IProposal).interfaceId ||
             _interfaceId == type(IERC165).interfaceId;
@@ -46,7 +51,7 @@ contract PluginA is IProposal, IERC165 {
     ) external override returns (uint256 _proposalId) {
         if (revertOnCreateProposal) revert("revertOnCreateProposal");
 
-        _proposalId = createProposalId(_actions, _metadata);
+        _proposalId = _createProposalId(keccak256(_metadata));
         proposalId = proposalId + 1;
         actions[_proposalId] = _actions[0];
         created = true;
@@ -64,10 +69,7 @@ contract PluginA is IProposal, IERC165 {
         return _proposalId;
     }
 
-    function createProposalId(
-        Action[] memory,
-        bytes memory
-    ) public view override returns (uint256) {
+    function _createProposalId(bytes32) internal view override returns (uint256) {
         return proposalId;
     }
 
@@ -75,7 +77,7 @@ contract PluginA is IProposal, IERC165 {
         return canExecuteResult;
     }
 
-    function createProposalParamsABI() external pure override returns (string memory) {
+    function customProposalParamsABI() external pure override returns (string memory) {
         return "";
     }
 
@@ -106,7 +108,7 @@ contract PluginA is IProposal, IERC165 {
         }
     }
 
-    function proposalCount() external view override returns (uint256) {
+    function proposalCount() public view override returns (uint256) {
         return proposalId;
     }
 

@@ -23,6 +23,7 @@ import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.s
 contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
     // variables
     Users internal users;
+    address allowedBody;
 
     // contracts
     IDAO internal dao;
@@ -38,7 +39,7 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
     uint16 internal approvalThreshold = 1;
     uint16 internal vetoThreshold = 1;
 
-    SPP.ProposalType internal proposalType = SPP.ProposalType.Approval;
+    SPP.ResultType internal resultType = SPP.ResultType.Approval;
 
     IPlugin.TargetConfig internal defaultTargetConfig;
 
@@ -54,6 +55,7 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
         users.alice = _createUser("Alice");
         users.bob = _createUser("Bob");
         users.unauthorized = _createUser("unauthorized");
+        allowedBody = users.manager;
 
         // set up dao and plugin
         _setupDaoAndPluginHelper();
@@ -226,7 +228,7 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
             pluginAddress: _pluginAddr,
             isManual: _isManual,
             allowedBody: _pluginAddr,
-            proposalType: proposalType
+            resultType: resultType
         });
     }
 
@@ -239,7 +241,7 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
             pluginAddress: _pluginAddr,
             isManual: _isManual,
             allowedBody: _allowedBody != address(0) ? _allowedBody : _pluginAddr,
-            proposalType: proposalType
+            resultType: resultType
         });
     }
 

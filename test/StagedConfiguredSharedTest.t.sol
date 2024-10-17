@@ -7,8 +7,6 @@ import {StagedProposalProcessor as SPP} from "../src/StagedProposalProcessor.sol
 import {IPlugin} from "@aragon/osx-commons-contracts/src/plugin/IPlugin.sol";
 
 abstract contract StagedConfiguredSharedTest is BaseTest {
-    address allowedBody = users.manager;
-
     function setUp() public override {
         super.setUp();
 
