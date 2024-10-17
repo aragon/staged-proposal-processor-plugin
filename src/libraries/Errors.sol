@@ -17,6 +17,9 @@ library Errors {
     /// @param proposalId The id of the proposal.
     error ProposalAlreadyExists(uint256 proposalId);
 
+    /// @notice Thrown if first stage's params don't match the count of the current first stage's plugins count.
+    error InvalidCustomParamsForFirstStage();
+
     /// ! @notice not used so far
     error CallerNotABody();
 

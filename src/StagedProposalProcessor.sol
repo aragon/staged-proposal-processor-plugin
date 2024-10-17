@@ -81,9 +81,10 @@ contract StagedProposalProcessor is
     // proposalId => stageId => allowedBody => resultType
     mapping(uint256 => mapping(uint16 => mapping(address => ResultType))) private pluginResults;
 
+    mapping(uint256 => mapping(uint16 => mapping(uint256 => bytes))) private createProposalParams;
+
     mapping(uint256 => Proposal) private proposals;
     mapping(uint256 => Stage[]) private stages;
-    mapping(uint256 => bytes[][]) private createProposalParams;
 
     uint16 private currentConfigIndex; // Index from `stages` storage mapping
     address private trustedForwarder;
@@ -219,14 +220,12 @@ contract StagedProposalProcessor is
             }
         }
 
-        // No need to store the very first stage's data as it only
-        // gets used in this very transaction.
-        if (_proposalParams.length > 1) {
-            bytes[][] memory tempData = new bytes[][](_proposalParams.length - 1);
-            for (uint i = 1; i < _proposalParams.length; i++) {
-                tempData[i - 1] = _proposalParams[i];
-            }
-            createProposalParams[proposalId] = tempData;
+        // To reduce the gas costs significantly, don't store the very
+        // first stage's params in storage as they only get used in this
+        // current tx and will not be needed later on for advancing.
+        for (uint256 i = 1; i < _proposalParams.length; i++) {
+            for (uint256 j = 0; j < _proposalParams[i].length; j++)
+                createProposalParams[proposalId][uint16(i)][j] = _proposalParams[i][j];
         }
 
         _createPluginProposals(
@@ -400,8 +399,12 @@ contract StagedProposalProcessor is
 
     /// @param _proposalId The ID of the proposal.
     /// @return The subplugins' createProposal's `data` parameter encoded. This doesn't include the very first stage's data.
-    function getCreateProposalParams(uint256 _proposalId) public view returns (bytes[][] memory) {
-        return createProposalParams[_proposalId];
+    function getCreateProposalParams(
+        uint256 _proposalId,
+        uint16 _stageId,
+        uint256 _index
+    ) public view returns (bytes memory) {
+        return createProposalParams[_proposalId][_stageId][_index];
     }
 
     // =========================== INTERNAL/PRIVATE FUNCTIONS =============================
@@ -525,15 +528,16 @@ contract StagedProposalProcessor is
             // If plugin proposal creation should be manual, skip it.
             if (plugin.isManual) continue;
 
-            bytes memory actionData = abi.encodeCall(
-                this.reportProposalResult,
-                (_proposalId, _stageId, plugin.resultType, stage.vetoThreshold == 0)
-            );
-
             Action[] memory actions = new Action[](1);
-            actions[0] = Action({to: address(this), value: 0, data: actionData});
 
-            bytes memory proposalMetadata = abi.encode(address(this), _proposalId, _stageId);
+            actions[0] = Action({
+                to: address(this),
+                value: 0,
+                data: abi.encodeCall(
+                    this.reportProposalResult,
+                    (_proposalId, _stageId, plugin.resultType, stage.vetoThreshold == 0)
+                )
+            });
 
             // Make sure that the `createProposal` call did not fail because
             // 63/64 of `gasleft()` was insufficient to execute the external call.
@@ -544,11 +548,11 @@ contract StagedProposalProcessor is
 
             try
                 IProposal(stage.plugins[i].pluginAddress).createProposal(
-                    proposalMetadata,
+                    abi.encode(address(this), _proposalId, _stageId),
                     actions,
                     _startDate,
                     _startDate + stage.voteDuration,
-                    _stageProposalParams.length > 0 ? _stageProposalParams[i] : bytes("")
+                    _stageProposalParams.length > i ? _stageProposalParams[i] : new bytes(0)
                 )
             returns (uint256 pluginProposalId) {
                 pluginProposalIds[_proposalId][_stageId][
@@ -669,16 +673,13 @@ contract StagedProposalProcessor is
         if (_proposal.currentStage < _stages.length - 1) {
             uint16 newStage = ++_proposal.currentStage;
 
-            bytes[][] memory params = createProposalParams[_proposalId];
+            // Grab the next stage's plugins' custom params of `createProposal`.
+            bytes[] memory customParams = new bytes[](_stages[newStage].plugins.length);
+            for (uint256 i = 0; i < _stages[newStage].plugins.length; i++) {
+                customParams[i] = createProposalParams[_proposalId][newStage][i];
+            }
 
-            _createPluginProposals(
-                _proposalId,
-                newStage,
-                uint64(block.timestamp),
-                // Because we don't store the very first stage's `_data`,
-                // subtract 1 to retrieve next stage's data.
-                params.length > 0 ? params[newStage - 1] : new bytes[](0)
-            );
+            _createPluginProposals(_proposalId, newStage, uint64(block.timestamp), customParams);
 
             emit ProposalAdvanced(_proposalId, newStage);
         } else {
