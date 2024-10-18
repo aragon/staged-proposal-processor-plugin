@@ -5,22 +5,20 @@ import {StagedProposalProcessor as SPP} from "./StagedProposalProcessor.sol";
 
 import {DAO} from "@aragon/osx/core/dao/DAO.sol";
 import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
-import {ProxyLib} from "@aragon/osx-commons-contracts/src/utils/deployment/ProxyLib.sol";
-import {IPluginSetup} from "@aragon/osx-commons-contracts/src/plugin/setup/IPluginSetup.sol";
-import {PermissionLib} from "@aragon/osx-commons-contracts/src/permission/PermissionLib.sol";
-import {
-    IPlugin
-} from "@aragon/osx-commons-contracts/src/plugin/IPlugin.sol";
+import {IPlugin} from "@aragon/osx-commons-contracts/src/plugin/IPlugin.sol";
 import {
     PluginUpgradeableSetup
 } from "@aragon/osx-commons-contracts/src/plugin/setup/PluginUpgradeableSetup.sol";
+import {ProxyLib} from "@aragon/osx-commons-contracts/src/utils/deployment/ProxyLib.sol";
+import {IPluginSetup} from "@aragon/osx-commons-contracts/src/plugin/setup/IPluginSetup.sol";
+import {PermissionLib} from "@aragon/osx-commons-contracts/src/permission/PermissionLib.sol";
 
 /// @title MyPluginSetup
 /// @dev Release 1, Build 1
 contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
     using ProxyLib for address;
 
-     /// @notice The identifier of the `EXECUTE_PERMISSION` permission.
+    /// @notice The identifier of the `EXECUTE_PERMISSION` permission.
     bytes32 public constant EXECUTE_PERMISSION_ID = keccak256("EXECUTE_PERMISSION");
 
     /// @notice The ID of the permission required to call the `updateStages` function.
@@ -63,7 +61,10 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
         // Setting a user's passed trusted forwarder below is dangerous in case plugin
         // installer is malicious.
         spp = IMPLEMENTATION.deployUUPSProxy(
-            abi.encodeCall(SPP.initialize, (IDAO(_dao), address(0), stages, pluginMetadata, targetConfig))
+            abi.encodeCall(
+                SPP.initialize,
+                (IDAO(_dao), address(0), stages, pluginMetadata, targetConfig)
+            )
         );
 
         PermissionLib.MultiTargetPermission[]
