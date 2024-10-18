@@ -3,22 +3,21 @@ pragma solidity ^0.8.8;
 
 import {Errors} from "./libraries/Errors.sol";
 
-import {ERC165Checker} from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
-
+import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
+import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
 import {
     PluginUUPSUpgradeable
 } from "@aragon/osx-commons-contracts/src/plugin/PluginUUPSUpgradeable.sol";
-import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
 import {
     IProposal
 } from "@aragon/osx-commons-contracts/src/plugin/extensions/proposal/IProposal.sol";
 import {
-    ProposalUpgradeable
-} from "@aragon/osx-commons-contracts/src/plugin/extensions/proposal/ProposalUpgradeable.sol";
-import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
-import {
     MetadataExtensionUpgradeable
 } from "@aragon/osx-commons-contracts/src/utils/metadata/MetadataExtensionUpgradeable.sol";
+import {ERC165Checker} from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
+import {
+    ProposalUpgradeable
+} from "@aragon/osx-commons-contracts/src/plugin/extensions/proposal/ProposalUpgradeable.sol";
 
 contract StagedProposalProcessor is
     ProposalUpgradeable,
@@ -51,6 +50,7 @@ contract StagedProposalProcessor is
         bool isManual;
         address allowedBody;
         ResultType resultType;
+        bool tryAdvance;
     }
 
     // Stage Settings
@@ -535,7 +535,7 @@ contract StagedProposalProcessor is
                 value: 0,
                 data: abi.encodeCall(
                     this.reportProposalResult,
-                    (_proposalId, _stageId, plugin.resultType, stage.vetoThreshold == 0)
+                    (_proposalId, _stageId, plugin.resultType, plugin.tryAdvance)
                 )
             });
 

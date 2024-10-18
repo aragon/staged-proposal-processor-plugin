@@ -3,21 +3,24 @@ pragma solidity ^0.8.8;
 
 import {TrustedForwarder} from "../../../src/utils/TrustedForwarder.sol";
 
+import {IPlugin} from "@aragon/osx-commons-contracts/src/plugin/IPlugin.sol";
+import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
-
+import {IExecutor} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
 import {
     IProposal
 } from "@aragon/osx-commons-contracts/src/plugin/extensions/proposal/IProposal.sol";
-import {
-    Proposal
-} from "@aragon/osx-commons-contracts/src/plugin/extensions/proposal/Proposal.sol";
+import {Proposal} from "@aragon/osx-commons-contracts/src/plugin/extensions/proposal/Proposal.sol";
 
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
 contract PluginA is IERC165, Proposal {
     bool public created;
     uint256 public proposalId;
-    TrustedForwarder public trustedForwarder;
+    // TrustedForwarder public trustedForwarder;
+
+    IPlugin.TargetConfig public targetConfig;
+
     mapping(uint256 => Action) public actions;
     mapping(uint256 => bytes) public extraParams;
 
@@ -25,13 +28,15 @@ contract PluginA is IERC165, Proposal {
     bool public needExtraParams;
     bool public canExecuteResult = true;
 
-    constructor(address _trustedForwarder) {
-        trustedForwarder = TrustedForwarder(_trustedForwarder);
+    constructor(IPlugin.TargetConfig memory _targetConfig) {
+        targetConfig = _targetConfig;
     }
 
     event ProposalCreated(uint256 proposalId, uint64 startDate, uint64 endDate);
 
-    function supportsInterface(bytes4 _interfaceId) public view virtual override(Proposal, IERC165) returns (bool) {
+    function supportsInterface(
+        bytes4 _interfaceId
+    ) public view virtual override(Proposal, IERC165) returns (bool) {
         return
             _interfaceId == type(IProposal).interfaceId ||
             _interfaceId == type(IERC165).interfaceId;
@@ -64,7 +69,7 @@ contract PluginA is IERC165, Proposal {
         return _proposalId;
     }
 
-    function _createProposalId(bytes32) internal view override returns(uint256){
+    function _createProposalId(bytes32) internal view override returns (uint256) {
         return proposalId;
     }
 
@@ -81,7 +86,26 @@ contract PluginA is IERC165, Proposal {
     ) external returns (bytes[] memory execResults, uint256 failureMap) {
         Action[] memory mainActions = new Action[](1);
         mainActions[0] = actions[_proposalId];
-        (execResults, failureMap) = trustedForwarder.execute(bytes32(_proposalId), mainActions, 0);
+        if (targetConfig.operation == IPlugin.Operation.DelegateCall) {
+            bool success;
+            bytes memory data;
+            (success, data) = targetConfig.target.delegatecall(
+                abi.encodeCall(IExecutor.execute, (bytes32(_proposalId), mainActions, 1))
+            );
+            (execResults, failureMap) = abi.decode(data, (bytes[], uint256));
+
+            // (execResults, failureMap) = targetConfig.target.execute(
+            //     bytes32(_proposalId),
+            //     mainActions,
+            //     1
+            // );
+        } else {
+            (execResults, failureMap) = IExecutor(targetConfig.target).execute(
+                bytes32(_proposalId),
+                mainActions,
+                0
+            );
+        }
     }
 
     function proposalCount() public view override returns (uint256) {
