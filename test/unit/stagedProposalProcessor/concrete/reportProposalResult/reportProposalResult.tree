@@ -3,17 +3,43 @@ ReportProposalResult_SPP_UnitTest
 │   ├── when voteDuration has not passed
 │   │   ├── when the caller is an allowed body
 │   │   │   ├── when should try advance stage
-│   │   │   │   ├── it should record the result.
-│   │   │   │   ├── it should emit event.
-│   │   │   │   └── it should call advanceProposal function.
+│   │   │   │   ├── when caller is trusted forwarder
+│   │   │   │   │   ├── it should use the sender stored in the call data.
+│   │   │   │   │   ├── it should record the result.
+│   │   │   │   │   ├── it should emit event proposal result reported.
+│   │   │   │   │   └── it should call advanceProposal function and emit event.
+│   │   │   │   ├── when caller is executor using delegatecall
+│   │   │   │   │   ├── it should use the msg.sender that is the plugin.
+│   │   │   │   │   ├── it should record the result.
+│   │   │   │   │   ├── it should emit event proposal result reported.
+│   │   │   │   │   └── it should call advanceProposal function and emit event.
+│   │   │   │   ├── when proposal can be advanced
+│   │   │   │   │   ├── it should record the result.
+│   │   │   │   │   ├── it should emit event proposal result reported.
+│   │   │   │   │   └── it should call advanceProposal function and emit event.
+│   │   │   │   └── when proposal can not be advanced
+│   │   │   │       ├── it should record the result.
+│   │   │   │       ├── it should emit event proposal result reported.
+│   │   │   │       └── it should not call advanceProposal function nor emit event.
 │   │   │   └── when should not try advance stage
+│   │   │       ├── given caller is trusted forwarder
+│   │   │       │   ├── it should use the sender stored in the call data.
+│   │   │       │   ├── it should record the result.
+│   │   │       │   ├── it should emit event proposal result reported.
+│   │   │       │   └── it should not call advanceProposal function nor emit event.
+│   │   │       ├── given caller is executor using delegatecall
+│   │   │       │   ├── it should use the msg.sender that is the plugin.
+│   │   │       │   ├── it should record the result.
+│   │   │       │   ├── it should emit event proposal result reported.
+│   │   │       │   └── it should not call advanceProposal function nor emit event.
 │   │   │       ├── it should record the result.
 │   │   │       ├── it should emit event.
 │   │   │       └── it should not call advanceProposal function.
 │   │   └── when the caller is not an allowed body
-│   │       └── it should not record the result. // TBD
+│   │       ├── it should not record the result in the right proposal path.
+│   │       └── it should record the result for historical data.
 │   └── when voteDuration has passed
 │       ├── it should record the result.
 │       └── it should emit event.
 └── given non existent proposal
-    └── it should reverts.   // TBD
+    └── it should revert.

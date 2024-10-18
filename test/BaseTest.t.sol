@@ -11,24 +11,19 @@ import {Constants} from "./utils/Constants.sol";
 import {Assertions} from "./utils/Assertions.sol";
 import {PluginA} from "./utils/dummy-plugins/PluginA.sol";
 import {TrustedForwarder} from "../src/utils/TrustedForwarder.sol";
-import {AlwaysTrueCondition} from "../src/utils/AlwaysTrueCondition.sol";
 import {StagedProposalProcessor as SPP} from "../src/StagedProposalProcessor.sol";
 
 import {DAO} from "@aragon/osx/core/dao/DAO.sol";
 import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
 import {PermissionLib} from "@aragon/osx/core/permission/PermissionLib.sol";
-import {PermissionManager} from "@aragon/osx/core/permission/PermissionManager.sol";
-import {
-    PluginUUPSUpgradeable
-} from "@aragon/osx-commons-contracts/src/plugin/PluginUUPSUpgradeable.sol";
-
+import {IPlugin} from "@aragon/osx-commons-contracts/src/plugin/IPlugin.sol";
+import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
-
-import "forge-std/console.sol";
 
 contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
     // variables
     Users internal users;
+    address allowedBody;
 
     // contracts
     IDAO internal dao;
@@ -44,9 +39,11 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
     uint16 internal approvalThreshold = 1;
     uint16 internal vetoThreshold = 1;
 
-    SPP.ProposalType internal proposalType = SPP.ProposalType.Approval;
+    SPP.ResultType internal resultType = SPP.ResultType.Approval;
 
-    PluginUUPSUpgradeable.TargetConfig internal defaultTargetConfig;
+    IPlugin.TargetConfig internal defaultTargetConfig;
+
+    bytes[][] internal defaultCreationParams;
 
     function setUp() public virtual {
         // deploy external needed contracts
@@ -58,9 +55,10 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
         users.alice = _createUser("Alice");
         users.bob = _createUser("Bob");
         users.unauthorized = _createUser("unauthorized");
+        allowedBody = users.manager;
 
         // set up dao and plugin
-        _setUpDaoAndPlugin();
+        _setupDaoAndPluginHelper();
 
         // label contracts
         vm.label({account: address(dao), newLabel: "DAO"});
@@ -80,7 +78,13 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
 
     // ==== HELPERS ====
 
-    function _setUpDaoAndPlugin() internal {
+    // virtual function to be override if harness spp or similar is needed
+    function _setupDaoAndPluginHelper() internal virtual {
+        address sppAddress = address(new SPP());
+        _setUpDaoAndPlugin(sppAddress);
+    }
+
+    function _setUpDaoAndPlugin(address sppAddr) internal {
         vm.startPrank({msgSender: users.manager});
 
         // create DAO.
@@ -92,22 +96,28 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
         );
 
         defaultTargetConfig.target = address(dao);
-        defaultTargetConfig.operation = PluginUUPSUpgradeable.Operation.Call;
+        defaultTargetConfig.operation = IPlugin.Operation.Call;
 
         // create SPP plugin.
         sppPlugin = SPP(
             createProxyAndCall(
-                address(new SPP()),
+                sppAddr,
                 abi.encodeCall(
                     SPP.initialize,
-                    (dao, address(trustedForwarder), new SPP.Stage[](0), DUMMY_METADATA, defaultTargetConfig)
+                    (
+                        dao,
+                        address(trustedForwarder),
+                        new SPP.Stage[](0),
+                        DUMMY_METADATA,
+                        defaultTargetConfig
+                    )
                 )
             )
         );
 
         // grant permissions
         PermissionLib.MultiTargetPermission[]
-            memory permissions = new PermissionLib.MultiTargetPermission[](5);
+            memory permissions = new PermissionLib.MultiTargetPermission[](4);
 
         // grant update stage permission on SPP plugin to the DAO
         permissions[0] = PermissionLib.MultiTargetPermission({
@@ -118,17 +128,8 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
             permissionId: sppPlugin.UPDATE_STAGES_PERMISSION_ID()
         });
 
-        // grant advance proposal permission to any address
-        permissions[1] = PermissionLib.MultiTargetPermission({
-            operation: PermissionLib.Operation.GrantWithCondition,
-            where: address(sppPlugin),
-            who: ANY_ADDR,
-            condition: address(new AlwaysTrueCondition()),
-            permissionId: sppPlugin.ADVANCE_PROPOSAL_PERMISSION_ID()
-        });
-
         // grant execute permission on the dao to the SPP plugin
-        permissions[2] = PermissionLib.MultiTargetPermission({
+        permissions[1] = PermissionLib.MultiTargetPermission({
             operation: PermissionLib.Operation.Grant,
             where: address(dao),
             who: address(sppPlugin),
@@ -137,16 +138,16 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
         });
 
         // grant update metadata permission on SPP plugin to the manager
-        permissions[3] = PermissionLib.MultiTargetPermission({
+        permissions[2] = PermissionLib.MultiTargetPermission({
             operation: PermissionLib.Operation.Grant,
             where: address(sppPlugin),
             who: users.manager,
             condition: PermissionLib.NO_CONDITION,
-            permissionId: sppPlugin.UPDATE_METADATA_PERMISSION_ID()
+            permissionId: sppPlugin.SET_METADATA_PERMISSION_ID()
         });
 
         // grant permission for creating proposals on the spp to the manager
-        permissions[4] = PermissionLib.MultiTargetPermission({
+        permissions[3] = PermissionLib.MultiTargetPermission({
             operation: PermissionLib.Operation.Grant,
             where: address(sppPlugin),
             who: users.manager,
@@ -168,16 +169,65 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
         bool _plugin2Manual,
         bool _plugin3Manual
     ) internal returns (SPP.Stage[] memory stages) {
-        address _pluginNonManual1 = address(new PluginA(address(trustedForwarder)));
-        address _pluginNonManual2 = address(new PluginA(address(trustedForwarder)));
-        address _pluginNonManual3 = address(new PluginA(address(trustedForwarder)));
+        defaultTargetConfig.target = address(trustedForwarder);
+        defaultTargetConfig.operation = IPlugin.Operation.Call;
+        address _plugin1 = address(new PluginA(defaultTargetConfig));
+        address _plugin2 = address(new PluginA(defaultTargetConfig));
+        address _plugin3 = address(new PluginA(defaultTargetConfig));
 
         SPP.Plugin[] memory _plugins1 = new SPP.Plugin[](2);
-        _plugins1[0] = _createPluginStruct(_pluginNonManual1, _plugin1Manual);
-        _plugins1[1] = _createPluginStruct(_pluginNonManual2, _plugin2Manual);
+        _plugins1[0] = _createPluginStruct(_plugin1, _plugin1Manual);
+        _plugins1[1] = _createPluginStruct(_plugin2, _plugin2Manual);
 
         SPP.Plugin[] memory _plugins2 = new SPP.Plugin[](1);
-        _plugins2[0] = _createPluginStruct(_pluginNonManual3, _plugin3Manual);
+        _plugins2[0] = _createPluginStruct(_plugin3, _plugin3Manual);
+
+        stages = new SPP.Stage[](_stageCount);
+        for (uint i; i < _stageCount; i++) {
+            if (i == 0) stages[i] = _createStageStruct(_plugins1);
+            else stages[i] = _createStageStruct(_plugins2);
+        }
+    }
+
+    function _createCustomStages(
+        uint256 _stageCount,
+        bool _plugin1Manual,
+        bool _plugin2Manual,
+        bool _plugin3Manual,
+        address _allowedBody,
+        address _executor,
+        IPlugin.Operation _operation,
+        bool _tryAdvance
+    ) internal returns (SPP.Stage[] memory stages) {
+        IPlugin.TargetConfig memory targetConfig;
+        targetConfig.target = address(_executor);
+        targetConfig.operation = _operation;
+
+        address _plugin1 = address(new PluginA(targetConfig));
+        address _plugin2 = address(new PluginA(targetConfig));
+        address _plugin3 = address(new PluginA(targetConfig));
+
+        SPP.Plugin[] memory _plugins1 = new SPP.Plugin[](2);
+        _plugins1[0] = _createCustomPluginStruct(
+            _plugin1,
+            _plugin1Manual,
+            _allowedBody,
+            _tryAdvance
+        );
+        _plugins1[1] = _createCustomPluginStruct(
+            _plugin2,
+            _plugin2Manual,
+            _allowedBody,
+            _tryAdvance
+        );
+
+        SPP.Plugin[] memory _plugins2 = new SPP.Plugin[](1);
+        _plugins2[0] = _createCustomPluginStruct(
+            _plugin3,
+            _plugin3Manual,
+            _allowedBody,
+            _tryAdvance
+        );
 
         stages = new SPP.Stage[](_stageCount);
         for (uint i; i < _stageCount; i++) {
@@ -194,7 +244,23 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
             pluginAddress: _pluginAddr,
             isManual: _isManual,
             allowedBody: _pluginAddr,
-            proposalType: proposalType
+            resultType: resultType,
+            tryAdvance: true
+        });
+    }
+
+    function _createCustomPluginStruct(
+        address _pluginAddr,
+        bool _isManual,
+        address _allowedBody,
+        bool _tryAdvance
+    ) internal view virtual returns (SPP.Plugin memory plugin) {
+        plugin = SPP.Plugin({
+            pluginAddress: _pluginAddr,
+            isManual: _isManual,
+            allowedBody: _allowedBody != address(0) ? _allowedBody : _pluginAddr,
+            resultType: resultType,
+            tryAdvance: _tryAdvance
         });
     }
 
@@ -211,9 +277,9 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
         });
     }
 
-    function _createDummyActions() internal view returns (IDAO.Action[] memory actions) {
+    function _createDummyActions() internal view returns (Action[] memory actions) {
         // action 1
-        actions = new IDAO.Action[](2);
+        actions = new Action[](2);
         actions[0].to = address(target);
         actions[0].value = 0;
         actions[0].data = abi.encodeCall(target.setValue, TARGET_VALUE);
@@ -224,18 +290,21 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
         actions[1].data = abi.encodeCall(target.setAddress, TARGET_ADDRESS);
     }
 
-    function _configureStagesAndCreateDummyProposal(bytes memory _metadata) internal returns (uint256 proposalId) {
+    function _configureStagesAndCreateDummyProposal(
+        bytes memory _metadata
+    ) internal returns (uint256 proposalId) {
         // setup stages
         SPP.Stage[] memory stages = _createDummyStages(2, false, false, false);
         sppPlugin.updateStages(stages);
 
         // create proposal
-        IDAO.Action[] memory actions = _createDummyActions();
+        Action[] memory actions = _createDummyActions();
         proposalId = sppPlugin.createProposal({
             _actions: actions,
             _allowFailureMap: 0,
             _metadata: _metadata,
-            _startDate: START_DATE
+            _startDate: START_DATE,
+            _proposalParams: defaultCreationParams
         });
     }
 

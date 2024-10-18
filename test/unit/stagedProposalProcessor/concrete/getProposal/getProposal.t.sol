@@ -23,7 +23,8 @@ contract GetProposal_SPP_UnitTest is StagedConfiguredSharedTest {
             _actions: _createDummyActions(),
             _allowFailureMap: 0,
             _metadata: DUMMY_METADATA,
-            _startDate: START_DATE
+            _startDate: START_DATE,
+            _proposalParams: defaultCreationParams
         });
         SPP.Proposal memory expectedProposal = SPP.Proposal({
             allowFailureMap: 0,

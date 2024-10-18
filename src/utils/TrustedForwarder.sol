@@ -2,15 +2,14 @@
 pragma solidity ^0.8.8;
 
 import {Errors} from "../libraries/Errors.sol";
-
-import "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
+import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
 
 contract TrustedForwarder {
     // We use array of actions even though we always revert with > 1
     // This is to allow compatibility as plugins call `execute` with multiple actions.
     function execute(
         bytes32 _callId,
-        IDAO.Action[] calldata _actions,
+        Action[] calldata _actions,
         uint256 _allowFailureMap
     )
         external
@@ -30,7 +29,7 @@ contract TrustedForwarder {
     {
         (_callId, _allowFailureMap, failureMap, execResults);
         if (_actions.length != 1) {
-            revert Errors.NotPossible();
+            revert Errors.IncorrectActionCount();
         }
 
         // append msg.sender in the end of the actual calldata

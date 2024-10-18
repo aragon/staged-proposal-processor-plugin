@@ -3,19 +3,21 @@ pragma solidity ^0.8.8;
 
 import {TrustedForwarder} from "../../../src/utils/TrustedForwarder.sol";
 
-import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
-
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import {
     IProposal
 } from "@aragon/osx-commons-contracts/src/plugin/extensions/proposal/IProposal.sol";
+import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
 
-// dummy plugin that implements IProposal but the create function always reverts
-contract PluginC is IProposal, IERC165 {
+// dummy plugin that uses lot of gas when proposal is created
+contract GasExpensivePlugin is IProposal, IERC165 {
     bool public created;
     uint256 public proposalId;
     TrustedForwarder public trustedForwarder;
     mapping(uint256 => Action) public actions;
+
+    uint256 iterationsCount = 20;
+    mapping(uint256 => uint256) public store;
 
     constructor(address _trustedForwarder) {
         trustedForwarder = TrustedForwarder(_trustedForwarder);
@@ -33,8 +35,12 @@ contract PluginC is IProposal, IERC165 {
         uint64,
         uint64,
         bytes memory
-    ) external pure override returns (uint256) {
-        revert("Always reverts");
+    ) external override returns (uint256) {
+        for (uint256 i = 0; i < iterationsCount; i++) {
+            store[i] = 1;
+        }
+
+        return proposalId;
     }
 
     function customProposalParamsABI() external pure override returns (string memory) {
@@ -56,5 +62,9 @@ contract PluginC is IProposal, IERC165 {
 
     function proposalCount() external view override returns (uint256) {
         return proposalId;
+    }
+
+    function setIterationsCount(uint256 _iterationsCount) external {
+        iterationsCount = _iterationsCount;
     }
 }

@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.8;
 
-import {BaseTest} from "../../../BaseTest.t.sol";
-import {Errors} from "../../../../src/libraries/Errors.sol";
+import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
 
-import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
+import {BaseTest} from "../../../BaseTest.t.sol";
 
 contract TrustedForwarder_FuzzyTest is BaseTest {
     function test_AnyoneCanExecute(address _randomAddress) external {
@@ -13,8 +12,8 @@ contract TrustedForwarder_FuzzyTest is BaseTest {
         assumeNotPrecompile(_randomAddress);
         resetPrank(_randomAddress);
 
-        IDAO.Action[] memory actions = new IDAO.Action[](1);
-        actions[0] = IDAO.Action({
+        Action[] memory actions = new Action[](1);
+        actions[0] = Action({
             to: address(target),
             value: 0,
             data: abi.encodeWithSelector(target.setValue.selector, TARGET_VALUE)

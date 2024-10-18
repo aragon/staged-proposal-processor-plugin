@@ -3,11 +3,9 @@ pragma solidity ^0.8.8;
 
 import {TrustedForwarder} from "../../../src/utils/TrustedForwarder.sol";
 
-import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
+import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
 
 contract PluginB {
-    error NotPossible();
-
     TrustedForwarder public trustedForwarder;
 
     constructor(address _trustedForwarder) {
@@ -16,7 +14,7 @@ contract PluginB {
 
     function execute(
         uint256 proposalId,
-        IDAO.Action[] memory actions
+        Action[] memory actions
     ) external returns (bytes[] memory execResults, uint256 failureMap) {
         (execResults, failureMap) = trustedForwarder.execute(bytes32(proposalId), actions, 0);
     }
