@@ -15,9 +15,9 @@ contract UpdateStages_SPP_UnitTest is BaseTest {
         resetPrank(users.unauthorized);
         SPP.Stage[] memory stages = _createDummyStages({
             _stageCount: 2,
-            _plugin1Manual: true,
-            _plugin2Manual: true,
-            _plugin3Manual: false
+            _body1Manual: true,
+            _body2Manual: true,
+            _body3Manual: false
         });
 
         vm.expectRevert(
@@ -37,9 +37,9 @@ contract UpdateStages_SPP_UnitTest is BaseTest {
 
         SPP.Stage[] memory stages = _createDummyStages({
             _stageCount: 0,
-            _plugin1Manual: true,
-            _plugin2Manual: true,
-            _plugin3Manual: false
+            _body1Manual: true,
+            _body2Manual: true,
+            _body3Manual: false
         });
 
         vm.expectRevert(abi.encodeWithSelector(Errors.StageCountZero.selector));
@@ -52,9 +52,9 @@ contract UpdateStages_SPP_UnitTest is BaseTest {
 
         SPP.Stage[] memory stages = _createDummyStages({
             _stageCount: 1,
-            _plugin1Manual: true,
-            _plugin2Manual: true,
-            _plugin3Manual: false
+            _body1Manual: true,
+            _body2Manual: true,
+            _body3Manual: false
         });
         uint256 _newConfigIndex = sppPlugin.getCurrentConfigIndex() + 1;
 
@@ -85,9 +85,9 @@ contract UpdateStages_SPP_UnitTest is BaseTest {
         // it should update the stages.
         SPP.Stage[] memory stages = _createDummyStages({
             _stageCount: 3,
-            _plugin1Manual: true,
-            _plugin2Manual: false,
-            _plugin3Manual: false
+            _body1Manual: true,
+            _body2Manual: false,
+            _body3Manual: false
         });
         uint256 _newConfigIndex = sppPlugin.getCurrentConfigIndex() + 1;
 
@@ -108,11 +108,11 @@ contract UpdateStages_SPP_UnitTest is BaseTest {
     {
         // it should revert.
 
-        SPP.Plugin[] memory _plugins = new SPP.Plugin[](1);
-        _plugins[0] = _createPluginStruct(address(new PluginB(address(trustedForwarder))), false);
+        SPP.Body[] memory _bodies = new SPP.Body[](1);
+        _bodies[0] = _createBodyStruct(address(new PluginB(address(trustedForwarder))), false);
 
         SPP.Stage[] memory stages = new SPP.Stage[](1);
-        stages[0] = _createStageStruct(_plugins);
+        stages[0] = _createStageStruct(_bodies);
 
         // check revert
         vm.expectRevert(abi.encodeWithSelector(Errors.InterfaceNotSupported.selector));
@@ -125,9 +125,9 @@ contract UpdateStages_SPP_UnitTest is BaseTest {
 
         SPP.Stage[] memory stages = _createDummyStages({
             _stageCount: 3,
-            _plugin1Manual: true,
-            _plugin2Manual: true,
-            _plugin3Manual: true
+            _body1Manual: true,
+            _body2Manual: true,
+            _body3Manual: true
         });
         uint256 _newConfigIndex = sppPlugin.getCurrentConfigIndex() + 1;
 

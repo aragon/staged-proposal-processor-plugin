@@ -8,16 +8,16 @@ library Errors {
     /// @notice Thrown the proposal does not exist.
     error ProposalNotExists(uint256);
 
-    /// @notice Thrown if a plugin address is duplicated in the same stage.
-    /// @param stageId The stage id that contains the duplicated plugin address.
-    /// @param plugin The address that is duplicated in `stageId`.
-    error DuplicatePluginAddress(uint256 stageId, address plugin);
+    /// @notice Thrown if a body address is duplicated in the same stage.
+    /// @param stageId The stage id that contains the duplicated body address.
+    /// @param body The address that is duplicated in `stageId`.
+    error DuplicateBodyAddress(uint256 stageId, address body);
 
     /// @notice Thrown if the proposal with same actions and metadata already exists.
     /// @param proposalId The id of the proposal.
     error ProposalAlreadyExists(uint256 proposalId);
 
-    /// @notice Thrown if first stage's params don't match the count of the current first stage's plugins count.
+    /// @notice Thrown if first stage's params don't match the count of the current first stage's bodies' count.
     error InvalidCustomParamsForFirstStage();
 
     /// ! @notice not used so far
@@ -43,7 +43,7 @@ library Errors {
     /// @notice Thrown when trusted forwarder can not execute the actions.
     error IncorrectActionCount();
 
-    /// @notice Thrown when a plugin doesn't support IProposal interface.
+    /// @notice Thrown when a body doesn't support IProposal interface.
     error InterfaceNotSupported();
 
     /// @notice Thrown when the proposal can not be advanced.
