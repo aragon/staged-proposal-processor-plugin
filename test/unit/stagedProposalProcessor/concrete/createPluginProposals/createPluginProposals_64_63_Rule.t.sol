@@ -56,11 +56,11 @@ contract CreatePluginProposals_64_63_Rule is BaseTest {
 
         vm.expectRevert(abi.encodeWithSelector(Errors.InsufficientGas.selector));
 
-        sppHarness.exposed_createBodyProposals{gas: expectedGas - 19000}({
+        sppHarness.exposed_createBodyProposals{gas: expectedGas - 190000}({
             _proposalId: proposalId,
             _stageId: 1,
             _startDate: uint64(block.timestamp),
-            _createProposalParams: new bytes[](sppPlugin.getStages()[0].bodies.length)
+            _createProposalParams: new bytes[](0)
         });
     }
 
@@ -73,19 +73,19 @@ contract CreatePluginProposals_64_63_Rule is BaseTest {
     function _setUpStages() internal returns (SPP.Stage[] memory stages) {
         defaultTargetConfig.target = address(trustedForwarder);
         defaultTargetConfig.operation = IPlugin.Operation.Call;
-        address _body1Addr = address(new PluginA(defaultTargetConfig));
-        address _body2Addr = address(new GasExpensivePlugin(defaultTargetConfig.target));
+        address body1Addr = address(new PluginA(defaultTargetConfig));
+        address body2Addr = address(new GasExpensivePlugin(defaultTargetConfig.target));
 
-        SPP.Body[] memory _body1 = new SPP.Body[](1);
-        _body1[0] = _createBodyStruct({_bodyAddr: _body1Addr, _isManual: false});
+        SPP.Body[] memory body1 = new SPP.Body[](1);
+        body1[0] = _createBodyStruct({_bodyAddr: body1Addr, _isManual: false});
 
-        SPP.Body[] memory _body2 = new SPP.Body[](1);
-        _body2[0] = _createBodyStruct({_bodyAddr: _body2Addr, _isManual: false});
+        SPP.Body[] memory body2 = new SPP.Body[](1);
+        body2[0] = _createBodyStruct({_bodyAddr: body2Addr, _isManual: false});
 
         stages = new SPP.Stage[](2);
         for (uint i; i < 2; ++i) {
-            if (i == 0) stages[i] = _createStageStruct(_body1);
-            else stages[i] = _createStageStruct(_body2);
+            if (i == 0) stages[i] = _createStageStruct(body1);
+            else stages[i] = _createStageStruct(body2);
         }
     }
 }
