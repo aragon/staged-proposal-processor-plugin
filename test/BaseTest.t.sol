@@ -165,36 +165,35 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
 
     function _createDummyStages(
         uint256 _stageCount,
-        bool _plugin1Manual,
-        bool _plugin2Manual,
-        bool _plugin3Manual
+        bool _body1Manual,
+        bool _body2Manual,
+        bool _body3Manual
     ) internal returns (SPP.Stage[] memory stages) {
         defaultTargetConfig.target = address(trustedForwarder);
         defaultTargetConfig.operation = IPlugin.Operation.Call;
-        address _plugin1 = address(new PluginA(defaultTargetConfig));
-        address _plugin2 = address(new PluginA(defaultTargetConfig));
-        address _plugin3 = address(new PluginA(defaultTargetConfig));
+        address body1Addr = address(new PluginA(defaultTargetConfig));
+        address body2Addr = address(new PluginA(defaultTargetConfig));
+        address body3Addr = address(new PluginA(defaultTargetConfig));
 
-        SPP.Plugin[] memory _plugins1 = new SPP.Plugin[](2);
-        _plugins1[0] = _createPluginStruct(_plugin1, _plugin1Manual);
-        _plugins1[1] = _createPluginStruct(_plugin2, _plugin2Manual);
+        SPP.Body[] memory stage1Bodies = new SPP.Body[](2);
+        stage1Bodies[0] = _createBodyStruct(body1Addr, _body1Manual);
+        stage1Bodies[1] = _createBodyStruct(body2Addr, _body2Manual);
 
-        SPP.Plugin[] memory _plugins2 = new SPP.Plugin[](1);
-        _plugins2[0] = _createPluginStruct(_plugin3, _plugin3Manual);
+        SPP.Body[] memory stage2Bodies = new SPP.Body[](1);
+        stage2Bodies[0] = _createBodyStruct(body3Addr, _body3Manual);
 
         stages = new SPP.Stage[](_stageCount);
         for (uint i; i < _stageCount; i++) {
-            if (i == 0) stages[i] = _createStageStruct(_plugins1);
-            else stages[i] = _createStageStruct(_plugins2);
+            if (i == 0) stages[i] = _createStageStruct(stage1Bodies);
+            else stages[i] = _createStageStruct(stage2Bodies);
         }
     }
 
     function _createCustomStages(
         uint256 _stageCount,
-        bool _plugin1Manual,
-        bool _plugin2Manual,
-        bool _plugin3Manual,
-        address _allowedBody,
+        bool _body1Manual,
+        bool _body2Manual,
+        bool _body3Manual,
         address _executor,
         IPlugin.Operation _operation,
         bool _tryAdvance
@@ -203,72 +202,66 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
         targetConfig.target = address(_executor);
         targetConfig.operation = _operation;
 
-        address _plugin1 = address(new PluginA(targetConfig));
-        address _plugin2 = address(new PluginA(targetConfig));
-        address _plugin3 = address(new PluginA(targetConfig));
+        address body1Addr = address(new PluginA(targetConfig));
+        address body2Addr = address(new PluginA(targetConfig));
+        address body3Addr = address(new PluginA(targetConfig));
 
-        SPP.Plugin[] memory _plugins1 = new SPP.Plugin[](2);
-        _plugins1[0] = _createCustomPluginStruct(
-            _plugin1,
-            _plugin1Manual,
-            _allowedBody,
+        SPP.Body[] memory _body1 = new SPP.Body[](2);
+        _body1[0] = _createCustomBodyStruct(
+            body1Addr,
+            _body1Manual,
             _tryAdvance
         );
-        _plugins1[1] = _createCustomPluginStruct(
-            _plugin2,
-            _plugin2Manual,
-            _allowedBody,
+        _body1[1] = _createCustomBodyStruct(
+            body2Addr,
+            _body2Manual,
             _tryAdvance
         );
 
-        SPP.Plugin[] memory _plugins2 = new SPP.Plugin[](1);
-        _plugins2[0] = _createCustomPluginStruct(
-            _plugin3,
-            _plugin3Manual,
-            _allowedBody,
+        SPP.Body[] memory _body2 = new SPP.Body[](1);
+        _body2[0] = _createCustomBodyStruct(
+            body3Addr,
+            _body3Manual,
             _tryAdvance
         );
 
         stages = new SPP.Stage[](_stageCount);
         for (uint i; i < _stageCount; i++) {
-            if (i == 0) stages[i] = _createStageStruct(_plugins1);
-            else stages[i] = _createStageStruct(_plugins2);
+            if (i == 0) stages[i] = _createStageStruct(_body1);
+            else stages[i] = _createStageStruct(_body2);
         }
     }
 
-    function _createPluginStruct(
-        address _pluginAddr,
+    function _createBodyStruct(
+        address _bodyAddr,
         bool _isManual
-    ) internal view virtual returns (SPP.Plugin memory plugin) {
-        plugin = SPP.Plugin({
-            pluginAddress: _pluginAddr,
+    ) internal view virtual returns (SPP.Body memory body) {
+        body = SPP.Body({
+            addr: _bodyAddr,
             isManual: _isManual,
-            allowedBody: _pluginAddr,
-            resultType: resultType,
-            tryAdvance: true
+            tryAdvance: true,
+            resultType: resultType
         });
     }
 
-    function _createCustomPluginStruct(
-        address _pluginAddr,
+    function _createCustomBodyStruct(
+        address _bodyAddr,
         bool _isManual,
-        address _allowedBody,
         bool _tryAdvance
-    ) internal view virtual returns (SPP.Plugin memory plugin) {
-        plugin = SPP.Plugin({
-            pluginAddress: _pluginAddr,
+    ) internal view virtual returns (SPP.Body memory body) {
+        body = SPP.Body({
+            addr: _bodyAddr,
             isManual: _isManual,
-            allowedBody: _allowedBody != address(0) ? _allowedBody : _pluginAddr,
-            resultType: resultType,
-            tryAdvance: _tryAdvance
+            tryAdvance: _tryAdvance,
+            resultType: resultType
         });
     }
 
     function _createStageStruct(
-        SPP.Plugin[] memory _plugins
+        SPP.Body[] memory _bodies
     ) internal view virtual returns (SPP.Stage memory stage) {
         stage = SPP.Stage({
-            plugins: _plugins,
+            bodies: _bodies,
             maxAdvance: maxAdvance,
             minAdvance: minAdvance,
             voteDuration: voteDuration,
@@ -312,8 +305,8 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
         // execute proposals on first stage
         SPP.Stage[] memory stages = sppPlugin.getStages();
 
-        for (uint256 i; i < stages[_stage].plugins.length; i++) {
-            PluginA(stages[_stage].plugins[i].pluginAddress).execute({_proposalId: 0});
+        for (uint256 i; i < stages[_stage].bodies.length; i++) {
+            PluginA(stages[_stage].bodies[i].addr).execute({_proposalId: 0});
         }
     }
 }

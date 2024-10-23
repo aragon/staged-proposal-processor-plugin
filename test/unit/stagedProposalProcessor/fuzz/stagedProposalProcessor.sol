@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.8;
 
-import {Stage, Plugin} from "../../../utils/Types.sol";
+import {Stage, Body} from "../../../utils/Types.sol";
 import {BaseTest} from "../../../BaseTest.t.sol";
 import {StagedProposalProcessor as SPP} from "../../../../src/StagedProposalProcessor.sol";
 

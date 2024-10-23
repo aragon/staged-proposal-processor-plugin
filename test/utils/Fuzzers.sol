@@ -4,7 +4,7 @@ pragma solidity ^0.8.8;
 // import {StdUtils} from "forge-std/src/StdUtils.sol";
 import {StdUtils} from "forge-std/StdUtils.sol";
 
-import {Stage, Plugin} from "../utils/Types.sol";
+import {Stage, Body} from "../utils/Types.sol";
 import {StagedProposalProcessor as SPP} from "../../src/StagedProposalProcessor.sol";
 
 import "forge-std/console.sol";
@@ -12,9 +12,9 @@ import "forge-std/console.sol";
 abstract contract Fuzzers is StdUtils {
     function fuzzSppStages(
         Stage[] memory _stages,
-        Plugin[] memory _plugins
+        Body[] memory _bodies
     ) internal pure returns (SPP.Stage[] memory _fuzzedStages) {
-        SPP.Plugin[] memory fuzzPlugins = fuzzSppPlugins(_plugins);
+        SPP.Body[] memory fuzzBodies = fuzzSppBodies(_bodies);
 
         _fuzzedStages = new SPP.Stage[](_stages.length);
         for (uint256 i = 0; i < _stages.length; ++i) {
@@ -24,23 +24,21 @@ abstract contract Fuzzers is StdUtils {
                 voteDuration: _stages[i].voteDuration,
                 approvalThreshold: uint16(bound(_stages[i].approvalThreshold, 0, _stages.length)),
                 vetoThreshold: uint16(bound(_stages[i].vetoThreshold, 0, _stages.length)),
-                plugins: fuzzPlugins
+                bodies: fuzzBodies
             });
         }
     }
 
-    function fuzzSppPlugins(
-        Plugin[] memory _plugins
-    ) internal pure returns (SPP.Plugin[] memory _fuzzedPlugins) {
-        // todo set the plugin address and the allowed bodies like deployed plugins
-        _fuzzedPlugins = new SPP.Plugin[](_plugins.length);
-        for (uint256 i = 0; i < _plugins.length; ++i) {
-            _fuzzedPlugins[i] = SPP.Plugin({
-                pluginAddress: _plugins[i].pluginAddress,
-                isManual: _plugins[i].isManual,
-                allowedBody: _plugins[i].allowedBody,
-                resultType: SPP.ResultType(bound(_plugins[i].resultType, 0, 1)),
-                tryAdvance: _plugins[i].tryAdvance
+    function fuzzSppBodies(
+        Body[] memory _bodies
+    ) internal pure returns (SPP.Body[] memory _fuzzedBodies) {
+        _fuzzedBodies = new SPP.Body[](_bodies.length);
+        for (uint256 i = 0; i < _bodies.length; ++i) {
+            _fuzzedBodies[i] = SPP.Body({
+                addr: _bodies[i].addr,
+                isManual: _bodies[i].isManual,
+                tryAdvance: _bodies[i].tryAdvance,
+                resultType: SPP.ResultType(bound(_bodies[i].resultType, 0, 1))
             });
         }
     }

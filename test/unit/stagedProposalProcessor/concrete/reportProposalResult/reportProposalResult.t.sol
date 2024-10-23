@@ -53,7 +53,7 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         // it should call advanceProposal function and emit event.
 
         SPP.Stage[] memory stages = sppPlugin.getStages();
-        address pluginAddress = stages[0].plugins[0].pluginAddress;
+        address bodyAddress = stages[0].bodies[0].addr;
 
         SPP.Proposal memory oldProposal = sppPlugin.getProposal(proposalId);
         // advance the timer to allow the proposal to be advanced
@@ -61,17 +61,17 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
 
         // check event was emitted
         vm.expectEmit({emitter: address(sppPlugin)});
-        emit ProposalResultReported(proposalId, 0, pluginAddress);
+        emit ProposalResultReported(proposalId, 0, bodyAddress);
         vm.expectEmit({emitter: address(sppPlugin)});
         emit ProposalAdvanced(proposalId, 1);
 
         // execute the sub proposal to report the result
-        PluginA(pluginAddress).execute({_proposalId: 0});
+        PluginA(bodyAddress).execute({_proposalId: 0});
 
         // check result was recorded
         SPP.Proposal memory newProposal = sppPlugin.getProposal(proposalId);
         assertEq(
-            sppPlugin.getPluginResult(proposalId, oldProposal.currentStage, pluginAddress),
+            sppPlugin.getBodyResult(proposalId, oldProposal.currentStage, bodyAddress),
             SPP.ResultType.Approval
         );
 
@@ -101,7 +101,7 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         );
 
         SPP.Stage[] memory stages = sppPlugin.getStages();
-        address pluginAddress = stages[0].plugins[0].pluginAddress;
+        address bodyAddress = stages[0].bodies[0].addr;
 
         SPP.Proposal memory oldProposal = sppPlugin.getProposal(proposalId);
         // advance the timer to allow the proposal to be advanced
@@ -109,17 +109,17 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
 
         // check event was emitted
         vm.expectEmit({emitter: address(sppPlugin)});
-        emit ProposalResultReported(proposalId, 0, pluginAddress);
+        emit ProposalResultReported(proposalId, 0, bodyAddress);
         vm.expectEmit({emitter: address(sppPlugin)});
         emit ProposalAdvanced(proposalId, 1);
 
         // execute the sub proposal to report the result
-        PluginA(pluginAddress).execute({_proposalId: 0});
+        PluginA(bodyAddress).execute({_proposalId: 0});
 
         // check result was recorded
         SPP.Proposal memory newProposal = sppPlugin.getProposal(proposalId);
         assertEq(
-            sppPlugin.getPluginResult(proposalId, oldProposal.currentStage, pluginAddress),
+            sppPlugin.getBodyResult(proposalId, oldProposal.currentStage, bodyAddress),
             SPP.ResultType.Approval
         );
 
@@ -169,7 +169,7 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         // check result was recorded
         SPP.Proposal memory proposalNew = sppPlugin.getProposal(proposalId);
         assertEq(
-            sppPlugin.getPluginResult(proposalId, proposalOld.currentStage, allowedBody),
+            sppPlugin.getBodyResult(proposalId, proposalOld.currentStage, allowedBody),
             SPP.ResultType.Approval
         );
 
@@ -202,7 +202,7 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         // check result was recorded
         SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
         assertEq(
-            sppPlugin.getPluginResult(proposalId, proposal.currentStage, allowedBody),
+            sppPlugin.getBodyResult(proposalId, proposal.currentStage, allowedBody),
             SPP.ResultType.Approval
         );
 
@@ -247,7 +247,7 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         // check result was recorded
         SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
         assertEq(
-            sppPlugin.getPluginResult(proposalId, proposal.currentStage, allowedBody),
+            sppPlugin.getBodyResult(proposalId, proposal.currentStage, allowedBody),
             SPP.ResultType.Approval
         );
         // check proposal stage is has not advanced
@@ -273,21 +273,21 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         );
 
         SPP.Stage[] memory stages = sppPlugin.getStages();
-        address pluginAddress = stages[0].plugins[0].pluginAddress;
+        address bodyAddress = stages[0].bodies[0].addr;
 
         SPP.Proposal memory oldProposal = sppPlugin.getProposal(proposalId);
 
         // check event was emitted
         vm.expectEmit({emitter: address(sppPlugin)});
-        emit ProposalResultReported(proposalId, 0, pluginAddress);
+        emit ProposalResultReported(proposalId, 0, bodyAddress);
 
         // execute the sub proposal to report the result
-        PluginA(pluginAddress).execute({_proposalId: 0});
+        PluginA(bodyAddress).execute({_proposalId: 0});
 
         // check result was recorded
         SPP.Proposal memory newProposal = sppPlugin.getProposal(proposalId);
         assertEq(
-            sppPlugin.getPluginResult(proposalId, oldProposal.currentStage, pluginAddress),
+            sppPlugin.getBodyResult(proposalId, oldProposal.currentStage, bodyAddress),
             SPP.ResultType.Approval
         );
 
@@ -317,7 +317,7 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         );
 
         SPP.Stage[] memory stages = sppPlugin.getStages();
-        address pluginAddress = stages[0].plugins[0].pluginAddress;
+        address bodyAddress = stages[0].bodies[0].addr;
 
         SPP.Proposal memory oldProposal = sppPlugin.getProposal(proposalId);
         // advance the timer to allow the proposal to be advanced
@@ -325,15 +325,15 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
 
         // check event was emitted
         vm.expectEmit({emitter: address(sppPlugin)});
-        emit ProposalResultReported(proposalId, 0, pluginAddress);
+        emit ProposalResultReported(proposalId, 0, bodyAddress);
 
         // execute the sub proposal to report the result
-        PluginA(pluginAddress).execute({_proposalId: 0});
+        PluginA(bodyAddress).execute({_proposalId: 0});
 
         // check result was recorded
         SPP.Proposal memory newProposal = sppPlugin.getProposal(proposalId);
         assertEq(
-            sppPlugin.getPluginResult(proposalId, oldProposal.currentStage, pluginAddress),
+            sppPlugin.getBodyResult(proposalId, oldProposal.currentStage, bodyAddress),
             SPP.ResultType.Approval
         );
 
@@ -361,11 +361,11 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         // check result was recorded
         SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
         assertEq(
-            sppPlugin.getPluginResult(proposalId, proposal.currentStage, allowedBody),
+            sppPlugin.getBodyResult(proposalId, proposal.currentStage, allowedBody),
             SPP.ResultType.None
         );
         assertEq(
-            sppPlugin.getPluginResult(proposalId, proposal.currentStage, users.unauthorized),
+            sppPlugin.getBodyResult(proposalId, proposal.currentStage, users.unauthorized),
             SPP.ResultType.Approval
         );
     }
@@ -393,7 +393,7 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         // check result was recorded
         proposal = sppPlugin.getProposal(proposalId);
         assertEq(
-            sppPlugin.getPluginResult(proposalId, proposal.currentStage, allowedBody),
+            sppPlugin.getBodyResult(proposalId, proposal.currentStage, allowedBody),
             SPP.ResultType.Approval
         );
     }
@@ -420,10 +420,9 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         sppPlugin.updateStages(
             _createCustomStages({
                 _stageCount: 2,
-                _plugin1Manual: false,
-                _plugin2Manual: false,
-                _plugin3Manual: false,
-                _allowedBody: address(0),
+                _body1Manual: false,
+                _body2Manual: false,
+                _body3Manual: false,
                 _executor: _executor,
                 _operation: _operation,
                 _tryAdvance: _tryAdvance

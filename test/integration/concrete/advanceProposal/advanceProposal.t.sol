@@ -63,7 +63,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
 
     modifier whenSomeSubProposalNeedExtraParams() {
         // configure in the plugin that extra params are needed.
-        PluginA(sppPlugin.getStages()[1].plugins[0].pluginAddress).setNeedExtraParams(true);
+        PluginA(sppPlugin.getStages()[1].bodies[0].addr).setNeedExtraParams(true);
 
         _;
     }
@@ -110,7 +110,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
 
         // check sub proposal was not created
         assertEq(
-            PluginA(stages[initialStage + 1].plugins[0].pluginAddress).proposalCount(),
+            PluginA(stages[initialStage + 1].bodies[0].addr).proposalCount(),
             0,
             "proposalsCount"
         );
@@ -167,14 +167,14 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
 
         // check sub proposal created
         assertEq(
-            PluginA(stages[initialStage + 1].plugins[0].pluginAddress).proposalCount(),
+            PluginA(stages[initialStage + 1].bodies[0].addr).proposalCount(),
             1,
             "proposalsCount"
         );
 
         // should set the extra params on sub proposals
         assertEq(
-            PluginA(stages[initialStage + 1].plugins[0].pluginAddress).extraParams(0),
+            PluginA(stages[initialStage + 1].bodies[0].addr).extraParams(0),
             customCreationParam[1][0],
             "extraParams"
         );
@@ -237,14 +237,14 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
 
         // check sub proposal created
         assertEq(
-            PluginA(stages[initialStage + 1].plugins[0].pluginAddress).proposalCount(),
+            PluginA(stages[initialStage + 1].bodies[0].addr).proposalCount(),
             1,
             "proposalsCount"
         );
 
         // should set the extra params on sub proposals
         assertEq(
-            PluginA(stages[initialStage + 1].plugins[0].pluginAddress).extraParams(0),
+            PluginA(stages[initialStage + 1].bodies[0].addr).extraParams(0),
             customCreationParam[1][0],
             "extraParams"
         );
@@ -301,7 +301,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
 
         // check sub proposal was not created
         assertEq(
-            PluginA(stages[initialStage + 1].plugins[0].pluginAddress).proposalCount(),
+            PluginA(stages[initialStage + 1].bodies[0].addr).proposalCount(),
             0,
             "proposalsCount"
         );
@@ -348,7 +348,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
 
         // check sub proposal created
         assertEq(
-            PluginA(stages[initialStage + 1].plugins[0].pluginAddress).proposalCount(),
+            PluginA(stages[initialStage + 1].bodies[0].addr).proposalCount(),
             1,
             "proposalsCount"
         );
@@ -396,7 +396,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
 
         // check sub proposal not created
         assertEq(
-            PluginA(stages[initialStage + 1].plugins[0].pluginAddress).proposalCount(),
+            PluginA(stages[initialStage + 1].bodies[0].addr).proposalCount(),
             0,
             "proposalsCount"
         );
