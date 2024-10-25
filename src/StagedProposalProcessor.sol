@@ -52,7 +52,7 @@ contract StagedProposalProcessor is
     /// @notice A container for Body-related information.
     /// @param addr The address responsible for reporting results. For automatic bodies, it is also where the SPP creates proposals.
     /// @param isManual Whether SPP should create a proposal on a body. If true, it will not create.
-    /// @param tryAdvance The minimum duration until when stage can not be advanced. TODO:
+    /// @param tryAdvance Whether to try to automatically advance the stage when a body reports results.
     /// @param resultType The type(`Approval` or `Veto`) this body is registered with.
     struct Body {
         address addr;
