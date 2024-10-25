@@ -28,9 +28,7 @@ contract GetProposal_SPP_UnitTest is StagedConfiguredSharedTest {
         });
         SPP.Proposal memory expectedProposal = SPP.Proposal({
             allowFailureMap: 0,
-            creator: users.manager,
             lastStageTransition: START_DATE,
-            metadata: DUMMY_METADATA,
             currentStage: 0,
             stageConfigIndex: sppPlugin.getCurrentConfigIndex(),
             executed: false,
