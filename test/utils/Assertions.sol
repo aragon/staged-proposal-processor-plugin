@@ -14,9 +14,9 @@ abstract contract Assertions is StdAssertions {
     event log_named_array(string key, SPP.ResultType value);
 
     /// @dev Compares two {SPP.Stage} arrays.
-    function assertEq(SPP.Stage[] memory a, SPP.Stage[] memory b) internal {
+    function assertEq(SPP.Stage[] memory a, SPP.Stage[] memory b, string memory err) internal {
         if (keccak256(abi.encode(a)) != keccak256(abi.encode(b))) {
-            emit log("Error: a == b not satisfied [SPP.Stage[]]");
+            emit log_named_string("Error, a == b not satisfied [SPP.Stage[]]", err);
             emit log_named_array("   Left", a);
             emit log_named_array("  Right", b);
             fail();
@@ -24,19 +24,31 @@ abstract contract Assertions is StdAssertions {
     }
 
     /// @dev Compares two {SPP.Proposal} struct entities.
-    function assertEq(SPP.Proposal memory a, SPP.Proposal memory b) internal {
-        assertEq(a.allowFailureMap, b.allowFailureMap, "allowFailureMap");
-        assertEq(a.lastStageTransition, b.lastStageTransition, "lastStageTransition");
-        assertEq(a.currentStage, b.currentStage, "currentStage");
-        assertEq(a.stageConfigIndex, b.stageConfigIndex, "stageConfigIndex");
-        assertEq(a.executed, b.executed, "executed");
-        assertEq(a.actions, b.actions);
+    function assertEq(SPP.Proposal memory a, SPP.Proposal memory b, string memory err) internal {
+        assertEq(
+            a.allowFailureMap,
+            b.allowFailureMap,
+            string(abi.encodePacked(err, ".allowFailureMap"))
+        );
+        assertEq(
+            a.lastStageTransition,
+            b.lastStageTransition,
+            string(abi.encodePacked(err, ".lastStageTransition"))
+        );
+        assertEq(a.currentStage, b.currentStage, string(abi.encodePacked(err, ".currentStage")));
+        assertEq(
+            a.stageConfigIndex,
+            b.stageConfigIndex,
+            string(abi.encodePacked(err, ".stageConfigIndex"))
+        );
+        assertEq(a.executed, b.executed, string(abi.encodePacked(err, ".executed")));
+        assertEq(a.actions, b.actions, string(abi.encodePacked(err, ".actions")));
     }
 
     /// @dev Compares two {Action} arrays.
-    function assertEq(Action[] memory a, Action[] memory b) internal {
+    function assertEq(Action[] memory a, Action[] memory b, string memory err) internal {
         if (keccak256(abi.encode(a)) != keccak256(abi.encode(b))) {
-            emit log("Error: a == b not satisfied [Action[]]");
+            emit log_named_string("Error, a == b not satisfied [Action[]]", err);
             emit log_named_array("   Left", a);
             emit log_named_array("  Right", b);
             fail();
@@ -44,9 +56,9 @@ abstract contract Assertions is StdAssertions {
     }
 
     // @dev Compares two {bytes[][]} arrays.
-    function assertEq(bytes[][] memory a, bytes[][] memory b) internal {
+    function assertEq(bytes[][] memory a, bytes[][] memory b, string memory err) internal {
         if (keccak256(abi.encode(a)) != keccak256(abi.encode(b))) {
-            emit log("Error: a == b not satisfied [bytes[][]]");
+            emit log_named_string("Error, a == b not satisfied [bytes[][]]", err);
             emit log_named_array("   Left", a);
             emit log_named_array("  Right", b);
             fail();
@@ -54,9 +66,9 @@ abstract contract Assertions is StdAssertions {
     }
 
     // @dev Compares two SPP.ResultType enums.
-    function assertEq(SPP.ResultType a, SPP.ResultType b) internal {
+    function assertEq(SPP.ResultType a, SPP.ResultType b, string memory err) internal {
         if (a != b) {
-            emit log("Error: a == b not satisfied [SPP.ResultType]");
+            emit log_named_string("Error, a == b not satisfied [SPP.ResultType]", err);
             emit log_named_array("   Left", a);
             emit log_named_array("  Right", b);
             fail();

@@ -65,7 +65,7 @@ contract UpdateStages_SPP_UnitTest is BaseTest {
         SPP.Stage[] memory newStages = sppPlugin.getStages();
         assertEq(sppPlugin.getCurrentConfigIndex(), _newConfigIndex, "configIndex");
         assertEq(newStages.length, stages.length, "stages length");
-        assertEq(newStages, stages);
+        assertEq(newStages, stages, "stages");
     }
 
     modifier whenTheNewStagesListHasMultipleStages() {
@@ -219,7 +219,7 @@ contract UpdateStages_SPP_UnitTest is BaseTest {
         SPP.Stage[] memory newStages = sppPlugin.getStages();
         assertEq(sppPlugin.getCurrentConfigIndex(), _newConfigIndex, "configIndex");
         assertEq(newStages.length, stages.length, "stages length");
-        assertEq(newStages, stages);
+        assertEq(newStages, stages, "stages");
     }
 
     function test_RevertWhen_TheStageDoesNotSupportIProposal()
@@ -259,6 +259,6 @@ contract UpdateStages_SPP_UnitTest is BaseTest {
         SPP.Stage[] memory newStages = sppPlugin.getStages();
         assertEq(sppPlugin.getCurrentConfigIndex(), _newConfigIndex, "configIndex");
         assertEq(newStages.length, stages.length, "stages length");
-        assertEq(newStages, stages);
+        assertEq(newStages, stages, "stages");
     }
 }

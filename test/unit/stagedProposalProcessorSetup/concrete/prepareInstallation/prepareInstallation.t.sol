@@ -47,7 +47,7 @@ contract PrepareInstallation_SPPSetup_UnitTest is BaseTest {
         assertEq(address(0), SPP(deployedPlugin).getTrustedForwarder(), "trustedForwarder");
 
         // check plugin stages.
-        assertEq(stages, SPP(deployedPlugin).getStages());
+        assertEq(stages, SPP(deployedPlugin).getStages(), "stages");
 
         // todo check returned helpers
 
