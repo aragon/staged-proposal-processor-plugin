@@ -39,11 +39,11 @@ contract CreatePluginProposals_64_63_Rule is BaseTest {
         // it should revert.
 
         uint256 gasBefore = gasleft();
-        sppHarness.exposed_createPluginProposals({
+        sppHarness.exposed_createBodyProposals({
             _proposalId: proposalId,
             _stageId: 1,
             _startDate: uint64(block.timestamp),
-            _createProposalParams: new bytes[](sppPlugin.getStages()[0].plugins.length)
+            _createProposalParams: new bytes[](sppPlugin.getStages()[0].bodies.length)
         });
         uint256 gasAfter = gasleft();
 
@@ -56,7 +56,7 @@ contract CreatePluginProposals_64_63_Rule is BaseTest {
 
         vm.expectRevert(abi.encodeWithSelector(Errors.InsufficientGas.selector));
 
-        sppHarness.exposed_createPluginProposals{gas: expectedGas - 190000}({
+        sppHarness.exposed_createBodyProposals{gas: expectedGas - 190000}({
             _proposalId: proposalId,
             _stageId: 1,
             _startDate: uint64(block.timestamp),
@@ -73,19 +73,19 @@ contract CreatePluginProposals_64_63_Rule is BaseTest {
     function _setUpStages() internal returns (SPP.Stage[] memory stages) {
         defaultTargetConfig.target = address(trustedForwarder);
         defaultTargetConfig.operation = IPlugin.Operation.Call;
-        address _plugin1 = address(new PluginA(defaultTargetConfig));
-        address _plugin2 = address(new GasExpensivePlugin(defaultTargetConfig.target));
+        address body1Addr = address(new PluginA(defaultTargetConfig));
+        address body2Addr = address(new GasExpensivePlugin(defaultTargetConfig.target));
 
-        SPP.Plugin[] memory _plugins1 = new SPP.Plugin[](1);
-        _plugins1[0] = _createPluginStruct({_pluginAddr: _plugin1, _isManual: false});
+        SPP.Body[] memory body1 = new SPP.Body[](1);
+        body1[0] = _createBodyStruct({_bodyAddr: body1Addr, _isManual: false});
 
-        SPP.Plugin[] memory _plugins2 = new SPP.Plugin[](1);
-        _plugins2[0] = _createPluginStruct({_pluginAddr: _plugin2, _isManual: false});
+        SPP.Body[] memory body2 = new SPP.Body[](1);
+        body2[0] = _createBodyStruct({_bodyAddr: body2Addr, _isManual: false});
 
         stages = new SPP.Stage[](2);
         for (uint i; i < 2; ++i) {
-            if (i == 0) stages[i] = _createStageStruct(_plugins1);
-            else stages[i] = _createStageStruct(_plugins2);
+            if (i == 0) stages[i] = _createStageStruct(body1);
+            else stages[i] = _createStageStruct(body2);
         }
     }
 }

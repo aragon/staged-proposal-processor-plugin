@@ -46,9 +46,9 @@ contract GetProposalTally_SPP_IntegrationTest is BaseTest {
         // setup stages
         SPP.Stage[] memory stages = _createDummyStages({
             _stageCount: 2,
-            _plugin1Manual: false,
-            _plugin2Manual: true,
-            _plugin3Manual: false
+            _body1Manual: false,
+            _body2Manual: true,
+            _body3Manual: false
         });
         sppPlugin.updateStages(stages);
 
@@ -81,9 +81,9 @@ contract GetProposalTally_SPP_IntegrationTest is BaseTest {
     {
         // it should not count unreported results.
 
-        // make a plugin revet when creating proposal so the proposal id is not valid
-        address secondPluginAddr = sppPlugin.getStages()[0].plugins[1].pluginAddress;
-        PluginA(secondPluginAddr).setRevertOnCreateProposal(true);
+        // make a body revet when creating proposal so the proposal id is not valid
+        address secondBodyAddr = sppPlugin.getStages()[0].bodies[1].addr;
+        PluginA(secondBodyAddr).setRevertOnCreateProposal(true);
 
         // create proposal
         Action[] memory actions = _createDummyActions();
@@ -99,7 +99,7 @@ contract GetProposalTally_SPP_IntegrationTest is BaseTest {
 
         // check sub proposal id is not valid
         assertEq(
-            sppPlugin.pluginProposalIds(proposalId, proposal.currentStage, secondPluginAddr),
+            sppPlugin.bodyProposalIds(proposalId, proposal.currentStage, secondBodyAddr),
             type(uint256).max,
             "invalid subProposalId"
         );
@@ -140,13 +140,13 @@ contract GetProposalTally_SPP_IntegrationTest is BaseTest {
     {
         // it should count unreported results.
 
-        // set the can execute on sub plugin to false
-        address secondPluginAddr = sppPlugin.getStages()[0].plugins[1].pluginAddress;
-        PluginA(secondPluginAddr).setCanExecuteResult(false);
+        // set the can execute on sub body to false
+        address secondBodyAddr = sppPlugin.getStages()[0].bodies[1].addr;
+        PluginA(secondBodyAddr).setCanExecuteResult(false);
 
         (uint256 votes, uint256 vetos) = sppPlugin.getProposalTally(proposalId);
 
-        // there should be 1 vetos and no vote, because second plugin can not execute
+        // there should be 1 vetos and no vote, because second body can not execute
         assertEq(vetos, 1, "vetos");
         assertEq(votes, 0, "votes");
     }

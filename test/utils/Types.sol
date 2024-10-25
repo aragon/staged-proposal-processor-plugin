@@ -12,12 +12,11 @@ struct Users {
 }
 
 // helper type for fuzzing
-struct Plugin {
-    address pluginAddress;
+struct Body {
+    address addr;
     bool isManual;
-    address allowedBody;
-    uint8 resultType;
     bool tryAdvance;
+    uint8 resultType;    
 }
 
 struct Stage {
