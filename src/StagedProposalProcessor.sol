@@ -101,6 +101,7 @@ contract StagedProposalProcessor is
     // proposalId => stageId => body => resultType
     mapping(uint256 => mapping(uint16 => mapping(address => ResultType))) private bodyResults;
 
+    // proposalId => stageId => body index => custom proposal params data.
     mapping(uint256 => mapping(uint16 => mapping(uint256 => bytes))) private createProposalParams;
 
     mapping(uint256 => Proposal) private proposals;
