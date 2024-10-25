@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.8;
 
-import {AbstractPowerfulCondition} from "./AbstractPowerfulCondition.sol";
+import {PowerfulCondition} from "@aragon/osx-commons-contracts/src/permission/condition/PowerfulCondition.sol";
 
 import {
     DaoAuthorizable
@@ -13,9 +13,10 @@ import {
     IPermissionCondition
 } from "@aragon/osx-commons-contracts/src/permission/condition/IPermissionCondition.sol";
 
-contract SPPCondition is DaoAuthorizable, AbstractPowerfulCondition {
+contract SPPCondition is DaoAuthorizable, PowerfulCondition {
     using Address for address;
 
+    /// @notice The ID of the permission required to call the `updateRules` function.
     bytes32 public constant UPDATE_RULES_PERMISSION_ID = keccak256("UPDATE_RULES_PERMISSION");
 
     constructor(address dao, Rule[] memory rules) DaoAuthorizable(IDAO(dao)) {
@@ -23,12 +24,13 @@ contract SPPCondition is DaoAuthorizable, AbstractPowerfulCondition {
             _updateRules(rules);
         }
     }
-    
+
+    /// @inheritdoc IPermissionCondition
     function isGranted(
         address _where,
         address _who,
         bytes32 _permissionId,
-        bytes calldata _data
+        bytes calldata
     ) external view returns (bool isPermitted) {
         if (getRules().length == 0) {
             return true;
@@ -37,6 +39,8 @@ contract SPPCondition is DaoAuthorizable, AbstractPowerfulCondition {
         return _evalRule(0, _where, _who, _permissionId, new uint256[](0));
     }
 
+    /// @notice Internal function that updates the rules. 
+    /// @param _rules The rules that decide who can create a proposal on `StagedProposalProcessor`.
     function _updateRules(Rule[] memory _rules) internal override {
         for (uint256 i = 0; i < _rules.length; i++) {
             Rule memory rule = _rules[i];
@@ -61,7 +65,9 @@ contract SPPCondition is DaoAuthorizable, AbstractPowerfulCondition {
         super._updateRules(_rules);
     }
 
-    function updateRules(Rule[] calldata rules) public auth(UPDATE_RULES_PERMISSION_ID) {
-        _updateRules(rules);
+    /// @notice Updates the rules that will be used as a check upon proposal creation on `StagedProposalProcessor`.
+    /// @param _rules The rules that decide who can create a proposal on `StagedProposalProcessor`.
+    function updateRules(Rule[] calldata _rules) public auth(UPDATE_RULES_PERMISSION_ID) {
+        _updateRules(_rules);
     }
 }
