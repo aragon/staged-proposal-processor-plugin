@@ -4,6 +4,7 @@ pragma solidity ^0.8.8;
 import {BaseTest} from "../../../../BaseTest.t.sol";
 import {Errors} from "../../../../../src/libraries/Errors.sol";
 import {PluginB} from "../../../../utils/dummy-plugins/PluginB.sol";
+
 import {StagedProposalProcessor as SPP} from "../../../../../src/StagedProposalProcessor.sol";
 
 import {DaoUnauthorized} from "@aragon/osx/core/utils/auth.sol";
@@ -70,6 +71,127 @@ contract UpdateStages_SPP_UnitTest is BaseTest {
 
     modifier whenTheNewStagesListHasMultipleStages() {
         _;
+    }
+
+    function test_RevertWhen_MinAdvanceIsBiggerOrEqualThanMaxAdvance()
+        external
+        whenTheNewStagesListHasMultipleStages
+    {
+        // it should revert.
+
+        // set minAdvance bigger than maxAdvance
+        minAdvance = maxAdvance + 1;
+        SPP.Stage[] memory stages = _createDummyStages({
+            _stageCount: 2,
+            _body1Manual: true,
+            _body2Manual: true,
+            _body3Manual: false
+        });
+
+        vm.expectRevert(abi.encodeWithSelector(Errors.StageDurationsInvalid.selector));
+        sppPlugin.updateStages(stages);
+
+        // set minAdvance equal to maxAdvance
+        minAdvance = maxAdvance;
+        stages = _createDummyStages({
+            _stageCount: 2,
+            _body1Manual: true,
+            _body2Manual: true,
+            _body3Manual: false
+        });
+
+        vm.expectRevert(abi.encodeWithSelector(Errors.StageDurationsInvalid.selector));
+        sppPlugin.updateStages(stages);
+    }
+
+    function test_RevertWhen_VoteDurationIsBiggerOrEqualThanMaxAdvance()
+        external
+        whenTheNewStagesListHasMultipleStages
+    {
+        // it should revert.
+
+        // set voteDuration bigger than maxAdvance
+        voteDuration = maxAdvance + 1;
+        SPP.Stage[] memory stages = _createDummyStages({
+            _stageCount: 2,
+            _body1Manual: true,
+            _body2Manual: true,
+            _body3Manual: false
+        });
+
+        vm.expectRevert(abi.encodeWithSelector(Errors.StageDurationsInvalid.selector));
+        sppPlugin.updateStages(stages);
+
+        // set voteDuration equal to maxAdvance
+        voteDuration = maxAdvance;
+        stages = _createDummyStages({
+            _stageCount: 2,
+            _body1Manual: true,
+            _body2Manual: true,
+            _body3Manual: false
+        });
+
+        vm.expectRevert(abi.encodeWithSelector(Errors.StageDurationsInvalid.selector));
+        sppPlugin.updateStages(stages);
+    }
+
+    function test_RevertWhen_ApprovalThresholdIsBiggerThanBodiesLength()
+        external
+        whenTheNewStagesListHasMultipleStages
+    {
+        // it should revert.
+
+        // set approvalThreshold bigger than bodies length
+        approvalThreshold = 3;
+        SPP.Stage[] memory stages = _createDummyStages({
+            _stageCount: 2,
+            _body1Manual: true,
+            _body2Manual: true,
+            _body3Manual: false
+        });
+
+        vm.expectRevert(abi.encodeWithSelector(Errors.StageThresholdsInvalid.selector));
+        sppPlugin.updateStages(stages);
+    }
+
+    function test_RevertWhen_VetoThresholdIsBiggerThanBodiesLength()
+        external
+        whenTheNewStagesListHasMultipleStages
+    {
+        // it should revert.
+
+        // set vetoThreshold bigger than bodies length
+        vetoThreshold = 3;
+        SPP.Stage[] memory stages = _createDummyStages({
+            _stageCount: 2,
+            _body1Manual: true,
+            _body2Manual: true,
+            _body3Manual: false
+        });
+
+        vm.expectRevert(abi.encodeWithSelector(Errors.StageThresholdsInvalid.selector));
+        sppPlugin.updateStages(stages);
+    }
+
+    function test_RevertWhen_ThereAreDuplicatedBodiesOnSameStage()
+        external
+        whenTheNewStagesListHasMultipleStages
+    {
+        // it should revert.
+
+        // create stages structure with duplicated body address
+        address duplicatedAddr = address(new PluginB(address(trustedForwarder)));
+
+        SPP.Body[] memory stageBodies = new SPP.Body[](2);
+        stageBodies[0] = _createBodyStruct(duplicatedAddr, false);
+        stageBodies[1] = _createBodyStruct(duplicatedAddr, false);
+        SPP.Stage[] memory stages = new SPP.Stage[](1);
+        stages[0] = _createStageStruct(stageBodies);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(Errors.DuplicateBodyAddress.selector, 0, duplicatedAddr)
+        );
+        sppPlugin.updateStages(stages);
     }
 
     modifier whenSomeStagesAreNonManual() {
