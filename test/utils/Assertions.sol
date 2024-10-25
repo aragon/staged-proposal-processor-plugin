@@ -26,9 +26,7 @@ abstract contract Assertions is StdAssertions {
     /// @dev Compares two {SPP.Proposal} struct entities.
     function assertEq(SPP.Proposal memory a, SPP.Proposal memory b) internal {
         assertEq(a.allowFailureMap, b.allowFailureMap, "allowFailureMap");
-        assertEq(a.creator, b.creator, "creator");
         assertEq(a.lastStageTransition, b.lastStageTransition, "lastStageTransition");
-        assertEq(a.metadata, b.metadata, "metadata");
         assertEq(a.currentStage, b.currentStage, "currentStage");
         assertEq(a.stageConfigIndex, b.stageConfigIndex, "stageConfigIndex");
         assertEq(a.executed, b.executed, "executed");

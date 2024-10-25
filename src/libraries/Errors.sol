@@ -8,6 +8,15 @@ library Errors {
     /// @notice Thrown the proposal does not exist.
     error ProposalNotExists(uint256);
 
+    /// @notice Thrown if the start date is less than current timestamp.
+    error StartDateInvalid(uint64);
+
+    /// @notice Thrown if stage durations are invalid.
+    error StageDurationsInvalid();
+
+    /// @notice Thrown if the thresholds are invalid.
+    error StageThresholdsInvalid();
+
     /// @notice Thrown if a body address is duplicated in the same stage.
     /// @param stageId The stage id that contains the duplicated body address.
     /// @param body The address that is duplicated in `stageId`.

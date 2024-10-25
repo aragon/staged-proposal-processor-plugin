@@ -168,8 +168,6 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         // check proposal
         SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
         assertEq(proposal.currentStage, 0, "current stage");
-        assertEq(proposal.creator, users.manager, "creator");
-        assertEq(proposal.metadata, DUMMY_METADATA, "metadata");
         assertEq(proposal.lastStageTransition, START_DATE, "startDate");
         assertFalse(proposal.executed, "executed");
 
@@ -242,9 +240,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
             proposal,
             SPP.Proposal({
                 allowFailureMap: 0,
-                creator: users.manager,
                 lastStageTransition: START_DATE,
-                metadata: DUMMY_METADATA,
                 actions: actions,
                 stageConfigIndex: 1,
                 currentStage: 0,
@@ -348,9 +344,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
             proposal,
             SPP.Proposal({
                 allowFailureMap: 0,
-                creator: users.manager,
                 lastStageTransition: START_DATE,
-                metadata: DUMMY_METADATA,
                 actions: actions,
                 stageConfigIndex: 1,
                 currentStage: 0,
@@ -474,9 +468,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
             proposal,
             SPP.Proposal({
                 allowFailureMap: 0,
-                creator: users.manager,
                 lastStageTransition: START_DATE,
-                metadata: DUMMY_METADATA,
                 actions: actions,
                 stageConfigIndex: 1,
                 currentStage: 0,
@@ -593,9 +585,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
             proposal,
             SPP.Proposal({
                 allowFailureMap: 0,
-                creator: users.manager,
                 lastStageTransition: START_DATE,
-                metadata: DUMMY_METADATA,
                 actions: actions,
                 stageConfigIndex: 1,
                 currentStage: 0,
@@ -703,8 +693,6 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         // check proposal
         SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
         assertEq(proposal.currentStage, 0, "current stage");
-        assertEq(proposal.creator, users.manager, "creator");
-        assertEq(proposal.metadata, DUMMY_METADATA, "metadata");
         assertEq(proposal.lastStageTransition, START_DATE, "startDate");
         assertFalse(proposal.executed, "executed");
 
@@ -732,46 +720,23 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         whenStagesAreConfigured
         whenProposalDoesNotExist
     {
-        // it should use block.timestamp for first stage sub proposal startDate.
-        // it should use block.timestamp for last stage transition.
+        // it should revert.
 
         // block.timestamp is 3 and startDate is 1  1 < 3
         vm.warp(3);
-
-        uint64 _expectedStartDate = uint64(block.timestamp);
 
         // configure stages
         SPP.Stage[] memory stages = _createDummyStages(2, false, false, false);
         sppPlugin.updateStages(stages);
 
-        // create proposal
-        Action[] memory actions = _createDummyActions();
-
-        // check proposal start date
-        SPP.Body memory _currentPlugin;
-        for (uint256 i; i < stages[0].bodies.length; i++) {
-            _currentPlugin = stages[0].bodies[i];
-
-            vm.expectEmit({emitter: _currentPlugin.addr});
-            emit ProposalCreated({
-                proposalId: 0,
-                startDate: _expectedStartDate,
-                endDate: _expectedStartDate + stages[0].voteDuration
-            });
-        }
-
-        uint256 proposalId = sppPlugin.createProposal({
-            _actions: actions,
+        vm.expectRevert(abi.encodeWithSelector(Errors.StartDateInvalid.selector, 1));
+        sppPlugin.createProposal({
+            _actions: new Action[](0),
             _allowFailureMap: 0,
             _metadata: DUMMY_METADATA,
             _startDate: 1,
             _proposalParams: defaultCreationParams
         });
-
-        SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
-
-        // check proposal last stage transition
-        assertEq(proposal.lastStageTransition, _expectedStartDate, "lastStageTransition");
     }
 
     function test_GivenStartDateInInTheFuture()
