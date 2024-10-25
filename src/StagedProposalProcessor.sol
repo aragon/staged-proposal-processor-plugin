@@ -86,7 +86,7 @@ contract StagedProposalProcessor is
     /// @param actions The actions to be executed when the proposal passes.
     /// @param targetConfig The target to which this contract will pass actions with an operation type.
     struct Proposal {
-        uint256 allowFailureMap;
+        uint128 allowFailureMap;
         uint64 lastStageTransition;
         uint16 currentStage;
         uint16 stageConfigIndex;
@@ -213,7 +213,7 @@ contract StagedProposalProcessor is
     function createProposal(
         bytes memory _metadata,
         Action[] memory _actions,
-        uint256 _allowFailureMap,
+        uint128 _allowFailureMap,
         uint64 _startDate,
         bytes[][] memory _proposalParams
     ) public virtual auth(CREATE_PROPOSAL_PERMISSION_ID) returns (uint256 proposalId) {
@@ -527,7 +527,7 @@ contract StagedProposalProcessor is
             proposal.targetConfig.target,
             bytes32(_proposalId),
             proposal.actions,
-            proposal.allowFailureMap,
+            uint128(proposal.allowFailureMap),
             proposal.targetConfig.operation
         );
 
