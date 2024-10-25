@@ -729,7 +729,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         SPP.Stage[] memory stages = _createDummyStages(2, false, false, false);
         sppPlugin.updateStages(stages);
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.InvalidStartDate.selector, 1));
+        vm.expectRevert(abi.encodeWithSelector(Errors.StartDateInvalid.selector, 1));
         sppPlugin.createProposal({
             _actions: new Action[](0),
             _allowFailureMap: 0,

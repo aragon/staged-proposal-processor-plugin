@@ -9,7 +9,7 @@ library Errors {
     error ProposalNotExists(uint256);
 
     /// @notice Thrown if the start date is less than current timestamp.
-    error InvalidStartDate(uint64);
+    error StartDateInvalid(uint64);
 
     /// @notice Thrown if stage durations are invalid.
     error StageDurationsInvalid();

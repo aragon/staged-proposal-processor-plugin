@@ -104,13 +104,16 @@ contract StagedProposalProcessor is
     // proposalId => stageId => body index => custom proposal params data.
     mapping(uint256 => mapping(uint16 => mapping(uint256 => bytes))) private createProposalParams;
 
+    /// @notice A mapping between proposal IDs and proposal information.
     mapping(uint256 => Proposal) private proposals;
+
+    /// @notice A mapping between stage config index and actual stage configuration on that index.
     mapping(uint256 => Stage[]) private stages;
 
     uint16 private currentConfigIndex; // Index from `stages` storage mapping
     address private trustedForwarder;
 
-    /// @notice Emitted when the voting settings are updated.
+    /// @notice Emitted when the proposal is advanced to the next stage.
     /// @param proposalId The proposal id.
     /// @param stageId The stage id.
     event ProposalAdvanced(uint256 indexed proposalId, uint256 indexed stageId);
@@ -243,7 +246,7 @@ contract StagedProposalProcessor is
 
         // If the start date is in the past, revert.
         if (_startDate < uint64(block.timestamp)) {
-            revert Errors.InvalidStartDate(_startDate);
+            revert Errors.StartDateInvalid(_startDate);
         }
 
         proposal.lastStageTransition = _startDate == 0 ? uint64(block.timestamp) : _startDate;
