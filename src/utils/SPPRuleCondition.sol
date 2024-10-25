@@ -5,23 +5,35 @@ pragma solidity ^0.8.8;
 import {PowerfulCondition} from "@aragon/osx-commons-contracts/src/permission/condition/PowerfulCondition.sol";
 
 import {
-    DaoAuthorizable
-} from "@aragon/osx-commons-contracts/src/permission/auth/DaoAuthorizable.sol";
+    DaoAuthorizableUpgradeable
+} from "@aragon/osx-commons-contracts/src/permission/auth/DaoAuthorizableUpgradeable.sol";
 import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {
     IPermissionCondition
 } from "@aragon/osx-commons-contracts/src/permission/condition/IPermissionCondition.sol";
 
-contract SPPCondition is DaoAuthorizable, PowerfulCondition {
+/// @notice The SPP Condition that must be granted for `createProposal` function of `StagedProposalProcessor`.
+/// @dev This uses non-upgradable variant of `PowerfulCondition`, so must be deployed either with clonable or `new` keyword.
+contract SPPRuleCondition is DaoAuthorizableUpgradeable, PowerfulCondition {
     using Address for address;
 
     /// @notice The ID of the permission required to call the `updateRules` function.
     bytes32 public constant UPDATE_RULES_PERMISSION_ID = keccak256("UPDATE_RULES_PERMISSION");
 
-    constructor(address dao, Rule[] memory rules) DaoAuthorizable(IDAO(dao)) {
-        if (rules.length != 0) {
-            _updateRules(rules);
+    /// @notice Disables the initializers on the implementation contract to prevent it from being left uninitialized.
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor(address _dao, Rule[] memory _rules) {
+        initialize(_dao, _rules);
+    }
+
+    /// @notice Initializes the component.
+    /// @param _dao The IDAO interface of the associated DAO.
+    /// @param _rules The rules that decide who can create a proposal on `StagedProposalProcessor`.
+    function initialize(address _dao, Rule[] memory _rules) public initializer {
+        __DaoAuthorizableUpgradeable_init(IDAO(_dao));
+        if (_rules.length != 0) {
+            _updateRules(_rules);
         }
     }
 

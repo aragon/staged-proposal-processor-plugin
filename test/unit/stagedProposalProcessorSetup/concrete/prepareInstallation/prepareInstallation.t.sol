@@ -10,6 +10,9 @@ import {StagedProposalProcessor as SPP} from "../../../../../src/StagedProposalP
 import {DAO} from "@aragon/osx/core/dao/DAO.sol";
 import {PermissionLib} from "@aragon/osx-commons-contracts/src/permission/PermissionLib.sol";
 import {IPluginSetup} from "@aragon/osx-commons-contracts/src/plugin/setup/IPluginSetup.sol";
+import {
+    PowerfulCondition
+} from "@aragon/osx-commons-contracts/src/permission/condition/PowerfulCondition.sol";
 
 contract PrepareInstallation_SPPSetup_UnitTest is BaseTest {
     SPPSetup sppSetup;
@@ -28,7 +31,7 @@ contract PrepareInstallation_SPPSetup_UnitTest is BaseTest {
         // it should return correct permissions list.
 
         SPP.Stage[] memory stages = _createDummyStages(3, false, false, false);
-        bytes memory data = abi.encode(stages, bytes("metadata"), defaultTargetConfig);
+        bytes memory data = abi.encode(stages, bytes("metadata"), defaultTargetConfig, new PowerfulCondition.Rule[](0));
         (address deployedPlugin, IPluginSetup.PreparedSetupData memory setupData) = sppSetup
             .prepareInstallation(address(dao), data);
 
@@ -44,8 +47,9 @@ contract PrepareInstallation_SPPSetup_UnitTest is BaseTest {
         // todo check returned helpers
 
         // check returned permissions list.
-        assertEq(setupData.permissions.length, 5, "permissionsLength");
-        for (uint256 i = 0; i < 5; i++) {
+        assertEq(setupData.permissions.length, 7, "permissionsLength");
+        for (uint256 i = 0; i < 7; i++) {
+            // TODO: fails because of `grantWithCondition`.
             assertEq(
                 uint256(setupData.permissions[i].operation),
                 uint256(PermissionLib.Operation.Grant),
@@ -58,7 +62,9 @@ contract PrepareInstallation_SPPSetup_UnitTest is BaseTest {
                 permissionId != DAO(payable(address(dao))).EXECUTE_PERMISSION_ID() &&
                 permissionId != sppSetup.SET_TRUSTED_FORWARDER_PERMISSION_ID() &&
                 permissionId != sppSetup.SET_TARGET_CONFIG_PERMISSION_ID() &&
-                permissionId != sppSetup.SET_METADATA_PERMISSION_ID()
+                permissionId != sppSetup.SET_METADATA_PERMISSION_ID() &&
+                permissionId != sppSetup.UPDATE_RULES_PERMISSION_ID() && 
+                permissionId != sppSetup.CREATE_PROPOSAL_PERMISSION_ID()
             ) {
                 fail();
             }
