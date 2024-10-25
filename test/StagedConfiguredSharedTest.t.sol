@@ -14,10 +14,9 @@ abstract contract StagedConfiguredSharedTest is BaseTest {
         vetoThreshold = 0;
         SPP.Stage[] memory stages = _createCustomStages({
             _stageCount: 2,
-            _plugin1Manual: false,
-            _plugin2Manual: false,
-            _plugin3Manual: false,
-            _allowedBody: allowedBody,
+            _body1Manual: false,
+            _body2Manual: false,
+            _body3Manual: false,
             _executor: address(trustedForwarder),
             _operation: IPlugin.Operation.Call,
             _tryAdvance: true
