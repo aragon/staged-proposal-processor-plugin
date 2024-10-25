@@ -62,4 +62,14 @@ abstract contract Assertions is StdAssertions {
             fail();
         }
     }
+
+    function assertValueInList(bytes32 value, bytes32[] memory list, string memory err) internal {
+        for (uint256 i = 0; i < list.length; ++i) {
+            if (list[i] == value) {
+                return;
+            }
+        }
+        emit log_named_string("Error, value not found in list", err);
+        fail();
+    }
 }
