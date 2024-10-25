@@ -7,6 +7,16 @@ UpdateStages_SPP_UnitTest
 │   ├── it should emit event.
 │   └── it should update the stage.
 └── when the new stages list has multiple stages
+    ├── when min advance is bigger or equal than max advance
+    │   └── it should revert.
+    ├── when vote duration is bigger or equal than max advance
+    │   └── it should revert.
+    ├── when approval threshold is bigger than bodies length
+    │   └── it should revert.
+    ├── when veto threshold is bigger than bodies length
+    │   └── it should revert.
+    ├── when there are duplicated bodies on same stage
+    │   └── it should revert.
     ├── when some stages are non manual
     │   ├── when the stage supports IProposal
     │   │   ├── it should emit event.
