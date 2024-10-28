@@ -338,6 +338,77 @@ contract StagedProposalProcessor is
     function getStages() public view virtual returns (Stage[] memory) {
         return stages[getCurrentConfigIndex()];
     }
+    
+    /// @notice Recovers the proposal in case it's bricked because of the inconsistency between a sub-body and SPP's timelines of the stage.
+    /// @dev It achieves the recoverability by removing the sub-body that has incorrect durations in which case proposal doesn't need to depend on this sub-body's results.
+    /// @param _body The body that has the wrong durations applied.
+    /// @param _proposalId The ID of the proposal.
+    /// @param _stageId Stage number in the stages array.
+    function recover(
+        address _body,
+        uint256 _proposalId,
+        uint16 _stageId
+    ) public {
+        Proposal storage proposal = proposals[_proposalId];
+
+        if (proposal.executed) {
+            revert AlreadyExecuted();
+        }
+
+        uint16 currentStage = proposal.currentStage;
+
+        // If the stageId is not the current one, 
+        // it either was moved to next stage 
+        // or didn't yet come to the broken stage.
+        // In either case, we don't have a problem.
+        if (_stageId != currentStage) {
+            revert Errors.StageIdInvalid(currentStage, _stageId);
+        }
+
+        Stage storage stage = stages[proposal.stageConfigIndex][currentStage];
+
+        // If the body doesn't support IProposal, then we can not 
+        // depend whether it has `validDurations` function or not.
+        if (!_body.supportsInterface(type(IProposal).interfaceId)) {
+            revert("body is not IProposal");
+        }
+
+        // Make sure that body is in the stage.
+        bool bodyIndex;
+        ResultType bodyType;
+        for (uint i = 0; i < stage.bodies.length; i++) {
+            if (bodies[i].addr == _body) {
+                bodyIndex = i;
+                bodyType = bodies[i].resultType;
+            }
+        }
+
+        if(bodyType == ResultType.None) {
+            revert("body doesn't exist in the stage");
+        }
+
+
+        // 1. If _body already reported the result, don't continue.
+        // 2. If the SPP managed to create a proposal on this _body, durations mustn't have been a problem.
+        if (
+            bodyResults[_proposalId][_stageId][_body] != ResultType.None ||
+            bodyProposalIds[_proposalId][_stageId][_body] != PROPOSAL_WITHOUT_ID
+        ) {
+            return;
+        }
+
+        (uint64 minDuration, ) = IProposal(_body).validDurations();
+
+        if (minDuration > stage.maxAdvance) {
+            delete stage.bodies[bodyIndex];
+            
+            if(bodyType == ResultType.Approval) {
+                stage.approvalThreshold--;
+            } else {
+                stage.vetoThreshold--;
+            }
+        }
+    }
 
     /// @dev This can be called by any address that is not in the stage configuration.
     // `canProposalAdvance` is where it checks whether addresses that reported are actually in the stage configuration.
