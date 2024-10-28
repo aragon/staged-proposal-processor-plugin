@@ -27,6 +27,8 @@ contract PluginA is IERC165, Proposal {
     bool public needExtraParams;
     bool public canExecuteResult = true;
 
+    mapping(address => bool) public members;
+
     constructor(IPlugin.TargetConfig memory _targetConfig) {
         targetConfig = _targetConfig;
     }
@@ -68,9 +70,12 @@ contract PluginA is IERC165, Proposal {
         return _proposalId;
     }
 
-    function isMember(address _who) public pure returns (bool) {
-        (_who);
-        return true;
+    function isMember(address _who) public view returns (bool) {
+        return members[_who];
+    }
+
+    function setMember(address _who) external {
+        members[_who] = true;
     }
 
     function _createProposalId(bytes32) internal view override returns (uint256) {

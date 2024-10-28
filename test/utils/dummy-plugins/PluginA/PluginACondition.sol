@@ -9,7 +9,7 @@ import {
 } from "@aragon/osx-commons-contracts/src/permission/condition/PermissionCondition.sol";
 
 contract PluginACondition is PermissionCondition {
-    PluginA private immutable PLUGIN_A;
+    PluginA public immutable PLUGIN_A;
 
     constructor(address _pluginA) {
         PLUGIN_A = PluginA(_pluginA);

@@ -1,0 +1,8 @@
+IsGranted_SPPRuleCondition_UnitTest
+├── when rules are empty
+│   └── it should return true.
+└── when rules are not empty
+    ├── when evaluation is true
+    │   └── it should return true.
+    └── when evaluation is false
+        └── it should return false.
