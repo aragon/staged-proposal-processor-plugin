@@ -3,8 +3,8 @@ pragma solidity ^0.8.8;
 
 import {BaseTest} from "../../../BaseTest.t.sol";
 import {Errors} from "../../../../src/libraries/Errors.sol";
-import {PluginA} from "../../../utils/dummy-plugins/PluginA.sol";
-import {PluginC} from "../../../utils/dummy-plugins/PluginC.sol";
+import {PluginA} from "../../../utils/dummy-plugins/PluginA/PluginA.sol";
+import {PluginC} from "../../../utils/dummy-plugins/PluginC/PluginC.sol";
 import {StagedProposalProcessor as SPP} from "../../../../src/StagedProposalProcessor.sol";
 
 import {DaoUnauthorized} from "@aragon/osx/core/utils/auth.sol";

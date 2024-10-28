@@ -3,8 +3,8 @@ pragma solidity ^0.8.8;
 
 import {BaseTest} from "../../../../BaseTest.t.sol";
 import {Errors} from "../../../../../src/libraries/Errors.sol";
-import {PluginA} from "../../../../utils/dummy-plugins/PluginA.sol";
 import {SppHarness} from "../../../../utils/harness/SppHarness.sol";
+import {PluginA} from "../../../../utils/dummy-plugins/PluginA/PluginA.sol";
 import {TrustedForwarder} from "../../../../../src/utils/TrustedForwarder.sol";
 import {GasExpensivePlugin} from "../../../../utils/dummy-plugins/GasExpensivePlugin.sol";
 import {StagedProposalProcessor as SPP} from "../../../../../src/StagedProposalProcessor.sol";

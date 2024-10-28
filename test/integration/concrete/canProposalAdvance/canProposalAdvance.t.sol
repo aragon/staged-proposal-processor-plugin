@@ -3,7 +3,7 @@ pragma solidity ^0.8.8;
 
 import {BaseTest} from "../../../BaseTest.t.sol";
 import {Errors} from "../../../../src/libraries/Errors.sol";
-import {PluginA} from "../../../utils/dummy-plugins/PluginA.sol";
+import {PluginA} from "../../../utils/dummy-plugins/PluginA/PluginA.sol";
 import {StagedProposalProcessor as SPP} from "../../../../src/StagedProposalProcessor.sol";
 
 import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";

@@ -5,10 +5,10 @@ import {
     UPDATE_RULES_PERMISSION_ID,
     CREATE_PROPOSAL_PERMISSION_ID
 } from "../../../utils/Permissions.sol";
-import {PluginA} from "../../../utils/dummy-plugins/PluginA.sol";
-import {PluginB} from "../../../utils/dummy-plugins/PluginB.sol";
-import {PluginACondition} from "../../../utils/dummy-plugins/PluginACondition.sol";
-import {PluginBCondition} from "../../../utils/dummy-plugins/PluginBCondition.sol";
+import {PluginA} from "../../../utils/dummy-plugins/PluginA/PluginA.sol";
+import {PluginB} from "../../../utils/dummy-plugins/PluginB/PluginB.sol";
+import {PluginACondition} from "../../../utils/dummy-plugins/PluginA/PluginACondition.sol";
+import {PluginBCondition} from "../../../utils/dummy-plugins/PluginB/PluginBCondition.sol";
 import {BaseTest} from "../../../BaseTest.t.sol";
 import {SPPRuleCondition} from "../../../../src/utils/SPPRuleCondition.sol";
 

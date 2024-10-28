@@ -17,7 +17,7 @@ import {Target} from "./utils/Target.sol";
 import {Fuzzers} from "./utils/Fuzzers.sol";
 import {Constants} from "./utils/Constants.sol";
 import {Assertions} from "./utils/Assertions.sol";
-import {PluginA} from "./utils/dummy-plugins/PluginA.sol";
+import {PluginA} from "./utils/dummy-plugins/PluginA/PluginA.sol";
 import {TrustedForwarder} from "../src/utils/TrustedForwarder.sol";
 import {StagedProposalProcessor as SPP} from "../src/StagedProposalProcessor.sol";
 
