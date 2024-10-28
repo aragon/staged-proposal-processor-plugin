@@ -1,8 +1,10 @@
 Initialize_SPPRuleCondition_UnitTest
-├── when initialized
-│   └── when reinitializing
-│       └── it should revert.
-└── when not initialized
-    └── when initializing
-        ├── it should emit events.
-        └── it should initialize the contract.
+├── when deploying a clone
+│   └── when initializing
+│       ├── when not initialized
+│       │   ├── it should emit events.
+│       │   └── it should initialize the contract.
+│       └── when initialized // reinitializing
+│           └── it should revert.
+└── when deploying a contract
+    └── it should initialize the contract on construction.

@@ -27,8 +27,7 @@ contract UpdateRules_SPPRuleCondition_UnitTest is BaseTest {
         super.setUp();
 
         // set condition and grant permissions
-        ruleCondition = new SPPRuleCondition();
-        ruleCondition.initialize(address(dao), new SPPRuleCondition.Rule[](0));
+        ruleCondition = new SPPRuleCondition(address(dao), new SPPRuleCondition.Rule[](0));
 
         DAO(payable(address(dao))).grant({
             _where: address(ruleCondition),
@@ -59,8 +58,8 @@ contract UpdateRules_SPPRuleCondition_UnitTest is BaseTest {
         SPPRuleCondition.Rule[] memory rules = new SPPRuleCondition.Rule[](1);
         // condition that checks msg.data
         rules[0] = PowerfulCondition.Rule({
-            id: 202, // condition rule id
-            op: 0, // NONE
+            id: CONDITION_RULE_ID,
+            op: uint8(PowerfulCondition.Op.EQ),
             value: uint160(address(pluginBCondition)), // condition address
             permissionId: CREATE_PROPOSAL_PERMISSION_ID
         });
@@ -78,8 +77,8 @@ contract UpdateRules_SPPRuleCondition_UnitTest is BaseTest {
 
         SPPRuleCondition.Rule[] memory rules = new SPPRuleCondition.Rule[](1);
         rules[0] = PowerfulCondition.Rule({
-            id: 202, // condition rule id
-            op: 0, // NONE
+            id: CONDITION_RULE_ID,
+            op: uint8(PowerfulCondition.Op.EQ),
             value: uint160(address(pluginACondition)), // condition address
             permissionId: CREATE_PROPOSAL_PERMISSION_ID
         });
@@ -100,8 +99,9 @@ contract UpdateRules_SPPRuleCondition_UnitTest is BaseTest {
                 address(dao),
                 address(ruleCondition),
                 users.unauthorized,
-                ruleCondition.UPDATE_RULES_PERMISSION_ID()
+                UPDATE_RULES_PERMISSION_ID
             )
         );
+        ruleCondition.updateRules(new SPPRuleCondition.Rule[](0));
     }
 }
