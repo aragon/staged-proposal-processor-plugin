@@ -242,7 +242,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
                 currentStage: 0,
                 executed: false,
                 targetConfig: IPlugin.TargetConfig({
-                    target: address(trustedForwarder),
+                    target: address(dao),
                     operation: IPlugin.Operation.Call
                 })
             }),
@@ -343,7 +343,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
                 currentStage: 0,
                 executed: false,
                 targetConfig: IPlugin.TargetConfig({
-                    target: address(trustedForwarder),
+                    target: address(dao),
                     operation: IPlugin.Operation.Call
                 })
             }),
@@ -468,7 +468,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
                 currentStage: 0,
                 executed: false,
                 targetConfig: IPlugin.TargetConfig({
-                    target: address(trustedForwarder),
+                    target: address(dao),
                     operation: IPlugin.Operation.Call
                 })
             }),
@@ -525,7 +525,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         }
     }
 
-    function test_WhenExtraParamsAreProvidedButNotEnoughParams1()
+    function test_WhenExtraParamsAreProvidedButNotEnoughParams()
         external
         whenStagesAreConfigured
         whenProposalDoesNotExist
@@ -587,7 +587,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
                 currentStage: 0,
                 executed: false,
                 targetConfig: IPlugin.TargetConfig({
-                    target: address(trustedForwarder),
+                    target: address(dao),
                     operation: IPlugin.Operation.Call
                 })
             }),
