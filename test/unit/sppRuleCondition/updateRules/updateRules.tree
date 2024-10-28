@@ -7,14 +7,3 @@ UpdateRules_SPPRuleCondition_UnitTest
     │       └── it should update the conditions
     └── when caller is not allowed
         └── it should revert.
-
-
-// # when updating rules
-//   ## when caller is not allowed 
-//     ### when some conditions check msg data
-//       #### it should revert.
-//     ### when none condition check msg data
-//       #### it should update the conditions
-//   ## when caller is not allowed 
-//     ### it should revert.
-
