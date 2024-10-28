@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.8;
 
-import {TrustedForwarder} from "../../../src/utils/TrustedForwarder.sol";
+import {TrustedForwarder} from "../../../../src/utils/TrustedForwarder.sol";
 
 import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
 
