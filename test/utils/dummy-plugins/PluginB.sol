@@ -18,4 +18,10 @@ contract PluginB {
     ) external returns (bytes[] memory execResults, uint256 failureMap) {
         (execResults, failureMap) = trustedForwarder.execute(bytes32(proposalId), actions, 0);
     }
+
+    function hasPermission(address _who, bytes memory data) public view returns (bool) {
+        (_who, data);
+        (uint256 id, uint256 value) = abi.decode(data, (uint256, uint256));
+        return id == 1 && value == 1;
+    }
 }

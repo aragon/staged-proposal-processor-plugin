@@ -17,7 +17,6 @@ import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 contract PluginA is IERC165, Proposal {
     bool public created;
     uint256 public proposalId;
-    // TrustedForwarder public trustedForwarder;
 
     IPlugin.TargetConfig public targetConfig;
 
@@ -67,6 +66,10 @@ contract PluginA is IERC165, Proposal {
         }
 
         return _proposalId;
+    }
+
+    function isMember(address _who) public pure returns (bool) {
+        return true;
     }
 
     function _createProposalId(bytes32) internal view override returns (uint256) {
