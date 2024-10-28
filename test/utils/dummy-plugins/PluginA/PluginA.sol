@@ -69,6 +69,7 @@ contract PluginA is IERC165, Proposal {
     }
 
     function isMember(address _who) public pure returns (bool) {
+        (_who);
         return true;
     }
 
