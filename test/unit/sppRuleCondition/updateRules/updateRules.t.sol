@@ -5,41 +5,15 @@ import {
     UPDATE_RULES_PERMISSION_ID,
     CREATE_PROPOSAL_PERMISSION_ID
 } from "../../../utils/Permissions.sol";
-import {PluginA} from "../../../utils/dummy-plugins/PluginA/PluginA.sol";
-import {PluginB} from "../../../utils/dummy-plugins/PluginB/PluginB.sol";
-import {PluginACondition} from "../../../utils/dummy-plugins/PluginA/PluginACondition.sol";
-import {PluginBCondition} from "../../../utils/dummy-plugins/PluginB/PluginBCondition.sol";
-import {BaseTest} from "../../../BaseTest.t.sol";
 import {SPPRuleCondition} from "../../../../src/utils/SPPRuleCondition.sol";
+import {RuleConditionConfiguredTest} from "../../../RuleConditionConfiguredTest.t.sol";
 
-import {DAO} from "@aragon/osx/core/dao/DAO.sol";
 import {DaoUnauthorized} from "@aragon/osx/core/utils/auth.sol";
 import {
     PowerfulCondition
 } from "@aragon/osx-commons-contracts/src/permission/condition/PowerfulCondition.sol";
 
-contract UpdateRules_SPPRuleCondition_UnitTest is BaseTest {
-    SPPRuleCondition public ruleCondition;
-    PluginACondition public pluginACondition;
-    PluginBCondition public pluginBCondition;
-
-    function setUp() public override {
-        super.setUp();
-
-        // set condition and grant permissions
-        ruleCondition = new SPPRuleCondition(address(dao), new SPPRuleCondition.Rule[](0));
-
-        DAO(payable(address(dao))).grant({
-            _where: address(ruleCondition),
-            _who: users.manager,
-            _permissionId: UPDATE_RULES_PERMISSION_ID
-        });
-
-        // deploy dummy plugins conditions
-        pluginACondition = new PluginACondition(address(new PluginA(defaultTargetConfig)));
-        pluginBCondition = new PluginBCondition(address(new PluginB(address(0))));
-    }
-
+contract UpdateRules_SPPRuleCondition_UnitTest is RuleConditionConfiguredTest {
     modifier whenUpdatingRules() {
         _;
     }
