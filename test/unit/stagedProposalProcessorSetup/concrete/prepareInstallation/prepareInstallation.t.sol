@@ -31,7 +31,12 @@ contract PrepareInstallation_SPPSetup_UnitTest is BaseTest {
         // it should return correct permissions list.
 
         SPP.Stage[] memory stages = _createDummyStages(3, false, false, false);
-        bytes memory data = abi.encode(stages, bytes("metadata"), defaultTargetConfig, new PowerfulCondition.Rule[](0));
+        bytes memory data = abi.encode(
+            stages,
+            bytes("metadata"),
+            defaultTargetConfig,
+            new PowerfulCondition.Rule[](0)
+        );
         (address deployedPlugin, IPluginSetup.PreparedSetupData memory setupData) = sppSetup
             .prepareInstallation(address(dao), data);
 
@@ -42,32 +47,23 @@ contract PrepareInstallation_SPPSetup_UnitTest is BaseTest {
         assertEq(address(0), SPP(deployedPlugin).getTrustedForwarder(), "trustedForwarder");
 
         // check plugin stages.
-        assertEq(stages, SPP(deployedPlugin).getStages());
+        assertEq(stages, SPP(deployedPlugin).getStages(), "stages");
 
         // todo check returned helpers
 
         // check returned permissions list.
         assertEq(setupData.permissions.length, 7, "permissionsLength");
         for (uint256 i = 0; i < 7; i++) {
-            // TODO: fails because of `grantWithCondition`.
+            bytes32 permissionId = setupData.permissions[i].permissionId;
             assertEq(
                 uint256(setupData.permissions[i].operation),
-                uint256(PermissionLib.Operation.Grant),
+                permissionId == sppSetup.CREATE_PROPOSAL_PERMISSION_ID()
+                    ? uint256(PermissionLib.Operation.GrantWithCondition)
+                    : uint256(PermissionLib.Operation.Grant),
                 "operation"
             );
-            bytes32 permissionId = setupData.permissions[i].permissionId;
 
-            if (
-                permissionId != sppSetup.UPDATE_STAGES_PERMISSION_ID() &&
-                permissionId != DAO(payable(address(dao))).EXECUTE_PERMISSION_ID() &&
-                permissionId != sppSetup.SET_TRUSTED_FORWARDER_PERMISSION_ID() &&
-                permissionId != sppSetup.SET_TARGET_CONFIG_PERMISSION_ID() &&
-                permissionId != sppSetup.SET_METADATA_PERMISSION_ID() &&
-                permissionId != sppSetup.UPDATE_RULES_PERMISSION_ID() && 
-                permissionId != sppSetup.CREATE_PROPOSAL_PERMISSION_ID()
-            ) {
-                fail();
-            }
+            assertValueInList(permissionId, _getSetupPermissions(), "permissionId");
         }
     }
 }

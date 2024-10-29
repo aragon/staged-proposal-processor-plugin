@@ -12,7 +12,7 @@ contract GetProposal_SPP_UnitTest is StagedConfiguredSharedTest {
 
         // check proposal is correct
         SPP.Proposal memory proposal = sppPlugin.getProposal(NON_EXISTENT_PROPOSAL_ID);
-        assertEq(proposal, emptyProposal);
+        assertEq(proposal, emptyProposal, "proposal");
     }
 
     function test_WhenExistentProposal() external {
@@ -38,6 +38,6 @@ contract GetProposal_SPP_UnitTest is StagedConfiguredSharedTest {
 
         // check proposal is correct
         SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
-        assertEq(proposal, expectedProposal);
+        assertEq(proposal, expectedProposal, "proposal");
     }
 }

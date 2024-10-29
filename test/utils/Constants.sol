@@ -19,4 +19,6 @@ contract Constants {
 
     uint256 internal constant TARGET_VALUE = 15;
     address internal constant TARGET_ADDRESS = address(0x1234567890123456789012345678901234567890);
+
+    uint8 internal constant CONDITION_RULE_ID = 202;
 }
