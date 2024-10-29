@@ -51,11 +51,20 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
     /// @notice The address of the condition implementation contract.
     address public immutable CONDITION_IMPLEMENTATION;
 
+    /// @notice The condition that always returns true.
+    address private immutable ALWAYS_TRUE_CONDITION;
+    
+    /// @notice Thrown if the `allowedProposer` address is empty only if `rules` are also empty.
+    error InvalidAllowedProposer();
+
     /// @notice Constructs the `PluginUpgradeableSetup` by storing the `MyPlugin` implementation address.
     /// @dev The implementation address is used to deploy UUPS proxies referencing it and
     /// to verify the plugin on the respective block explorers.
-    constructor() PluginUpgradeableSetup(address(new SPP())) {
-        CONDITION_IMPLEMENTATION = address(new SPPRuleCondition(address(0), new PowerfulCondition.Rule[](0)));
+    constructor(address alwaysTrueCondition) PluginUpgradeableSetup(address(new SPP())) {
+        CONDITION_IMPLEMENTATION = address(
+            new SPPRuleCondition(address(0), new PowerfulCondition.Rule[](0))
+        );
+        ALWAYS_TRUE_CONDITION = alwaysTrueCondition;
     }
 
     /// @inheritdoc IPluginSetup
@@ -67,8 +76,16 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
             SPP.Stage[] memory stages,
             bytes memory pluginMetadata,
             IPlugin.TargetConfig memory targetConfig,
-            PowerfulCondition.Rule[] memory rules
-        ) = abi.decode(_data, (SPP.Stage[], bytes, IPlugin.TargetConfig, PowerfulCondition.Rule[]));
+            PowerfulCondition.Rule[] memory rules,
+            address allowedProposer
+        ) = abi.decode(
+                _data,
+                (SPP.Stage[], bytes, IPlugin.TargetConfig, PowerfulCondition.Rule[], address)
+            );
+
+        if (rules.length == 0 && allowedProposer == address(0)) {
+            revert InvalidAllowedProposer();
+        }
 
         // Note that by default, we assume that sub-plugins will call the executor with
         // a delegate call which will still make `msg.sender` to be sub-plugin on SPP,
@@ -83,12 +100,19 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
             )
         );
 
+        uint256 permissionCount = 6;
+        uint256 count = 5;
+
+        // Figure out how many permissions are needed.
+        if (allowedProposer != address(0) && allowedProposer != ANY_ADDR) permissionCount++;
+        if (rules.length != 0) permissionCount++;
+
         // Clone and initialize the plugin contract.
         bytes memory initData = abi.encodeCall(SPPRuleCondition.initialize, (_dao, rules));
         address sppCondition = CONDITION_IMPLEMENTATION.deployMinimalProxy(initData);
 
         PermissionLib.MultiTargetPermission[]
-            memory permissions = new PermissionLib.MultiTargetPermission[](7);
+            memory permissions = new PermissionLib.MultiTargetPermission[](permissionCount);
 
         permissions[0] = PermissionLib.MultiTargetPermission({
             operation: PermissionLib.Operation.Grant,
@@ -131,20 +155,42 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
         });
 
         permissions[5] = PermissionLib.MultiTargetPermission({
-            operation: PermissionLib.Operation.GrantWithCondition,
-            where: spp,
-            who: ANY_ADDR,
-            condition: sppCondition,
-            permissionId: CREATE_PROPOSAL_PERMISSION_ID
-        });
-
-        permissions[6] = PermissionLib.MultiTargetPermission({
             operation: PermissionLib.Operation.Grant,
             where: sppCondition,
             who: _dao,
             condition: PermissionLib.NO_CONDITION,
             permissionId: UPDATE_RULES_PERMISSION_ID
         });
+
+        // Even if the `rules` are non-empty, it might still be useful
+        // to be able to grant the permission directly to someone without condition.
+        if (allowedProposer != address(0) && allowedProposer != ANY_ADDR) {
+            permissions[++count] = PermissionLib.MultiTargetPermission({
+                operation: PermissionLib.Operation.Grant,
+                where: spp,
+                who: allowedProposer,
+                condition: PermissionLib.NO_CONDITION,
+                permissionId: CREATE_PROPOSAL_PERMISSION_ID
+            });
+        }
+
+        if (rules.length != 0) {
+            permissions[++count] = PermissionLib.MultiTargetPermission({
+                operation: PermissionLib.Operation.GrantWithCondition,
+                where: spp,
+                who: ANY_ADDR,
+                condition: sppCondition,
+                permissionId: CREATE_PROPOSAL_PERMISSION_ID
+            });
+        } else if (allowedProposer == ANY_ADDR) {
+            permissions[++count] = PermissionLib.MultiTargetPermission({
+                operation: PermissionLib.Operation.GrantWithCondition,
+                where: spp,
+                who: ANY_ADDR,
+                condition: ALWAYS_TRUE_CONDITION,
+                permissionId: CREATE_PROPOSAL_PERMISSION_ID
+            });
+        }
 
         preparedSetupData.permissions = permissions;
         preparedSetupData.helpers = new address[](1);
