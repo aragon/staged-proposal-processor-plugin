@@ -40,22 +40,14 @@ contract PrepareUninstallation_SPPSetup_UnitTest is BaseTest {
         // check returned permissions list.
         assertEq(permissions.length, 7, "permissionsLength");
         for (uint256 i = 0; i < 7; i++) {
+            bytes32 permissionId = permissions[i].permissionId;
             assertEq(
                 uint256(permissions[i].operation),
                 uint256(PermissionLib.Operation.Revoke),
                 "operation"
             );
-            if (
-                permissions[i].permissionId != sppSetup.UPDATE_STAGES_PERMISSION_ID() &&
-                permissions[i].permissionId != DAO(payable(address(dao))).EXECUTE_PERMISSION_ID() &&
-                permissions[i].permissionId != sppSetup.SET_TRUSTED_FORWARDER_PERMISSION_ID() &&
-                permissions[i].permissionId != sppSetup.SET_TARGET_CONFIG_PERMISSION_ID() &&
-                permissions[i].permissionId != sppSetup.SET_METADATA_PERMISSION_ID() &&
-                permissions[i].permissionId != sppSetup.CREATE_PROPOSAL_PERMISSION_ID() &&
-                permissions[i].permissionId != sppSetup.UPDATE_RULES_PERMISSION_ID()
-            ) {
-                fail();
-            }
+
+            assertValueInList(permissionId, _getSetupPermissions(), "permissionId");
         }
     }
 }

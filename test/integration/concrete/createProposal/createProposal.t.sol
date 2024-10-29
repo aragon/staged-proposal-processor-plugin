@@ -3,8 +3,8 @@ pragma solidity ^0.8.8;
 
 import {BaseTest} from "../../../BaseTest.t.sol";
 import {Errors} from "../../../../src/libraries/Errors.sol";
-import {PluginA} from "../../../utils/dummy-plugins/PluginA.sol";
-import {PluginC} from "../../../utils/dummy-plugins/PluginC.sol";
+import {PluginA} from "../../../utils/dummy-plugins/PluginA/PluginA.sol";
+import {PluginC} from "../../../utils/dummy-plugins/PluginC/PluginC.sol";
 import {StagedProposalProcessor as SPP} from "../../../../src/StagedProposalProcessor.sol";
 
 import {DaoUnauthorized} from "@aragon/osx/core/utils/auth.sol";
@@ -111,11 +111,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         });
 
         // check sub proposal was not created and the id is max uint256
-        uint256 subProposalId = sppPlugin.bodyProposalIds(
-            proposalId,
-            0,
-            _bodies[0].addr
-        );
+        uint256 subProposalId = sppPlugin.bodyProposalIds(proposalId, 0, _bodies[0].addr);
 
         assertEq(subProposalId, type(uint256).max, "subProposalId");
     }
@@ -246,10 +242,11 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
                 currentStage: 0,
                 executed: false,
                 targetConfig: IPlugin.TargetConfig({
-                    target: address(trustedForwarder),
+                    target: address(dao),
                     operation: IPlugin.Operation.Call
                 })
-            })
+            }),
+            "proposal"
         );
 
         // check sub proposals on stage zero, they should not be created
@@ -264,11 +261,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
             assertEq(_currentPluginProposalsCount, 0, "proposalsCount");
 
             // check sub proposal invalid id was stored
-            uint256 subProposalId = sppPlugin.bodyProposalIds(
-                proposalId,
-                0,
-                _currentPlugin.addr
-            );
+            uint256 subProposalId = sppPlugin.bodyProposalIds(proposalId, 0, _currentPlugin.addr);
 
             assertEq(subProposalId, type(uint256).max, "subProposalId");
         }
@@ -350,10 +343,11 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
                 currentStage: 0,
                 executed: false,
                 targetConfig: IPlugin.TargetConfig({
-                    target: address(trustedForwarder),
+                    target: address(dao),
                     operation: IPlugin.Operation.Call
                 })
-            })
+            }),
+            "proposal"
         );
 
         // check sub proposals on stage zero
@@ -474,10 +468,11 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
                 currentStage: 0,
                 executed: false,
                 targetConfig: IPlugin.TargetConfig({
-                    target: address(trustedForwarder),
+                    target: address(dao),
                     operation: IPlugin.Operation.Call
                 })
-            })
+            }),
+            "proposal"
         );
 
         // check sub proposals on stage zero
@@ -523,13 +518,14 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
             for (uint256 j; j < stages[i].bodies.length; j++) {
                 assertEq(
                     sppPlugin.getCreateProposalParams(proposalId, uint16(i), j),
-                    customCreationParam[i][j]
+                    customCreationParam[i][j],
+                    "extraParams"
                 );
             }
         }
     }
 
-    function test_WhenExtraParamsAreProvidedButNotEnoughParams1()
+    function test_WhenExtraParamsAreProvidedButNotEnoughParams()
         external
         whenStagesAreConfigured
         whenProposalDoesNotExist
@@ -591,10 +587,11 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
                 currentStage: 0,
                 executed: false,
                 targetConfig: IPlugin.TargetConfig({
-                    target: address(trustedForwarder),
+                    target: address(dao),
                     operation: IPlugin.Operation.Call
                 })
-            })
+            }),
+            "proposal"
         );
 
         // check sub proposals on stage zero, first one should be created second one not
@@ -629,11 +626,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
 
         // check sub proposals on non zero stage
         for (uint256 i; i < stages[1].bodies.length; i++) {
-            assertEq(
-                PluginA(stages[1].bodies[i].addr).proposalCount(),
-                0,
-                "proposalsCount"
-            );
+            assertEq(PluginA(stages[1].bodies[i].addr).proposalCount(), 0, "proposalsCount");
         }
 
         // check extra params was not stored since was not provided.
@@ -641,7 +634,8 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
             for (uint256 j; j < stages[i].bodies.length; j++) {
                 assertEq(
                     sppPlugin.getCreateProposalParams(proposalId, uint16(i), j),
-                    customCreationParam[i][j]
+                    customCreationParam[i][j],
+                    "extraParams"
                 );
             }
         }
@@ -707,11 +701,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
 
         // check no sub proposals created
         for (uint256 i; i < stages[1].bodies.length; i++) {
-            assertEq(
-                PluginA(stages[1].bodies[i].addr).proposalCount(),
-                0,
-                "proposalCount"
-            );
+            assertEq(PluginA(stages[1].bodies[i].addr).proposalCount(), 0, "proposalCount");
         }
     }
 
