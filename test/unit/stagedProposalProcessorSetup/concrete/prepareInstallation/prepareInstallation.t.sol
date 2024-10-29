@@ -1,18 +1,21 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.8;
 
+import {PermissionLib} from "@aragon/osx-commons-contracts/src/permission/PermissionLib.sol";
+import {IPluginSetup} from "@aragon/osx-commons-contracts/src/plugin/setup/IPluginSetup.sol";
+import {
+    RuledCondition
+} from "@aragon/osx-commons-contracts/src/permission/condition/extensions/RuledCondition.sol";
+import {
+    AlwaysTrueCondition
+} from "@aragon/osx-commons-contracts/src/permission/condition/extensions/AlwaysTrueCondition.sol";
+import {DAO} from "@aragon/osx/core/dao/DAO.sol";
+
 import {BaseTest} from "../../../../BaseTest.t.sol";
 import {
     StagedProposalProcessorSetup as SPPSetup
 } from "../../../../../src/StagedProposalProcessorSetup.sol";
 import {StagedProposalProcessor as SPP} from "../../../../../src/StagedProposalProcessor.sol";
-
-import {DAO} from "@aragon/osx/core/dao/DAO.sol";
-import {PermissionLib} from "@aragon/osx-commons-contracts/src/permission/PermissionLib.sol";
-import {IPluginSetup} from "@aragon/osx-commons-contracts/src/plugin/setup/IPluginSetup.sol";
-import {
-    PowerfulCondition
-} from "@aragon/osx-commons-contracts/src/permission/condition/PowerfulCondition.sol";
 
 contract PrepareInstallation_SPPSetup_UnitTest is BaseTest {
     SPPSetup sppSetup;
@@ -20,8 +23,9 @@ contract PrepareInstallation_SPPSetup_UnitTest is BaseTest {
     function setUp() public override {
         super.setUp();
 
+
         // deploy SPPSetup contract.
-        sppSetup = new SPPSetup();
+        sppSetup = new SPPSetup(address(new AlwaysTrueCondition()));
     }
 
     function test_WhenPreparingInstallation() external {
@@ -35,7 +39,7 @@ contract PrepareInstallation_SPPSetup_UnitTest is BaseTest {
             stages,
             bytes("metadata"),
             defaultTargetConfig,
-            new PowerfulCondition.Rule[](0)
+            new RuledCondition.Rule[](0)
         );
         (address deployedPlugin, IPluginSetup.PreparedSetupData memory setupData) = sppSetup
             .prepareInstallation(address(dao), data);

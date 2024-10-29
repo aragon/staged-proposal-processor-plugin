@@ -10,7 +10,9 @@ import {IPluginSetup} from "@aragon/osx-commons-contracts/src/plugin/setup/IPlug
 import {
     PluginUpgradeableSetup
 } from "@aragon/osx-commons-contracts/src/plugin/setup/PluginUpgradeableSetup.sol";
-
+import {
+    AlwaysTrueCondition
+} from "@aragon/osx-commons-contracts/src/permission/condition/extensions/AlwaysTrueCondition.sol";
 contract PrepareUpdate_SPPSetup_UnitTest is BaseTest {
     SPPSetup sppSetup;
 
@@ -18,7 +20,7 @@ contract PrepareUpdate_SPPSetup_UnitTest is BaseTest {
         super.setUp();
 
         // deploy SPPSetup contract.
-        sppSetup = new SPPSetup();
+        sppSetup = new SPPSetup(address(new AlwaysTrueCondition()));
     }
 
     function test_RevertWhen_PreparingUpdate() external {

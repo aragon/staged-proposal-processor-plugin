@@ -11,8 +11,8 @@ import {ProxyLib} from "@aragon/osx-commons-contracts/src/utils/deployment/Proxy
 import {IPluginSetup} from "@aragon/osx-commons-contracts/src/plugin/setup/IPluginSetup.sol";
 import {PermissionLib} from "@aragon/osx-commons-contracts/src/permission/PermissionLib.sol";
 import {
-    PowerfulCondition
-} from "@aragon/osx-commons-contracts/src/permission/condition/PowerfulCondition.sol";
+    RuledCondition
+} from "@aragon/osx-commons-contracts/src/permission/condition/extensions/RuledCondition.sol";
 
 import {StagedProposalProcessor as SPP} from "./StagedProposalProcessor.sol";
 import {SPPRuleCondition} from "./utils/SPPRuleCondition.sol";
@@ -53,50 +53,46 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
 
     /// @notice The condition that always returns true.
     address private immutable ALWAYS_TRUE_CONDITION;
-    
+
     /// @notice Thrown if the `allowedProposer` address is empty only if `rules` are also empty.
     error InvalidAllowedProposer();
+
+    /// @notice Helper struct to avoid stack too deep errors
+    struct InstallationData {
+        SPP.Stage[] stages;
+        bytes pluginMetadata;
+        IPlugin.TargetConfig targetConfig;
+        RuledCondition.Rule[] rules;
+        address allowedProposer;
+    }
 
     /// @notice Constructs the `PluginUpgradeableSetup` by storing the `MyPlugin` implementation address.
     /// @dev The implementation address is used to deploy UUPS proxies referencing it and
     /// to verify the plugin on the respective block explorers.
     constructor(address alwaysTrueCondition) PluginUpgradeableSetup(address(new SPP())) {
         CONDITION_IMPLEMENTATION = address(
-            new SPPRuleCondition(address(0), new PowerfulCondition.Rule[](0))
+            new SPPRuleCondition(address(0), new RuledCondition.Rule[](0))
         );
         ALWAYS_TRUE_CONDITION = alwaysTrueCondition;
-    }
+    }    
 
     /// @inheritdoc IPluginSetup
     function prepareInstallation(
         address _dao,
         bytes calldata _data
     ) external returns (address spp, PreparedSetupData memory preparedSetupData) {
-        (
-            SPP.Stage[] memory stages,
-            bytes memory pluginMetadata,
-            IPlugin.TargetConfig memory targetConfig,
-            PowerfulCondition.Rule[] memory rules,
-            address allowedProposer
-        ) = abi.decode(
-                _data,
-                (SPP.Stage[], bytes, IPlugin.TargetConfig, PowerfulCondition.Rule[], address)
-            );
+        InstallationData memory data = _getInstallationDataa(_data);
 
-        if (rules.length == 0 && allowedProposer == address(0)) {
-            revert InvalidAllowedProposer();
-        }
-
-        // Note that by default, we assume that sub-plugins will call the executor with
-        // a delegate call which will still make `msg.sender` to be sub-plugin on SPP,
-        // so as default, we set trusted forwarder = address(0), but grantee of
-        // `SET_TRUSTED_FORWARDER_PERMISSION` can anytime set the actual address.
-        // Setting a user's passed trusted forwarder below is dangerous in case plugin
-        // installer is malicious.
+        // // Note that by default, we assume that sub-plugins will call the executor with
+        // // a delegate call which will still make `msg.sender` to be sub-plugin on SPP,
+        // // so as default, we set trusted forwarder = address(0), but grantee of
+        // // `SET_TRUSTED_FORWARDER_PERMISSION` can anytime set the actual address.
+        // // Setting a user's passed trusted forwarder below is dangerous in case plugin
+        // // installer is malicious.
         spp = IMPLEMENTATION.deployUUPSProxy(
             abi.encodeCall(
                 SPP.initialize,
-                (IDAO(_dao), address(0), stages, pluginMetadata, targetConfig)
+                (IDAO(_dao), address(0), data.stages, data.pluginMetadata, data.targetConfig)
             )
         );
 
@@ -104,11 +100,16 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
         uint256 count = 5;
 
         // Figure out how many permissions are needed.
-        if (allowedProposer != address(0) && allowedProposer != ANY_ADDR) permissionCount++;
-        if (rules.length != 0) permissionCount++;
+        if (data.allowedProposer != address(0) && data.allowedProposer != ANY_ADDR) {
+            permissionCount++;
+        }
+        
+        if (data.rules.length != 0) {
+            permissionCount++;
+        }
 
         // Clone and initialize the plugin contract.
-        bytes memory initData = abi.encodeCall(SPPRuleCondition.initialize, (_dao, rules));
+        bytes memory initData = abi.encodeCall(SPPRuleCondition.initialize, (_dao, data.rules));
         address sppCondition = CONDITION_IMPLEMENTATION.deployMinimalProxy(initData);
 
         PermissionLib.MultiTargetPermission[]
@@ -164,17 +165,17 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
 
         // Even if the `rules` are non-empty, it might still be useful
         // to be able to grant the permission directly to someone without condition.
-        if (allowedProposer != address(0) && allowedProposer != ANY_ADDR) {
+        if (data.allowedProposer != address(0) && data.allowedProposer != ANY_ADDR) {
             permissions[++count] = PermissionLib.MultiTargetPermission({
                 operation: PermissionLib.Operation.Grant,
                 where: spp,
-                who: allowedProposer,
+                who: data.allowedProposer,
                 condition: PermissionLib.NO_CONDITION,
                 permissionId: CREATE_PROPOSAL_PERMISSION_ID
             });
         }
 
-        if (rules.length != 0) {
+        if (data.rules.length != 0) {
             permissions[++count] = PermissionLib.MultiTargetPermission({
                 operation: PermissionLib.Operation.GrantWithCondition,
                 where: spp,
@@ -182,7 +183,7 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
                 condition: sppCondition,
                 permissionId: CREATE_PROPOSAL_PERMISSION_ID
             });
-        } else if (allowedProposer == ANY_ADDR) {
+        } else if (data.allowedProposer == ANY_ADDR) {
             permissions[++count] = PermissionLib.MultiTargetPermission({
                 operation: PermissionLib.Operation.GrantWithCondition,
                 where: spp,
@@ -270,5 +271,27 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
             condition: PermissionLib.NO_CONDITION,
             permissionId: UPDATE_RULES_PERMISSION_ID
         });
+    }
+
+    /// @notice Helper function to avoid stack too deep errors.
+    function _getInstallationDataa(bytes calldata _data) private pure returns (InstallationData memory) {
+        (
+            address allowedProposer,
+            bytes memory pluginMetadata,
+            SPP.Stage[] memory stages,
+            RuledCondition.Rule[] memory rules,
+            IPlugin.TargetConfig memory targetConfig
+        ) = abi.decode(
+                _data,
+                (address, bytes, SPP.Stage[], RuledCondition.Rule[], IPlugin.TargetConfig)
+            );
+        return
+            InstallationData({
+                stages: stages,
+                pluginMetadata: pluginMetadata,
+                targetConfig: targetConfig,
+                rules: rules,
+                allowedProposer: allowedProposer
+            });
     }
 }

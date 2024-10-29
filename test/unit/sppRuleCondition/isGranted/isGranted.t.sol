@@ -10,8 +10,8 @@ import {RuleConditionConfiguredTest} from "../../../RuleConditionConfiguredTest.
 import {PluginACondition} from "../../../utils/dummy-plugins/PluginA/PluginACondition.sol";
 
 import {
-    PowerfulCondition
-} from "@aragon/osx-commons-contracts/src/permission/condition/PowerfulCondition.sol";
+    RuledCondition
+} from "@aragon/osx-commons-contracts/src/permission/condition/extensions/RuledCondition.sol";
 
 contract IsGranted_SPPRuleCondition_UnitTest is RuleConditionConfiguredTest {
     function test_WhenRulesAreEmpty() external {
@@ -29,9 +29,9 @@ contract IsGranted_SPPRuleCondition_UnitTest is RuleConditionConfiguredTest {
 
     modifier whenRulesAreNotEmpty() {
         SPPRuleCondition.Rule[] memory rules = new SPPRuleCondition.Rule[](1);
-        rules[0] = PowerfulCondition.Rule({
+        rules[0] = RuledCondition.Rule({
             id: CONDITION_RULE_ID,
-            op: uint8(PowerfulCondition.Op.EQ),
+            op: uint8(RuledCondition.Op.EQ),
             value: uint160(address(pluginACondition)), // condition address
             permissionId: CREATE_PROPOSAL_PERMISSION_ID
         });

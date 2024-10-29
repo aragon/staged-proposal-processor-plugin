@@ -10,10 +10,9 @@ import {PluginBCondition} from "./utils/dummy-plugins/PluginB/PluginBCondition.s
 import {UPDATE_RULES_PERMISSION_ID, CREATE_PROPOSAL_PERMISSION_ID} from "./utils/Permissions.sol";
 
 import {DAO} from "@aragon/osx/core/dao/DAO.sol";
-import {IPlugin} from "@aragon/osx-commons-contracts/src/plugin/IPlugin.sol";
 import {
-    PowerfulCondition
-} from "@aragon/osx-commons-contracts/src/permission/condition/PowerfulCondition.sol";
+    RuledCondition
+} from "@aragon/osx-commons-contracts/src/permission/condition/extensions/RuledCondition.sol";
 
 abstract contract RuleConditionConfiguredTest is BaseTest {
     address internal ruleConditionImplementation;
@@ -26,11 +25,11 @@ abstract contract RuleConditionConfiguredTest is BaseTest {
         super.setUp();
 
         ruleConditionImplementation = address(
-            new SPPRuleCondition(address(0), new PowerfulCondition.Rule[](0))
+            new SPPRuleCondition(address(0), new RuledCondition.Rule[](0))
         );
 
         // deploy rule condition
-        ruleCondition = new SPPRuleCondition(address(dao), new PowerfulCondition.Rule[](0));
+        ruleCondition = new SPPRuleCondition(address(dao), new RuledCondition.Rule[](0));
 
         // grant permission to update rules
         DAO(payable(address(dao))).grant({
@@ -44,9 +43,9 @@ abstract contract RuleConditionConfiguredTest is BaseTest {
         pluginBCondition = new PluginBCondition(address(new PluginB(address(0))));
     }
 
-    function getDummyRule() internal pure returns (PowerfulCondition.Rule memory) {
+    function getDummyRule() internal pure returns (RuledCondition.Rule memory) {
         return
-            PowerfulCondition.Rule({
+            RuledCondition.Rule({
                 id: 1,
                 op: 1,
                 value: 55,

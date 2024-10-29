@@ -15,9 +15,29 @@ import {PluginRepoFactory} from "@aragon/osx/framework/plugin/repo/PluginRepoFac
 import "forge-std/console.sol";
 
 contract Deploy is BaseScript {
+    address private alwaysTrueCondition;
+
+    error ConditionAddressNotProvided();
+
     function run() external {
         // get deployed contracts
         (pluginRepoFactory, managementDao) = getRepoContractAddresses(network);
+
+        string memory _json = _getOsxConfigs(network);
+        string memory alwaysTrueConditionKey = _buildKey(
+            protocolVersion,
+            ALWAYS_TRUE_CONDITION_KEY
+        );
+
+        if (vm.keyExists(_json, alwaysTrueConditionKey)) {
+            alwaysTrueCondition = vm.parseJsonAddress(_json, alwaysTrueConditionKey);
+        } else {
+            alwaysTrueCondition = vm.envAddress("ALWAYS_TRUE_CONDITION_ADDRESS");
+        }
+
+        if (alwaysTrueCondition == address(0)) {
+            revert ConditionAddressNotProvided();
+        }
 
         vm.startBroadcast(deployerPrivateKey);
 
@@ -40,7 +60,7 @@ contract Deploy is BaseScript {
             deployer
         );
 
-        _sppSetup = new SPPSetup();
+        _sppSetup = new SPPSetup(alwaysTrueCondition);
 
         // create plugin version release 1
         _sppRepo.createVersion(

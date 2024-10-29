@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.8;
 
-import {PowerfulCondition} from "@aragon/osx-commons-contracts/src/permission/condition/PowerfulCondition.sol";
+import {RuledCondition} from "@aragon/osx-commons-contracts/src/permission/condition/extensions/RuledCondition.sol";
 
 import {
     DaoAuthorizableUpgradeable
@@ -14,8 +14,8 @@ import {
 } from "@aragon/osx-commons-contracts/src/permission/condition/IPermissionCondition.sol";
 
 /// @notice The SPP Condition that must be granted for `createProposal` function of `StagedProposalProcessor`.
-/// @dev This uses non-upgradable variant of `PowerfulCondition`, so must be deployed either with clonable or `new` keyword.
-contract SPPRuleCondition is DaoAuthorizableUpgradeable, PowerfulCondition {
+/// @dev This contract must be deployed either with clonable or `new` keyword.
+contract SPPRuleCondition is DaoAuthorizableUpgradeable, RuledCondition {
     using Address for address;
 
     /// @notice The ID of the permission required to call the `updateRules` function.

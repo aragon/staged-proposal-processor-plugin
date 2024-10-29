@@ -10,8 +10,8 @@ import {RuleConditionConfiguredTest} from "../../../RuleConditionConfiguredTest.
 
 import {DaoUnauthorized} from "@aragon/osx/core/utils/auth.sol";
 import {
-    PowerfulCondition
-} from "@aragon/osx-commons-contracts/src/permission/condition/PowerfulCondition.sol";
+    RuledCondition
+} from "@aragon/osx-commons-contracts/src/permission/condition/extensions/RuledCondition.sol";
 
 contract UpdateRules_SPPRuleCondition_UnitTest is RuleConditionConfiguredTest {
     modifier whenUpdatingRules() {
@@ -31,9 +31,9 @@ contract UpdateRules_SPPRuleCondition_UnitTest is RuleConditionConfiguredTest {
 
         SPPRuleCondition.Rule[] memory rules = new SPPRuleCondition.Rule[](1);
         // condition that checks msg.data
-        rules[0] = PowerfulCondition.Rule({
+        rules[0] = RuledCondition.Rule({
             id: CONDITION_RULE_ID,
-            op: uint8(PowerfulCondition.Op.EQ),
+            op: uint8(RuledCondition.Op.EQ),
             value: uint160(address(pluginBCondition)), // condition address
             permissionId: CREATE_PROPOSAL_PERMISSION_ID
         });
@@ -50,9 +50,9 @@ contract UpdateRules_SPPRuleCondition_UnitTest is RuleConditionConfiguredTest {
         // it should update the conditions
 
         SPPRuleCondition.Rule[] memory rules = new SPPRuleCondition.Rule[](1);
-        rules[0] = PowerfulCondition.Rule({
+        rules[0] = RuledCondition.Rule({
             id: CONDITION_RULE_ID,
-            op: uint8(PowerfulCondition.Op.EQ),
+            op: uint8(RuledCondition.Op.EQ),
             value: uint160(address(pluginACondition)), // condition address
             permissionId: CREATE_PROPOSAL_PERMISSION_ID
         });
