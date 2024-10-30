@@ -25,7 +25,7 @@ contract PrepareInstallation_SPPSetup_UnitTest is BaseTest {
 
 
         // deploy SPPSetup contract.
-        sppSetup = new SPPSetup(address(new AlwaysTrueCondition()));
+        sppSetup = new SPPSetup();
     }
 
     function test_WhenPreparingInstallation() external {

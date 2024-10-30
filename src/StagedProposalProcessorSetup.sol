@@ -51,28 +51,13 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
     /// @notice The address of the condition implementation contract.
     address public immutable CONDITION_IMPLEMENTATION;
 
-    /// @notice The condition that always returns true.
-    address private immutable ALWAYS_TRUE_CONDITION;
-
-    /// @notice Thrown if the `allowedProposer` address is empty only if `rules` are also empty.
-    error InvalidAllowedProposer();
-
-    /// @notice Helper struct to avoid stack too deep errors
-    struct InstallationParams {
-        SPP.Stage[] stages;
-        bytes pluginMetadata;
-        IPlugin.TargetConfig targetConfig;
-        RuledCondition.Rule[] rules;
-    }
-
     /// @notice Constructs the `PluginUpgradeableSetup` by storing the `MyPlugin` implementation address.
     /// @dev The implementation address is used to deploy UUPS proxies referencing it and
     /// to verify the plugin on the respective block explorers.
-    constructor(address alwaysTrueCondition) PluginUpgradeableSetup(address(new SPP())) {
+    constructor() PluginUpgradeableSetup(address(new SPP())) {
         CONDITION_IMPLEMENTATION = address(
             new SPPRuleCondition(address(0), new RuledCondition.Rule[](0))
         );
-        ALWAYS_TRUE_CONDITION = alwaysTrueCondition;
     }
 
     /// @inheritdoc IPluginSetup
@@ -158,7 +143,7 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
         });
 
         permissions[6] = PermissionLib.MultiTargetPermission({
-            operation: PermissionLib.Operation.Grant,
+            operation: PermissionLib.Operation.GrantWithCondition,
             where: spp,
             who: ANY_ADDR,
             condition: sppCondition,
