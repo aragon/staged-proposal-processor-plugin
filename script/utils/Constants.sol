@@ -10,5 +10,4 @@ contract Constants {
     string public constant PLUGIN_FACTORY_ADDRESS_KEY = "PluginRepoFactory.address";
     string public constant MANAGEMENT_DAO_ADDRESS_KEY = "ManagementDAOProxy.address";
     string public constant DAO_FACTORY_ADDRESS_KEY = "DAOFactory.address";
-    string public constant ALWAYS_TRUE_CONDITION_KEY = "AlwaysTrueCondition.address";
 }

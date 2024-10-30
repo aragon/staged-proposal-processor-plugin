@@ -6,9 +6,6 @@ import {IPluginSetup} from "@aragon/osx-commons-contracts/src/plugin/setup/IPlug
 import {
     RuledCondition
 } from "@aragon/osx-commons-contracts/src/permission/condition/extensions/RuledCondition.sol";
-import {
-    AlwaysTrueCondition
-} from "@aragon/osx-commons-contracts/src/permission/condition/extensions/AlwaysTrueCondition.sol";
 import {DAO} from "@aragon/osx/core/dao/DAO.sol";
 
 import {BaseTest} from "../../../../BaseTest.t.sol";
