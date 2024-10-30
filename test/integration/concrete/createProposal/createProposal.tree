@@ -43,6 +43,10 @@ CreateProposal_SPP_IntegrationTest
 │       │   ├── it should create proposal.
 │       │   ├── it should not create sub proposals on stage zero.
 │       │   └── it should not create sub proposals on non zero stages.
+│       ├── given on stage zero there are zero plugins
+│       │   ├── it should emit events.
+│       │   ├── it should create proposal.
+│       │   └── it should not be able to advance until minAdvance.
 │       ├── given startDate is in the past
 │       │   ├── it should revert.
 │       └── given startDate in in the future

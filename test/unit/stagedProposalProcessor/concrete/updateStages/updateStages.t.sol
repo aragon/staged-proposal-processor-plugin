@@ -193,6 +193,34 @@ contract UpdateStages_SPP_UnitTest is BaseTest {
         sppPlugin.updateStages(stages);
     }
 
+    function test_WhenSomeStagesHaveZeroBodies() external whenTheNewStagesListHasMultipleStages {
+        // it should emit event.
+        // it should update the stages.
+
+        SPP.Stage[] memory stages = _createDummyStages({
+            _stageCount: 3,
+            _body1Manual: true,
+            _body2Manual: true,
+            _body3Manual: true
+        });
+
+        // remove bodies from stage 2
+        stages[1].bodies = new SPP.Body[](0);
+        stages[1].approvalThreshold = 0;
+        stages[1].vetoThreshold = 0;
+
+        uint256 _newConfigIndex = sppPlugin.getCurrentConfigIndex() + 1;
+
+        vm.expectEmit({emitter: address(sppPlugin)});
+        emit StagesUpdated(stages);
+        sppPlugin.updateStages(stages);
+
+        SPP.Stage[] memory newStages = sppPlugin.getStages();
+        assertEq(sppPlugin.getCurrentConfigIndex(), _newConfigIndex, "configIndex");
+        assertEq(newStages.length, stages.length, "stages length");
+        assertEq(newStages, stages, "stages");
+    }
+
     modifier whenSomeStagesAreNonManual() {
         _;
     }
