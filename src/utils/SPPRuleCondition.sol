@@ -2,16 +2,17 @@
 
 pragma solidity ^0.8.8;
 
-import {RuledCondition} from "@aragon/osx-commons-contracts/src/permission/condition/extensions/RuledCondition.sol";
-
-import {
-    DaoAuthorizableUpgradeable
-} from "@aragon/osx-commons-contracts/src/permission/auth/DaoAuthorizableUpgradeable.sol";
-import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
+import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
 import {
     IPermissionCondition
 } from "@aragon/osx-commons-contracts/src/permission/condition/IPermissionCondition.sol";
+import {
+    DaoAuthorizableUpgradeable
+} from "@aragon/osx-commons-contracts/src/permission/auth/DaoAuthorizableUpgradeable.sol";
+import {
+    RuledCondition
+} from "@aragon/osx-commons-contracts/src/permission/condition/extensions/RuledCondition.sol";
 
 /// @notice The SPP Condition that must be granted for `createProposal` function of `StagedProposalProcessor`.
 /// @dev This contract must be deployed either with clonable or `new` keyword.
@@ -51,16 +52,16 @@ contract SPPRuleCondition is DaoAuthorizableUpgradeable, RuledCondition {
         return _evalRule(0, _where, _who, _permissionId, new uint256[](0));
     }
 
-    /// @notice Internal function that updates the rules. 
+    /// @notice Internal function that updates the rules.
     /// @param _rules The rules that decide who can create a proposal on `StagedProposalProcessor`.
     function _updateRules(Rule[] memory _rules) internal override {
         for (uint256 i = 0; i < _rules.length; i++) {
             Rule memory rule = _rules[i];
 
-            // Make sure that `isGranted` doesn't revert 
+            // Make sure that `isGranted` doesn't revert
             // in case empty bytes data is provided.
-            // Since SPP can not always predict what the `data` 
-            // should be for each sub-plugin. We make sure that 
+            // Since SPP can not always predict what the `data`
+            // should be for each sub-plugin. We make sure that
             // only those conditions that don't depend on `data` param are allowed.
             if (rule.id == CONDITION_RULE_ID) {
                 bytes memory data = abi.encodeCall(
@@ -70,7 +71,7 @@ contract SPPRuleCondition is DaoAuthorizableUpgradeable, RuledCondition {
 
                 address condition = address(uint160(rule.value));
 
-                // TODO: test 
+                // TODO: test
                 condition.functionStaticCall(data);
             }
         }
