@@ -58,7 +58,7 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
     error InvalidAllowedProposer();
 
     /// @notice Helper struct to avoid stack too deep errors
-    struct InstallationData {
+    struct InstallationParams {
         SPP.Stage[] stages;
         bytes pluginMetadata;
         IPlugin.TargetConfig targetConfig;
@@ -74,25 +74,36 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
             new SPPRuleCondition(address(0), new RuledCondition.Rule[](0))
         );
         ALWAYS_TRUE_CONDITION = alwaysTrueCondition;
-    }    
+    }
 
     /// @inheritdoc IPluginSetup
     function prepareInstallation(
         address _dao,
-        bytes calldata _data
+        bytes calldata _installParams
     ) external returns (address spp, PreparedSetupData memory preparedSetupData) {
-        InstallationData memory data = _getInstallationDataa(_data);
+        InstallationParams memory params = decodeInstallationParams(_installParams);
 
-        // // Note that by default, we assume that sub-plugins will call the executor with
-        // // a delegate call which will still make `msg.sender` to be sub-plugin on SPP,
-        // // so as default, we set trusted forwarder = address(0), but grantee of
-        // // `SET_TRUSTED_FORWARDER_PERMISSION` can anytime set the actual address.
-        // // Setting a user's passed trusted forwarder below is dangerous in case plugin
-        // // installer is malicious.
+        // Revert if `rules` are empty and `allowedProposer` is address(0),
+        // as this would leave no one with permission to create proposals.
+        if (params.rules.length == 0 && params.allowedProposer == address(0)) {
+            revert InvalidAllowedProposer();
+        }
+
+        // If rules are defined but the caller still wants ANY_ADDR to create proposals, 
+        // it becomes unclear what purpose the rules serve. Therefore, we revert.
+        if (params.rules.length != 0 && params.allowedProposer == ANY_ADDR) {
+            revert InvalidAllowedProposer();
+        }
+
+        // By default, we assume that sub-plugins will use a delegate call to invoke the executor, 
+        // which will keep `msg.sender` as the sub-plugin within the SPP context. 
+        // Therefore, the default trusted forwarder is set to the zero address (address(0)). 
+        // However, the grantee of `SET_TRUSTED_FORWARDER_PERMISSION` can update this address at any time. 
+        // Allowing a user-provided trusted forwarder here is risky if the plugin installer is malicious.
         spp = IMPLEMENTATION.deployUUPSProxy(
             abi.encodeCall(
                 SPP.initialize,
-                (IDAO(_dao), address(0), data.stages, data.pluginMetadata, data.targetConfig)
+                (IDAO(_dao), address(0), params.stages, params.pluginMetadata, params.targetConfig)
             )
         );
 
@@ -100,16 +111,16 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
         uint256 count = 5;
 
         // Figure out how many permissions are needed.
-        if (data.allowedProposer != address(0) && data.allowedProposer != ANY_ADDR) {
+        if (params.allowedProposer != address(0) && params.allowedProposer != ANY_ADDR) {
             permissionCount++;
         }
-        
-        if (data.rules.length != 0) {
+
+        if (params.rules.length != 0 || params.allowedProposer == ANY_ADDR) {
             permissionCount++;
         }
 
         // Clone and initialize the plugin contract.
-        bytes memory initData = abi.encodeCall(SPPRuleCondition.initialize, (_dao, data.rules));
+        bytes memory initData = abi.encodeCall(SPPRuleCondition.initialize, (_dao, params.rules));
         address sppCondition = CONDITION_IMPLEMENTATION.deployMinimalProxy(initData);
 
         PermissionLib.MultiTargetPermission[]
@@ -163,32 +174,23 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
             permissionId: UPDATE_RULES_PERMISSION_ID
         });
 
-        // Even if the `rules` are non-empty, it might still be useful
-        // to be able to grant the permission directly to someone without condition.
-        if (data.allowedProposer != address(0) && data.allowedProposer != ANY_ADDR) {
+
+        if (params.allowedProposer != address(0) && params.allowedProposer != ANY_ADDR) {
             permissions[++count] = PermissionLib.MultiTargetPermission({
                 operation: PermissionLib.Operation.Grant,
                 where: spp,
-                who: data.allowedProposer,
+                who: params.allowedProposer,
                 condition: PermissionLib.NO_CONDITION,
                 permissionId: CREATE_PROPOSAL_PERMISSION_ID
             });
         }
 
-        if (data.rules.length != 0) {
+        if (params.rules.length != 0 || params.allowedProposer == ANY_ADDR) {
             permissions[++count] = PermissionLib.MultiTargetPermission({
                 operation: PermissionLib.Operation.GrantWithCondition,
                 where: spp,
                 who: ANY_ADDR,
                 condition: sppCondition,
-                permissionId: CREATE_PROPOSAL_PERMISSION_ID
-            });
-        } else if (data.allowedProposer == ANY_ADDR) {
-            permissions[++count] = PermissionLib.MultiTargetPermission({
-                operation: PermissionLib.Operation.GrantWithCondition,
-                where: spp,
-                who: ANY_ADDR,
-                condition: ALWAYS_TRUE_CONDITION,
                 permissionId: CREATE_PROPOSAL_PERMISSION_ID
             });
         }
@@ -274,7 +276,10 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
     }
 
     /// @notice Helper function to avoid stack too deep errors.
-    function _getInstallationDataa(bytes calldata _data) private pure returns (InstallationData memory) {
+    /// @dev This could also be used by UI to verify that _data can be decoded without any errors.
+    function decodeInstallationParams(
+        bytes calldata _installationParams
+    ) public pure returns (InstallationParams memory) {
         (
             address allowedProposer,
             bytes memory pluginMetadata,
@@ -282,11 +287,11 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
             RuledCondition.Rule[] memory rules,
             IPlugin.TargetConfig memory targetConfig
         ) = abi.decode(
-                _data,
+                _installationParams,
                 (address, bytes, SPP.Stage[], RuledCondition.Rule[], IPlugin.TargetConfig)
             );
         return
-            InstallationData({
+            InstallationParams({
                 stages: stages,
                 pluginMetadata: pluginMetadata,
                 targetConfig: targetConfig,
