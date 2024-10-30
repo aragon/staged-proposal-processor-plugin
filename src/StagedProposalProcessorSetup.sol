@@ -65,7 +65,7 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
         address _dao,
         bytes calldata _installationParams
     ) external returns (address spp, PreparedSetupData memory preparedSetupData) {
-         (
+        (
             bytes memory pluginMetadata,
             SPP.Stage[] memory stages,
             RuledCondition.Rule[] memory rules,
@@ -75,10 +75,10 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
                 (bytes, SPP.Stage[], RuledCondition.Rule[], IPlugin.TargetConfig)
             );
 
-        // By default, we assume that sub-plugins will use a delegate call to invoke the executor, 
-        // which will keep `msg.sender` as the sub-plugin within the SPP context. 
-        // Therefore, the default trusted forwarder is set to the zero address (address(0)). 
-        // However, the grantee of `SET_TRUSTED_FORWARDER_PERMISSION` can update this address at any time. 
+        // By default, we assume that sub-plugins will use a delegate call to invoke the executor,
+        // which will keep `msg.sender` as the sub-plugin within the SPP context.
+        // Therefore, the default trusted forwarder is set to the zero address (address(0)).
+        // However, the grantee of `SET_TRUSTED_FORWARDER_PERMISSION` can update this address at any time.
         // Allowing a user-provided trusted forwarder here is risky if the plugin installer is malicious.
         spp = IMPLEMENTATION.deployUUPSProxy(
             abi.encodeCall(
@@ -135,19 +135,19 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
         });
 
         permissions[5] = PermissionLib.MultiTargetPermission({
-            operation: PermissionLib.Operation.Grant,
-            where: sppCondition,
-            who: _dao,
-            condition: PermissionLib.NO_CONDITION,
-            permissionId: UPDATE_RULES_PERMISSION_ID
-        });
-
-        permissions[6] = PermissionLib.MultiTargetPermission({
             operation: PermissionLib.Operation.GrantWithCondition,
             where: spp,
             who: ANY_ADDR,
             condition: sppCondition,
             permissionId: CREATE_PROPOSAL_PERMISSION_ID
+        });
+
+        permissions[6] = PermissionLib.MultiTargetPermission({
+            operation: PermissionLib.Operation.Grant,
+            where: sppCondition,
+            who: _dao,
+            condition: PermissionLib.NO_CONDITION,
+            permissionId: UPDATE_RULES_PERMISSION_ID
         });
 
         preparedSetupData.permissions = permissions;
@@ -229,5 +229,4 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
             permissionId: UPDATE_RULES_PERMISSION_ID
         });
     }
-
 }
