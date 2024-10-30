@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import {Script} from "forge-std/Script.sol";
-
 import {BaseScript} from "./Base.sol";
 
 import {PluginSettings} from "../src/utils/PluginSettings.sol";
@@ -15,7 +13,6 @@ import {PluginRepoFactory} from "@aragon/osx/framework/plugin/repo/PluginRepoFac
 import "forge-std/console.sol";
 
 contract Deploy is BaseScript {
-
     function run() external {
         // get deployed contracts
         (pluginRepoFactory, managementDao) = getRepoContractAddresses(network);
