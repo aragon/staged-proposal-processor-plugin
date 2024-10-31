@@ -402,7 +402,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         );
     }
 
-    function test_WhenThereAreNoPluginsOnNext()
+    function test_WhenThereAreNoPluginsOnNextStage()
         external
         givenProposalExists
         whenProposalCanAdvance

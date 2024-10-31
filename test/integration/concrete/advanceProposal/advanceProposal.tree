@@ -30,7 +30,7 @@ AdvanceProposal_SPP_IntegrationTest
 │   │       │   ├── it should emit event.
 │   │       │   ├── it should advance proposal.
 │   │       │   └── it should not create sub proposals
-│   │       └── when there are no plugins on next
+│   │       └── when there are no plugins on next stage
 │   │           ├── it should emit event.
 │   │           ├── it should advance proposal.
 │   │           └── it should not be able to advance until minAdvance.
