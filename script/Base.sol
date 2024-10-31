@@ -4,10 +4,11 @@ pragma solidity ^0.8.8;
 import {Script} from "forge-std/Script.sol";
 
 import {Constants} from "./utils/Constants.sol";
-
+import {PluginSettings} from "../src/utils/PluginSettings.sol";
 import {StagedProposalProcessorSetup as SPPSetup} from "../src/StagedProposalProcessorSetup.sol";
 
 import {PluginRepo} from "@aragon/osx/framework/plugin/repo/PluginRepo.sol";
+import "forge-std/console.sol";
 
 contract BaseScript is Script, Constants {
     // core contracts
@@ -24,6 +25,46 @@ contract BaseScript is Script, Constants {
     address internal immutable deployer = vm.addr(deployerPrivateKey);
 
     error UnsupportedNetwork(string network);
+
+    error InvalidVersionRelease(uint8 release, uint8 latestRelease);
+    error InvalidVersionBuild(uint8 build, uint8 latestBuild);
+
+    error SomethingWentWrong();
+
+    function _createAndCheckNewVersion() internal returns (SPPSetup _sppSetup) {
+        _sppSetup = new SPPSetup();
+        // Check release number
+        uint256 latestRelease = sppRepo.latestRelease();
+
+        if (PluginSettings.VERSION_RELEASE > latestRelease + 1) {
+            revert InvalidVersionRelease(PluginSettings.VERSION_RELEASE, uint8(latestRelease));
+        }
+        // Check build number
+        uint256 latestBuild = sppRepo.buildCount(uint8(latestRelease));
+        if (PluginSettings.VERSION_BUILD < latestBuild + 1) {
+            revert InvalidVersionBuild(PluginSettings.VERSION_BUILD, uint8(latestBuild));
+        }
+
+        // create plugin version
+        sppRepo.createVersion(
+            PluginSettings.VERSION_RELEASE,
+            address(_sppSetup),
+            PluginSettings.BUILD_METADATA,
+            PluginSettings.RELEASE_METADATA
+        );
+
+        // check version was created correctly
+        if (PluginSettings.VERSION_RELEASE != sppRepo.latestRelease()) {
+            revert SomethingWentWrong();
+        }
+
+        console.log(
+            "Published Staged Proposal Plugin at ",
+            address(sppSetup),
+            " with ",
+            _versionString(PluginSettings.VERSION_RELEASE, PluginSettings.VERSION_BUILD)
+        );
+    }
 
     function getRepoFactoryAddress() public view returns (address _repoFactory) {
         string memory _json = _getOsxConfigs(network);
@@ -75,5 +116,9 @@ contract BaseScript is Script, Constants {
         string memory _contractKey
     ) internal pure returns (string memory) {
         return string.concat(".['", _protocolVersion, "'].", _contractKey);
+    }
+
+    function _versionString(uint8 _release, uint8 _build) internal pure returns (string memory) {
+        return string(abi.encodePacked("v", vm.toString(_release), ".", vm.toString(_build)));
     }
 }
