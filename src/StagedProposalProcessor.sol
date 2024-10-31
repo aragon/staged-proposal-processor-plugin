@@ -18,6 +18,7 @@ import {ERC165Checker} from "@openzeppelin/contracts/utils/introspection/ERC165C
 import {
     ProposalUpgradeable
 } from "@aragon/osx-commons-contracts/src/plugin/extensions/proposal/ProposalUpgradeable.sol";
+import "forge-std/console.sol";
 
 contract StagedProposalProcessor is
     ProposalUpgradeable,
@@ -35,6 +36,10 @@ contract StagedProposalProcessor is
 
     /// @notice The ID of the permission required to call the `updateStages` function.
     bytes32 public constant UPDATE_STAGES_PERMISSION_ID = keccak256("UPDATE_STAGES_PERMISSION");
+
+    /// @notice The ID of the permission required to call the `execute` function.
+    bytes32 public constant EXECUTE_PROPOSAL_PERMISSION_ID =
+        keccak256("EXECUTE_PROPOSAL_PERMISSION");
 
     /// @notice Used to distinguish proposals where the SPP was not able to create a proposal on a sub-body.
     uint256 private constant PROPOSAL_WITHOUT_ID = type(uint256).max;
@@ -449,6 +454,14 @@ contract StagedProposalProcessor is
         return createProposalParams[_proposalId][_stageId][_index];
     }
 
+    function execute(uint256 _proposalId) public auth(EXECUTE_PROPOSAL_PERMISSION_ID) {
+        if (!canExecute(_proposalId)) {
+            revert Errors.ProposalExecutionForbidden(_proposalId);
+        }
+
+        _executeProposal(_proposalId);
+    }
+
     // =========================== INTERNAL/PRIVATE FUNCTIONS =============================
 
     /// @notice Internal function to update stage configuration.
@@ -735,8 +748,27 @@ contract StagedProposalProcessor is
 
             emit ProposalAdvanced(_proposalId, newStage);
         } else {
-            // always execute if it is the last stage
-            _executeProposal(_proposalId);
+            console.log("Proposal %s is executed", _proposalId, msg.sender);
+            // console.log(
+            //     "has permission",
+            //     dao().hasPermission(
+            //         address(this),
+            //         msg.sender, // todo rethink this
+            //         EXECUTE_PROPOSAL_PERMISSION_ID,
+            //         msg.data
+            //     )
+            // );
+            // always try execute if it is the last stage
+            if (
+                dao().hasPermission(
+                    address(this),
+                    msg.sender, // todo rethink this
+                    EXECUTE_PROPOSAL_PERMISSION_ID,
+                    msg.data
+                )
+            ) {
+                _executeProposal(_proposalId);
+            }
         }
     }
 

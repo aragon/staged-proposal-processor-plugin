@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.8;
 
-// /// @title Permissions
-// /// @notice Library containing all custom permissions Ids the plugin may use.
-// // library Permissions {
 // // / @notice A special address encoding permissions that are valid for any address `who` or `where`.
 address constant ANY_ADDR = address(type(uint160).max);
 
@@ -29,4 +26,5 @@ bytes32 constant SET_TARGET_CONFIG_PERMISSION_ID = keccak256("SET_TARGET_CONFIG_
 
 // /// @notice The ID of the permission required to call the `updateMetadata` function.
 bytes32 constant SET_METADATA_PERMISSION_ID = keccak256("SET_METADATA_PERMISSION");
-// // }
+
+bytes32 constant EXECUTE_PROPOSAL_PERMISSION_ID = keccak256("EXECUTE_PROPOSAL_PERMISSION");
