@@ -2,13 +2,13 @@
 pragma solidity ^0.8.8;
 
 import {Script} from "forge-std/Script.sol";
+import {console} from "forge-std/console.sol";
 
 import {Constants} from "./utils/Constants.sol";
 import {PluginSettings} from "../src/utils/PluginSettings.sol";
 import {StagedProposalProcessorSetup as SPPSetup} from "../src/StagedProposalProcessorSetup.sol";
 
 import {PluginRepo} from "@aragon/osx/framework/plugin/repo/PluginRepo.sol";
-import "forge-std/console.sol";
 
 contract BaseScript is Script, Constants {
     // core contracts

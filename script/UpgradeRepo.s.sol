@@ -2,12 +2,9 @@
 pragma solidity ^0.8.0;
 
 import {BaseScript} from "./Base.sol";
-
-import {PluginSettings} from "../src/utils/PluginSettings.sol";
 import {StagedProposalProcessorSetup as SPPSetup} from "../src/StagedProposalProcessorSetup.sol";
 
 import {PluginRepo} from "@aragon/osx/framework/plugin/repo/PluginRepo.sol";
-import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
 
 contract UpgradeRepo is BaseScript {
     error UpgradingToSameVersion(uint8[3] currentProtocolVersion, uint8[3] latestProtocolVersion);

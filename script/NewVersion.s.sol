@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 import {BaseScript} from "./Base.sol";
-
 import {PluginSettings} from "../src/utils/PluginSettings.sol";
 import {StagedProposalProcessorSetup as SPPSetup} from "../src/StagedProposalProcessorSetup.sol";
 
