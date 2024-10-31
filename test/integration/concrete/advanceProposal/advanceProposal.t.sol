@@ -402,6 +402,58 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         );
     }
 
+    function test_WhenThereAreNoPluginsOnNextStage()
+        external
+        givenProposalExists
+        whenProposalCanAdvance
+        whenProposalIsNotInLastStage
+    {
+        // it should emit event.
+        // it should advance proposal.
+        // it should not be able to advance until minAdvance.
+
+        // configure stages (one of them non-manual)
+        SPP.Stage[] memory stages = _createDummyStages(2, false, true, true);
+        // remove bodies from stage 2
+        stages[1].bodies = new SPP.Body[](0);
+        stages[1].approvalThreshold = 0;
+        stages[1].vetoThreshold = 0;
+        sppPlugin.updateStages(stages);
+
+        // create proposal
+        Action[] memory actions = _createDummyActions();
+        uint256 proposalId = sppPlugin.createProposal({
+            _actions: actions,
+            _allowFailureMap: 0,
+            _metadata: DUMMY_METADATA,
+            _startDate: START_DATE,
+            _proposalParams: defaultCreationParams
+        });
+
+        uint256 initialStage;
+        // execute proposals on first stage
+        _executeStageProposals(initialStage);
+
+        vm.warp(VOTE_DURATION + START_DATE);
+
+        // check event emitted
+        vm.expectEmit({emitter: address(sppPlugin)});
+        emit ProposalAdvanced(proposalId, initialStage + 1);
+        sppPlugin.advanceProposal(proposalId);
+
+        SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
+
+        // check proposal advanced
+        assertEq(proposal.currentStage, initialStage + 1, "currentStage");
+
+        // check proposal can not advance
+        assertFalse(sppPlugin.canProposalAdvance(proposalId), "canAdvanceProposal");
+
+        // check can advance after minAdvance
+        vm.warp(sppPlugin.getProposal(proposalId).lastStageTransition + minAdvance);
+        assertTrue(sppPlugin.canProposalAdvance(proposalId), "canAdvance");
+    }
+
     function test_RevertWhen_ProposalCanNotAdvance() external givenProposalExists {
         // it should revert.
 

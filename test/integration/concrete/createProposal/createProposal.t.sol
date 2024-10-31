@@ -705,7 +705,69 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         }
     }
 
-    function test_GivenStartDateIsInThePast()
+    function test_GivenOnStageZeroThereAreZeroPlugins()
+        external
+        whenStagesAreConfigured
+        whenProposalDoesNotExist
+    {
+        // it should emit events.
+        // it should create proposal.
+        // it should not be able to advance until minAdvance.
+
+        // configure stages
+        SPP.Stage[] memory stages = _createDummyStages(2, true, true, false);
+
+        // remove bodies from stage 0
+        stages[0].bodies = new SPP.Body[](0);
+        stages[0].approvalThreshold = 0;
+        stages[0].vetoThreshold = 0;
+
+        sppPlugin.updateStages(stages);
+
+        // create proposal
+        Action[] memory actions = _createDummyActions();
+
+        // check event
+        vm.expectEmit({
+            checkTopic1: false,
+            checkTopic2: true,
+            checkTopic3: true,
+            checkData: true,
+            emitter: address(sppPlugin)
+        });
+        emit ProposalCreated({
+            proposalId: 0,
+            creator: users.manager,
+            startDate: START_DATE,
+            endDate: 0,
+            metadata: DUMMY_METADATA,
+            actions: actions,
+            allowFailureMap: 0
+        });
+
+        uint256 proposalId = sppPlugin.createProposal({
+            _actions: actions,
+            _allowFailureMap: 0,
+            _metadata: DUMMY_METADATA,
+            _startDate: START_DATE,
+            _proposalParams: defaultCreationParams
+        });
+
+        // check proposal
+        SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
+        assertEq(proposal.currentStage, 0, "current stage");
+        assertEq(proposal.lastStageTransition, START_DATE, "startDate");
+        assertFalse(proposal.executed, "executed");
+
+        // check can not advance
+        assertFalse(sppPlugin.canProposalAdvance(proposalId), "canAdvance");
+
+        // check can advance after minAdvance
+        vm.warp(START_DATE + minAdvance);
+        assertTrue(sppPlugin.canProposalAdvance(proposalId), "canAdvance");
+    }
+
+    function test_RevertGiven_StartDateIsInThePast()
         external
         whenStagesAreConfigured
         whenProposalDoesNotExist

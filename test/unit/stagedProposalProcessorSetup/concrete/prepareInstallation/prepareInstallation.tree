@@ -1,6 +1,16 @@
 PrepareInstallation_SPPSetup_UnitTest
 └── when preparing installation
+    ├── when rules are empty
+    │   ├── it should return spp condition as only helper.
+    │   ├── it should set correct permission with spp condition.
+    │   └── it should not store rules on the spp condition.
+    ├── when rules are not empty
+    │   ├── it should return spp condition as only helper.
+    │   ├── it should set correct permission with spp condition.
+    │   └── it should store the rules on the spp condition.
     ├── it should deploy plugin.
-    ├── it should define trusted forwarder on the plugin.
+    ├── it should store stages on the plugin.
+    ├── it should store metadata on the plugin.
+    ├── it should store trusted forwarder on the plugin.
     ├── it should return correct helpers.
     └── it should return correct permissions list.

@@ -473,13 +473,13 @@ contract StagedProposalProcessor is
                 revert Errors.StageDurationsInvalid();
             }
 
-            if(approvalThreshold > bodies.length || vetoThreshold > bodies.length) {
+            if (approvalThreshold > bodies.length || vetoThreshold > bodies.length) {
                 revert Errors.StageThresholdsInvalid();
             }
 
             for (uint256 j = 0; j < bodies.length; ) {
                 // Ensure that body addresses are not duplicated in the same stage.
-                for (uint k = j + 1; k < bodies.length; ) {
+                for (uint256 k = j + 1; k < bodies.length; ) {
                     if (bodies[j].addr == bodies[k].addr) {
                         revert Errors.DuplicateBodyAddress(i, bodies[j].addr);
                     }
@@ -512,7 +512,7 @@ contract StagedProposalProcessor is
             stage.voteDuration = voteDuration;
             stage.approvalThreshold = approvalThreshold;
             stage.vetoThreshold = vetoThreshold;
-            
+
             unchecked {
                 ++i;
             }
