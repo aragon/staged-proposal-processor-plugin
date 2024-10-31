@@ -25,24 +25,37 @@ contract BaseScript is Script, Constants {
 
     error UnsupportedNetwork(string network);
 
-    function getRepoContractAddresses(
-        string memory _network
-    ) public view returns (address _repoFactory, address _managementDao) {
-        string memory _json = _getOsxConfigs(_network);
+    function getRepoFactoryAddress() public view returns (address _repoFactory) {
+        string memory _json = _getOsxConfigs(network);
 
         string memory _repoFactoryKey = _buildKey(protocolVersion, PLUGIN_FACTORY_ADDRESS_KEY);
 
         if (!vm.keyExists(_json, _repoFactoryKey)) {
-            revert UnsupportedNetwork(_network);
+            revert UnsupportedNetwork(network);
         }
         _repoFactory = vm.parseJsonAddress(_json, _repoFactoryKey);
+    }
+
+    function getManagementDaoAddress() public view returns (address _managementDao) {
+        string memory _json = _getOsxConfigs(network);
 
         string memory _managementDaoKey = _buildKey(protocolVersion, MANAGEMENT_DAO_ADDRESS_KEY);
 
         if (!vm.keyExists(_json, _managementDaoKey)) {
-            revert UnsupportedNetwork(_network);
+            revert UnsupportedNetwork(network);
         }
         _managementDao = vm.parseJsonAddress(_json, _managementDaoKey);
+    }
+
+    function getPluginRepoAddress() public view returns (address _sppRepo) {
+        string memory _json = _getOsxConfigs(network);
+
+        string memory _sppRepoKey = _buildKey(protocolVersion, PLUGIN_REPO_KEY);
+
+        if (!vm.keyExists(_json, _sppRepoKey)) {
+            revert UnsupportedNetwork(network);
+        }
+        _sppRepo = vm.parseJsonAddress(_json, _sppRepoKey);
     }
 
     function _getOsxConfigs(string memory _network) internal view returns (string memory) {

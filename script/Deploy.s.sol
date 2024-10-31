@@ -15,7 +15,8 @@ import "forge-std/console.sol";
 contract Deploy is BaseScript {
     function run() external {
         // get deployed contracts
-        (pluginRepoFactory, managementDao) = getRepoContractAddresses(network);
+        pluginRepoFactory = getRepoFactoryAddress();
+        managementDao = getManagementDaoAddress();
 
         vm.startBroadcast(deployerPrivateKey);
 
