@@ -36,10 +36,6 @@ contract Deploy is BaseScript {
             deployer
         );
 
-        if (_sppRepo == PluginRepo(address(0))) {
-            revert SomethingWentWrong();
-        }
-
         console.log(
             "SPP repo deployed with ENS domain",
             PluginSettings.PLUGIN_REPO_ENS_SUBDOMAIN_NAME,
