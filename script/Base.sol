@@ -132,4 +132,18 @@ contract BaseScript is Script, Constants {
     function _versionString(uint8 _release, uint8 _build) internal pure returns (string memory) {
         return string(abi.encodePacked("v", vm.toString(_release), ".", vm.toString(_build)));
     }
+
+    function _protocolVersionString(uint8[3] memory version) internal pure returns (string memory) {
+        return
+            string(
+                abi.encodePacked(
+                    "v",
+                    vm.toString(version[0]),
+                    ".",
+                    vm.toString(version[1]),
+                    ".",
+                    vm.toString(version[2])
+                )
+            );
+    }
 }

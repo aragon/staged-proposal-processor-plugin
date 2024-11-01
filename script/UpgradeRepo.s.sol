@@ -5,6 +5,7 @@ import {BaseScript} from "./Base.sol";
 import {StagedProposalProcessorSetup as SPPSetup} from "../src/StagedProposalProcessorSetup.sol";
 
 import {PluginRepo} from "@aragon/osx/framework/plugin/repo/PluginRepo.sol";
+import {console} from "forge-std/console.sol";
 
 contract UpgradeRepo is BaseScript {
     error UpgradingToSameVersion(uint8[3] currentProtocolVersion, uint8[3] latestProtocolVersion);
@@ -44,12 +45,11 @@ contract UpgradeRepo is BaseScript {
 
         vm.startBroadcast(deployerPrivateKey);
 
-        SPPSetup sppSetup;
         if (isDeployerAllowed) {
             // upgrade the repo
             sppRepo.upgradeTo(address(latestBaseRepo));
+            console.log("Repo upgraded to version", _protocolVersionString(latestProtocolVersion));
         } else {
-            sppSetup = new SPPSetup();
             revert NotAllowed(deployer);
         }
         vm.stopBroadcast();
