@@ -36,6 +36,10 @@ contract StagedProposalProcessor is
     /// @notice The ID of the permission required to call the `updateStages` function.
     bytes32 public constant UPDATE_STAGES_PERMISSION_ID = keccak256("UPDATE_STAGES_PERMISSION");
 
+    /// @notice The ID of the permission required to execute the proposal if it's on the last stage.
+    bytes32 public constant EXECUTE_PROPOSAL_PERMISSION_ID =
+        keccak256("EXECUTE_PROPOSAL_PERMISSION");
+
     /// @notice Used to distinguish proposals where the SPP was not able to create a proposal on a sub-body.
     uint256 private constant PROPOSAL_WITHOUT_ID = type(uint256).max;
 
@@ -276,7 +280,7 @@ contract StagedProposalProcessor is
 
         emit ProposalCreated({
             proposalId: proposalId,
-            creator: msg.sender,
+            creator: _msgSender(),
             startDate: proposal.lastStageTransition,
             endDate: 0,
             metadata: _metadata,
@@ -369,8 +373,15 @@ contract StagedProposalProcessor is
         _processProposalResult(_proposalId, _stageId, _resultType);
 
         if (_tryAdvance && _canProposalAdvance(_proposalId)) {
-            // advance proposal
-            _advanceProposal(_proposalId);
+            // If it's the last stage, only advance(i.e execute) if
+            // caller has permission. Note that we don't revert in
+            // this case to still allow the records being reported.
+            if (
+                proposal.currentStage != stages[proposal.stageConfigIndex].length - 1 ||
+                hasExecutePermission()
+            ) {
+                _advanceProposal(_proposalId);
+            }
         }
     }
 
@@ -385,6 +396,15 @@ contract StagedProposalProcessor is
 
         if (!_canProposalAdvance(_proposalId)) {
             revert Errors.ProposalCannotAdvance(_proposalId);
+        }
+
+        // If it's last stage, make sure that caller
+        // has permission to execute, otherwise revert.
+        if (
+            proposal.currentStage == stages[proposal.stageConfigIndex].length - 1 &&
+            !hasExecutePermission()
+        ) {
+            revert Errors.ProposalExecutionForbidden(_proposalId);
         }
 
         _advanceProposal(_proposalId);
@@ -434,6 +454,18 @@ contract StagedProposalProcessor is
         }
 
         return false;
+    }
+
+    /// @notice Checks if caller has a permission to execute a proposal if it's on the last stage.
+    /// @return Returns true if the caller has permission to execute.
+    function hasExecutePermission() public view returns (bool) {
+        return
+            dao().hasPermission(
+                address(this),
+                _msgSender(),
+                EXECUTE_PROPOSAL_PERMISSION_ID,
+                msg.data
+            );
     }
 
     /// @notice Useful function for UI to get any sub-bodies'(not including first stage's sub-bodies) `createProposal`'s `data` param.
@@ -549,17 +581,7 @@ contract StagedProposalProcessor is
         uint16 _stageId,
         ResultType _resultType
     ) internal virtual {
-        address sender = msg.sender;
-
-        // If sender is a trusted Forwarder, that means
-        // it would have appended the original sender in the calldata.
-        if (sender == trustedForwarder) {
-            assembly {
-                // get the last 20 bytes as an address which was appended
-                // by the trustedForwarder before calling this function.
-                sender := shr(96, calldataload(sub(calldatasize(), 20)))
-            }
-        }
+        address sender = _msgSender();
 
         bodyResults[_proposalId][_stageId][sender] = _resultType;
         emit ProposalResultReported(_proposalId, _stageId, sender);
@@ -713,8 +735,8 @@ contract StagedProposalProcessor is
         }
     }
 
-    /// @notice Internal function to advance the proposal.
-    /// @dev Note that is assumes the proposal can advance.
+    /// @notice Internal function to advance the proposal. It executes if it's the last stage.
+    /// @dev Note that it assumes the proposal can advance.
     /// @param _proposalId The proposal Id.
     function _advanceProposal(uint256 _proposalId) internal virtual {
         Proposal storage _proposal = proposals[_proposalId];
@@ -723,6 +745,7 @@ contract StagedProposalProcessor is
         _proposal.lastStageTransition = uint64(block.timestamp);
 
         if (_proposal.currentStage < _stages.length - 1) {
+            // is not last stage
             uint16 newStage = ++_proposal.currentStage;
 
             // Grab the next stage's bodies' custom params of `createProposal`.
@@ -735,7 +758,6 @@ contract StagedProposalProcessor is
 
             emit ProposalAdvanced(_proposalId, newStage);
         } else {
-            // always execute if it is the last stage
             _executeProposal(_proposalId);
         }
     }
@@ -746,6 +768,22 @@ contract StagedProposalProcessor is
         trustedForwarder = _forwarder;
 
         emit TrustedForwarderUpdated(_forwarder);
+    }
+
+    function _msgSender() internal view override returns (address) {
+        // If sender is a trusted Forwarder, that means
+        // it would have appended the original sender in the calldata.
+        if (msg.sender == trustedForwarder) {
+            address sender;
+            assembly {
+                // get the last 20 bytes as an address which was appended
+                // by the trustedForwarder before calling this function.
+                sender := shr(96, calldataload(sub(calldatasize(), 20)))
+            }
+            return sender;
+        } else {
+            return msg.sender;
+        }
     }
 
     /// @dev This empty reserved space is put in place to allow future versions to add new

@@ -9,7 +9,8 @@ import {
     SET_TARGET_CONFIG_PERMISSION_ID,
     SET_METADATA_PERMISSION_ID,
     UPDATE_RULES_PERMISSION_ID,
-    CREATE_PROPOSAL_PERMISSION_ID
+    CREATE_PROPOSAL_PERMISSION_ID,
+    EXECUTE_PROPOSAL_PERMISSION_ID
 } from "./utils/Permissions.sol";
 import {Users} from "./utils/Types.sol";
 import {Events} from "./utils/Events.sol";
@@ -125,7 +126,7 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
 
         // grant permissions
         PermissionLib.MultiTargetPermission[]
-            memory permissions = new PermissionLib.MultiTargetPermission[](4);
+            memory permissions = new PermissionLib.MultiTargetPermission[](5);
 
         // grant update stage permission on SPP plugin to the DAO
         permissions[0] = PermissionLib.MultiTargetPermission({
@@ -161,6 +162,15 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
             who: users.manager,
             condition: PermissionLib.NO_CONDITION,
             permissionId: sppPlugin.CREATE_PROPOSAL_PERMISSION_ID()
+        });
+
+        // grant permission for execute proposals on the spp to the manager
+        permissions[4] = PermissionLib.MultiTargetPermission({
+            operation: PermissionLib.Operation.Grant,
+            where: address(sppPlugin),
+            who: users.manager,
+            condition: PermissionLib.NO_CONDITION,
+            permissionId: sppPlugin.EXECUTE_PROPOSAL_PERMISSION_ID()
         });
 
         DAO(payable(address(dao))).applyMultiTargetPermissions(permissions);
@@ -307,7 +317,7 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
     }
 
     function _getSetupPermissions() internal view returns (bytes32[] memory permissionList) {
-        permissionList = new bytes32[](7);
+        permissionList = new bytes32[](8);
 
         permissionList[0] = UPDATE_STAGES_PERMISSION_ID;
         permissionList[1] = DAO(payable(address(dao))).EXECUTE_PERMISSION_ID();
@@ -316,5 +326,6 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
         permissionList[4] = SET_METADATA_PERMISSION_ID;
         permissionList[5] = UPDATE_RULES_PERMISSION_ID;
         permissionList[6] = CREATE_PROPOSAL_PERMISSION_ID;
+        permissionList[7] = EXECUTE_PROPOSAL_PERMISSION_ID;
     }
 }

@@ -57,4 +57,8 @@ library Errors {
 
     /// @notice Thrown when the proposal can not be advanced.
     error ProposalCannotAdvance(uint256 proposalId);
+
+    /// @notice Thrown if the proposal execution is forbidden.
+    /// @param proposalId The ID of the proposal.
+    error ProposalExecutionForbidden(uint256 proposalId);
 }

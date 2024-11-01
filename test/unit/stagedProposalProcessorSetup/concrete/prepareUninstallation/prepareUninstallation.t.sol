@@ -38,7 +38,7 @@ contract PrepareUninstallation_SPPSetup_UnitTest is BaseTest {
         );
 
         // check returned permissions list.
-        assertEq(permissions.length, 7, "permissionsLength");
+        assertEq(permissions.length, _getSetupPermissions().length, "permissionsLength");
         for (uint256 i = 0; i < 7; i++) {
             bytes32 permissionId = permissions[i].permissionId;
             assertEq(
