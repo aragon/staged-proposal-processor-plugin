@@ -18,7 +18,6 @@ import {ERC165Checker} from "@openzeppelin/contracts/utils/introspection/ERC165C
 import {
     ProposalUpgradeable
 } from "@aragon/osx-commons-contracts/src/plugin/extensions/proposal/ProposalUpgradeable.sol";
-import "forge-std/console.sol";
 
 contract StagedProposalProcessor is
     ProposalUpgradeable,
@@ -281,7 +280,7 @@ contract StagedProposalProcessor is
 
         emit ProposalCreated({
             proposalId: proposalId,
-            creator: msg.sender,
+            creator: _msgSender(),
             startDate: proposal.lastStageTransition,
             endDate: 0,
             metadata: _metadata,
@@ -374,7 +373,7 @@ contract StagedProposalProcessor is
         _processProposalResult(_proposalId, _stageId, _resultType);
 
         if (_tryAdvance && _canProposalAdvance(_proposalId)) {
-            // advance proposal
+            // advance proposal, if can not execute because has not permission silently continue
             _advanceProposal(_proposalId);
         }
     }
@@ -392,7 +391,10 @@ contract StagedProposalProcessor is
             revert Errors.ProposalCannotAdvance(_proposalId);
         }
 
-        _advanceProposal(_proposalId);
+        bool couldNotExecute = _advanceProposal(_proposalId);
+        if (couldNotExecute) {
+            revert Errors.ProposalExecutionForbidden(_proposalId);
+        }
     }
 
     /// @notice Decides if the proposal can be advanced to the next stage.
@@ -452,14 +454,6 @@ contract StagedProposalProcessor is
         uint256 _index
     ) public view returns (bytes memory) {
         return createProposalParams[_proposalId][_stageId][_index];
-    }
-
-    function execute(uint256 _proposalId) public auth(EXECUTE_PROPOSAL_PERMISSION_ID) {
-        if (!canExecute(_proposalId)) {
-            revert Errors.ProposalExecutionForbidden(_proposalId);
-        }
-
-        _executeProposal(_proposalId);
     }
 
     // =========================== INTERNAL/PRIVATE FUNCTIONS =============================
@@ -562,17 +556,7 @@ contract StagedProposalProcessor is
         uint16 _stageId,
         ResultType _resultType
     ) internal virtual {
-        address sender = msg.sender;
-
-        // If sender is a trusted Forwarder, that means
-        // it would have appended the original sender in the calldata.
-        if (sender == trustedForwarder) {
-            assembly {
-                // get the last 20 bytes as an address which was appended
-                // by the trustedForwarder before calling this function.
-                sender := shr(96, calldataload(sub(calldatasize(), 20)))
-            }
-        }
+        address sender = _msgSender();
 
         bodyResults[_proposalId][_stageId][sender] = _resultType;
         emit ProposalResultReported(_proposalId, _stageId, sender);
@@ -729,13 +713,14 @@ contract StagedProposalProcessor is
     /// @notice Internal function to advance the proposal.
     /// @dev Note that is assumes the proposal can advance.
     /// @param _proposalId The proposal Id.
-    function _advanceProposal(uint256 _proposalId) internal virtual {
+    function _advanceProposal(uint256 _proposalId) internal virtual returns (bool couldNotExecute) {
         Proposal storage _proposal = proposals[_proposalId];
         Stage[] storage _stages = stages[_proposal.stageConfigIndex];
 
         _proposal.lastStageTransition = uint64(block.timestamp);
 
         if (_proposal.currentStage < _stages.length - 1) {
+            // is not last stage
             uint16 newStage = ++_proposal.currentStage;
 
             // Grab the next stage's bodies' custom params of `createProposal`.
@@ -748,26 +733,18 @@ contract StagedProposalProcessor is
 
             emit ProposalAdvanced(_proposalId, newStage);
         } else {
-            console.log("Proposal %s is executed", _proposalId, msg.sender);
-            // console.log(
-            //     "has permission",
-            //     dao().hasPermission(
-            //         address(this),
-            //         msg.sender, // todo rethink this
-            //         EXECUTE_PROPOSAL_PERMISSION_ID,
-            //         msg.data
-            //     )
-            // );
             // always try execute if it is the last stage
             if (
                 dao().hasPermission(
                     address(this),
-                    msg.sender, // todo rethink this
+                    _msgSender(), // todo rethink this
                     EXECUTE_PROPOSAL_PERMISSION_ID,
                     msg.data
                 )
             ) {
                 _executeProposal(_proposalId);
+            } else {
+                couldNotExecute = true;
             }
         }
     }
@@ -778,6 +755,22 @@ contract StagedProposalProcessor is
         trustedForwarder = _forwarder;
 
         emit TrustedForwarderUpdated(_forwarder);
+    }
+
+    function _msgSender() internal view override returns (address) {
+        // If sender is a trusted Forwarder, that means
+        // it would have appended the original sender in the calldata.
+        if (msg.sender == trustedForwarder) {
+            address sender;
+            assembly {
+                // get the last 20 bytes as an address which was appended
+                // by the trustedForwarder before calling this function.
+                sender := shr(96, calldataload(sub(calldatasize(), 20)))
+            }
+            return sender;
+        } else {
+            return msg.sender;
+        }
     }
 
     /// @dev This empty reserved space is put in place to allow future versions to add new
