@@ -373,8 +373,15 @@ contract StagedProposalProcessor is
         _processProposalResult(_proposalId, _stageId, _resultType);
 
         if (_tryAdvance && _canProposalAdvance(_proposalId)) {
-            // advance proposal, if can not execute because has not permission silently continue
-            _advanceProposal(_proposalId);
+            // If it's the last stage, only advance(i.e execute) if 
+            // caller has permission. Note that we don't revert in 
+            // this case to still allow the records being reported.
+            if (
+                proposal.currentStage == stages[proposal.stageConfigIndex].length - 1 &&
+                hasExecutePermission()
+            ) {
+                _advanceProposal(_proposalId);
+            }
         }
     }
 
@@ -391,10 +398,16 @@ contract StagedProposalProcessor is
             revert Errors.ProposalCannotAdvance(_proposalId);
         }
 
-        bool couldNotExecute = _advanceProposal(_proposalId);
-        if (couldNotExecute) {
+        // If it's last stage, make sure that caller has permission 
+        // to execute, otherwise revert.
+        if (
+            proposal.currentStage == stages[proposal.stageConfigIndex].length - 1 &&
+            !hasExecutePermission()
+        ) {
             revert Errors.ProposalExecutionForbidden(_proposalId);
         }
+
+        _advanceProposal(_proposalId);
     }
 
     /// @notice Decides if the proposal can be advanced to the next stage.
@@ -441,6 +454,18 @@ contract StagedProposalProcessor is
         }
 
         return false;
+    }
+
+    /// @notice Checks if caller has a permission to execute a proposal if it's on the last stage.
+    /// @return Returns true if the caller has permission to execute.
+    function hasExecutePermission() public view returns (bool) {
+        return
+            dao().hasPermission(
+                address(this),
+                _msgSender(),
+                EXECUTE_PROPOSAL_PERMISSION_ID,
+                msg.data
+            );
     }
 
     /// @notice Useful function for UI to get any sub-bodies'(not including first stage's sub-bodies) `createProposal`'s `data` param.
@@ -710,10 +735,10 @@ contract StagedProposalProcessor is
         }
     }
 
-    /// @notice Internal function to advance the proposal.
-    /// @dev Note that is assumes the proposal can advance.
+    /// @notice Internal function to advance the proposal. It executes if it's the last stage.
+    /// @dev Note that it assumes the proposal can advance. 
     /// @param _proposalId The proposal Id.
-    function _advanceProposal(uint256 _proposalId) internal virtual returns (bool couldNotExecute) {
+    function _advanceProposal(uint256 _proposalId) internal virtual {
         Proposal storage _proposal = proposals[_proposalId];
         Stage[] storage _stages = stages[_proposal.stageConfigIndex];
 
@@ -733,19 +758,7 @@ contract StagedProposalProcessor is
 
             emit ProposalAdvanced(_proposalId, newStage);
         } else {
-            // always try execute if it is the last stage
-            if (
-                dao().hasPermission(
-                    address(this),
-                    _msgSender(), // todo rethink this
-                    EXECUTE_PROPOSAL_PERMISSION_ID,
-                    msg.data
-                )
-            ) {
-                _executeProposal(_proposalId);
-            } else {
-                couldNotExecute = true;
-            }
+            _executeProposal(_proposalId);
         }
     }
 
