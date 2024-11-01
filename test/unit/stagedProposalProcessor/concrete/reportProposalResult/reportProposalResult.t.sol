@@ -2,10 +2,12 @@
 pragma solidity ^0.8.8;
 
 import {Errors} from "../../../../../src/libraries/Errors.sol";
-import {PluginA} from "../../../../utils/dummy-plugins/PluginA.sol";
+import {PluginA} from "../../../../utils/dummy-plugins/PluginA/PluginA.sol";
+import {EXECUTE_PROPOSAL_PERMISSION_ID} from "../../../../utils/Permissions.sol";
 import {StagedConfiguredSharedTest} from "../../../../StagedConfiguredSharedTest.t.sol";
 import {StagedProposalProcessor as SPP} from "../../../../../src/StagedProposalProcessor.sol";
 
+import {DAO} from "@aragon/osx/core/dao/DAO.sol";
 import {IPlugin} from "@aragon/osx-commons-contracts/src/plugin/IPlugin.sol";
 import {Executor} from "@aragon/osx-commons-contracts/src/executors/Executor.sol";
 
@@ -40,12 +42,99 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         _;
     }
 
-    function test_WhenCallerIsTrustedForwarder()
+    modifier whenCallerIsTrustedForwarder() {
+        _;
+    }
+
+    modifier whenProposalIsInLastStage() {
+        SPP.Stage[] memory stages = sppPlugin.getStages();
+        // address bodyAddress = stages[0].bodies[0].addr;
+
+        SPP.Proposal memory oldProposal = sppPlugin.getProposal(proposalId);
+        // advance the timer to allow the proposal to be advanced
+        vm.warp(oldProposal.lastStageTransition + stages[0].minAdvance + 1);
+
+        // execute the sub proposal to report the result and advance to first stage
+        PluginA(stages[0].bodies[0].addr).execute({_proposalId: 0});
+
+        _;
+    }
+
+    function test_WhenBodyHasNoExecutePermission()
         external
         givenExistentProposal
         whenVoteDurationHasNotPassed
         whenTheCallerIsAnAllowedBody
         whenShouldTryAdvanceStage
+        whenCallerIsTrustedForwarder
+        whenProposalIsInLastStage
+    {
+        SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
+        SPP.Stage[] memory stages = sppPlugin.getStages();
+        address bodyAddress = stages[1].bodies[0].addr;
+
+        vm.warp(proposal.lastStageTransition + stages[1].minAdvance + 1);
+
+        // execute the sub proposal to report the result and advance to last stage
+        PluginA(bodyAddress).execute({_proposalId: 0});
+
+        // check result was recorded
+        assertEq(
+            sppPlugin.getBodyResult(proposalId, proposal.currentStage, bodyAddress),
+            SPP.ResultType.Approval,
+            "resultType"
+        );
+
+        // check proposal was not executed
+        assertFalse(sppPlugin.getProposal(proposalId).executed, "executed");
+    }
+
+    function test_WhenBodyHasExecutePermission()
+        external
+        givenExistentProposal
+        whenVoteDurationHasNotPassed
+        whenTheCallerIsAnAllowedBody
+        whenShouldTryAdvanceStage
+        whenCallerIsTrustedForwarder
+        whenProposalIsInLastStage
+    {
+        // it should record the result.
+        // it execute proposal.
+
+        SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
+        SPP.Stage[] memory stages = sppPlugin.getStages();
+        address bodyAddress = stages[1].bodies[0].addr;
+
+        // grant permission to the plugin
+        DAO(payable(address(dao))).grant(
+            address(sppPlugin),
+            bodyAddress,
+            EXECUTE_PROPOSAL_PERMISSION_ID
+        );
+
+        vm.warp(proposal.lastStageTransition + stages[1].minAdvance + 1);
+
+        // execute the sub proposal to report the result and advance to last stage
+        PluginA(bodyAddress).execute({_proposalId: 0});
+
+        // check result was recorded
+        assertEq(
+            sppPlugin.getBodyResult(proposalId, proposal.currentStage, bodyAddress),
+            SPP.ResultType.Approval,
+            "resultType"
+        );
+
+        // check proposal was not executed
+        assertTrue(sppPlugin.getProposal(proposalId).executed, "executed");
+    }
+
+    function test_WhenProposalIsNotInLastStage()
+        external
+        givenExistentProposal
+        whenVoteDurationHasNotPassed
+        whenTheCallerIsAnAllowedBody
+        whenShouldTryAdvanceStage
+        whenCallerIsTrustedForwarder
     {
         // it should use the sender stored in the call data.
         // it should record the result.
@@ -72,19 +161,111 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         SPP.Proposal memory newProposal = sppPlugin.getProposal(proposalId);
         assertEq(
             sppPlugin.getBodyResult(proposalId, oldProposal.currentStage, bodyAddress),
-            SPP.ResultType.Approval
+            SPP.ResultType.Approval,
+            "resultType"
         );
 
         // check proposal was advanced
         assertEq(newProposal.currentStage, oldProposal.currentStage + 1, "currentStage");
     }
 
-    function test_WhenCallerIsExecutorUsingDelegatecall()
+    modifier whenCallerIsExecutorUsingDelegatecall() {
+        _;
+    }
+
+    modifier givenProposalIsInLastStage() {
+        SPP.Stage[] memory stages = sppPlugin.getStages();
+        // address bodyAddress = stages[0].bodies[0].addr;
+
+        SPP.Proposal memory oldProposal = sppPlugin.getProposal(proposalId);
+        // advance the timer to allow the proposal to be advanced
+        vm.warp(oldProposal.lastStageTransition + stages[0].minAdvance + 1);
+
+        // execute the sub proposal to report the result and advance to first stage
+        PluginA(stages[0].bodies[0].addr).execute({_proposalId: 0});
+
+        _;
+    }
+
+    function test_GivenBodyHasNoExecutePermission()
         external
         givenExistentProposal
         whenVoteDurationHasNotPassed
         whenTheCallerIsAnAllowedBody
         whenShouldTryAdvanceStage
+        whenCallerIsExecutorUsingDelegatecall
+        givenProposalIsInLastStage
+    {
+        // it should record the result.
+        // it execute proposal.
+        // it should not revert.
+
+        SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
+        SPP.Stage[] memory stages = sppPlugin.getStages();
+        address bodyAddress = stages[1].bodies[0].addr;
+
+        vm.warp(proposal.lastStageTransition + stages[1].minAdvance + 1);
+
+        // execute the sub proposal to report the result and advance to last stage
+        PluginA(bodyAddress).execute({_proposalId: 0});
+
+        // check result was recorded
+        assertEq(
+            sppPlugin.getBodyResult(proposalId, proposal.currentStage, bodyAddress),
+            SPP.ResultType.Approval,
+            "resultType"
+        );
+
+        // check proposal was not executed
+        assertFalse(sppPlugin.getProposal(proposalId).executed, "executed");
+    }
+
+    function test_GivenBodyHasExecutePermission()
+        external
+        givenExistentProposal
+        whenVoteDurationHasNotPassed
+        whenTheCallerIsAnAllowedBody
+        whenShouldTryAdvanceStage
+        whenCallerIsExecutorUsingDelegatecall
+        givenProposalIsInLastStage
+    {
+        // it should record the result.
+        // it execute proposal.
+
+        SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
+        SPP.Stage[] memory stages = sppPlugin.getStages();
+        address bodyAddress = stages[1].bodies[0].addr;
+
+        // grant permission to the plugin
+        DAO(payable(address(dao))).grant(
+            address(sppPlugin),
+            bodyAddress,
+            EXECUTE_PROPOSAL_PERMISSION_ID
+        );
+
+        vm.warp(proposal.lastStageTransition + stages[1].minAdvance + 1);
+
+        // execute the sub proposal to report the result and advance to last stage
+        PluginA(bodyAddress).execute({_proposalId: 0});
+
+        // check result was recorded
+        assertEq(
+            sppPlugin.getBodyResult(proposalId, proposal.currentStage, bodyAddress),
+            SPP.ResultType.Approval,
+            "resultType"
+        );
+
+        // check proposal was not executed
+        assertTrue(sppPlugin.getProposal(proposalId).executed, "executed");
+    }
+
+    function test_GivenProposalIsNotInLastStage()
+        external
+        givenExistentProposal
+        whenVoteDurationHasNotPassed
+        whenTheCallerIsAnAllowedBody
+        whenShouldTryAdvanceStage
+        whenCallerIsExecutorUsingDelegatecall
     {
         // it should use the msg.sender that is the plugin.
         // it should record the result.
@@ -120,7 +301,8 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         SPP.Proposal memory newProposal = sppPlugin.getProposal(proposalId);
         assertEq(
             sppPlugin.getBodyResult(proposalId, oldProposal.currentStage, bodyAddress),
-            SPP.ResultType.Approval
+            SPP.ResultType.Approval,
+            "resultType"
         );
 
         // check proposal was advanced
@@ -170,7 +352,8 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         SPP.Proposal memory proposalNew = sppPlugin.getProposal(proposalId);
         assertEq(
             sppPlugin.getBodyResult(proposalId, proposalOld.currentStage, allowedBody),
-            SPP.ResultType.Approval
+            SPP.ResultType.Approval,
+            "resultType"
         );
 
         // check proposal was advanced
@@ -203,7 +386,8 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
         assertEq(
             sppPlugin.getBodyResult(proposalId, proposal.currentStage, allowedBody),
-            SPP.ResultType.Approval
+            SPP.ResultType.Approval,
+            "resultType"
         );
 
         // check proposal stage is has not advanced
@@ -248,7 +432,8 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
         assertEq(
             sppPlugin.getBodyResult(proposalId, proposal.currentStage, allowedBody),
-            SPP.ResultType.Approval
+            SPP.ResultType.Approval,
+            "resultType"
         );
         // check proposal stage is has not advanced
         assertEq(proposal.currentStage, 0, "currentStage");
@@ -288,7 +473,8 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         SPP.Proposal memory newProposal = sppPlugin.getProposal(proposalId);
         assertEq(
             sppPlugin.getBodyResult(proposalId, oldProposal.currentStage, bodyAddress),
-            SPP.ResultType.Approval
+            SPP.ResultType.Approval,
+            "resultType"
         );
 
         // check proposal was advanced
@@ -334,7 +520,8 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         SPP.Proposal memory newProposal = sppPlugin.getProposal(proposalId);
         assertEq(
             sppPlugin.getBodyResult(proposalId, oldProposal.currentStage, bodyAddress),
-            SPP.ResultType.Approval
+            SPP.ResultType.Approval,
+            "resultType"
         );
 
         // check proposal was not advanced
@@ -362,11 +549,13 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
         assertEq(
             sppPlugin.getBodyResult(proposalId, proposal.currentStage, allowedBody),
-            SPP.ResultType.None
+            SPP.ResultType.None,
+            "resultType"
         );
         assertEq(
             sppPlugin.getBodyResult(proposalId, proposal.currentStage, users.unauthorized),
-            SPP.ResultType.Approval
+            SPP.ResultType.Approval,
+            "resultType"
         );
     }
 
@@ -394,7 +583,8 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         proposal = sppPlugin.getProposal(proposalId);
         assertEq(
             sppPlugin.getBodyResult(proposalId, proposal.currentStage, allowedBody),
-            SPP.ResultType.Approval
+            SPP.ResultType.Approval,
+            "resultType"
         );
     }
 

@@ -3,13 +3,22 @@ pragma solidity ^0.8.8;
 
 import {Test} from "forge-std/Test.sol";
 
+import {
+    UPDATE_STAGES_PERMISSION_ID,
+    SET_TRUSTED_FORWARDER_PERMISSION_ID,
+    SET_TARGET_CONFIG_PERMISSION_ID,
+    SET_METADATA_PERMISSION_ID,
+    UPDATE_RULES_PERMISSION_ID,
+    CREATE_PROPOSAL_PERMISSION_ID,
+    EXECUTE_PROPOSAL_PERMISSION_ID
+} from "./utils/Permissions.sol";
 import {Users} from "./utils/Types.sol";
 import {Events} from "./utils/Events.sol";
 import {Target} from "./utils/Target.sol";
 import {Fuzzers} from "./utils/Fuzzers.sol";
 import {Constants} from "./utils/Constants.sol";
 import {Assertions} from "./utils/Assertions.sol";
-import {PluginA} from "./utils/dummy-plugins/PluginA.sol";
+import {PluginA} from "./utils/dummy-plugins/PluginA/PluginA.sol";
 import {TrustedForwarder} from "../src/utils/TrustedForwarder.sol";
 import {StagedProposalProcessor as SPP} from "../src/StagedProposalProcessor.sol";
 
@@ -117,7 +126,7 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
 
         // grant permissions
         PermissionLib.MultiTargetPermission[]
-            memory permissions = new PermissionLib.MultiTargetPermission[](4);
+            memory permissions = new PermissionLib.MultiTargetPermission[](5);
 
         // grant update stage permission on SPP plugin to the DAO
         permissions[0] = PermissionLib.MultiTargetPermission({
@@ -153,6 +162,15 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
             who: users.manager,
             condition: PermissionLib.NO_CONDITION,
             permissionId: sppPlugin.CREATE_PROPOSAL_PERMISSION_ID()
+        });
+
+        // grant permission for execute proposals on the spp to the manager
+        permissions[4] = PermissionLib.MultiTargetPermission({
+            operation: PermissionLib.Operation.Grant,
+            where: address(sppPlugin),
+            who: users.manager,
+            condition: PermissionLib.NO_CONDITION,
+            permissionId: sppPlugin.EXECUTE_PROPOSAL_PERMISSION_ID()
         });
 
         DAO(payable(address(dao))).applyMultiTargetPermissions(permissions);
@@ -207,23 +225,11 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
         address body3Addr = address(new PluginA(targetConfig));
 
         SPP.Body[] memory _body1 = new SPP.Body[](2);
-        _body1[0] = _createCustomBodyStruct(
-            body1Addr,
-            _body1Manual,
-            _tryAdvance
-        );
-        _body1[1] = _createCustomBodyStruct(
-            body2Addr,
-            _body2Manual,
-            _tryAdvance
-        );
+        _body1[0] = _createCustomBodyStruct(body1Addr, _body1Manual, _tryAdvance);
+        _body1[1] = _createCustomBodyStruct(body2Addr, _body2Manual, _tryAdvance);
 
         SPP.Body[] memory _body2 = new SPP.Body[](1);
-        _body2[0] = _createCustomBodyStruct(
-            body3Addr,
-            _body3Manual,
-            _tryAdvance
-        );
+        _body2[0] = _createCustomBodyStruct(body3Addr, _body3Manual, _tryAdvance);
 
         stages = new SPP.Stage[](_stageCount);
         for (uint i; i < _stageCount; i++) {
@@ -308,5 +314,18 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
         for (uint256 i; i < stages[_stage].bodies.length; i++) {
             PluginA(stages[_stage].bodies[i].addr).execute({_proposalId: 0});
         }
+    }
+
+    function _getSetupPermissions() internal view returns (bytes32[] memory permissionList) {
+        permissionList = new bytes32[](8);
+
+        permissionList[0] = UPDATE_STAGES_PERMISSION_ID;
+        permissionList[1] = DAO(payable(address(dao))).EXECUTE_PERMISSION_ID();
+        permissionList[2] = SET_TRUSTED_FORWARDER_PERMISSION_ID;
+        permissionList[3] = SET_TARGET_CONFIG_PERMISSION_ID;
+        permissionList[4] = SET_METADATA_PERMISSION_ID;
+        permissionList[5] = UPDATE_RULES_PERMISSION_ID;
+        permissionList[6] = CREATE_PROPOSAL_PERMISSION_ID;
+        permissionList[7] = EXECUTE_PROPOSAL_PERMISSION_ID;
     }
 }

@@ -3,13 +3,14 @@ pragma solidity ^0.8.8;
 
 import {BaseTest} from "../../../BaseTest.t.sol";
 import {Errors} from "../../../../src/libraries/Errors.sol";
-import {PluginA} from "../../../utils/dummy-plugins/PluginA.sol";
+import {PluginA} from "../../../utils/dummy-plugins/PluginA/PluginA.sol";
 import {StagedProposalProcessor as SPP} from "../../../../src/StagedProposalProcessor.sol";
 
 import {DAO} from "@aragon/osx/core/dao/DAO.sol";
 import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
 
 contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
+    uint256 proposalId;
     modifier givenProposalExists() {
         _;
     }
@@ -18,11 +19,8 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         _;
     }
 
-    function test_WhenProposalIsInLastStage() external givenProposalExists whenProposalCanAdvance {
-        // it should execute the proposal.
-
-        uint256 proposalId = _configureStagesAndCreateDummyProposal(DUMMY_METADATA);
-
+    modifier whenProposalIsInLastStage() {
+        proposalId = _configureStagesAndCreateDummyProposal(DUMMY_METADATA);
         uint256 initialStage;
 
         // execute proposals on first stage
@@ -32,13 +30,43 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         vm.warp(VOTE_DURATION + START_DATE);
         sppPlugin.advanceProposal(proposalId);
 
-        uint64 lastStageTransition = sppPlugin.getProposal(proposalId).lastStageTransition;
-
         // execute proposals on first stage
         _executeStageProposals(initialStage + 1);
 
+        _;
+    }
+
+    function test_RevertWhen_CallerHasNoTryExecutePermission()
+        external
+        givenProposalExists
+        whenProposalCanAdvance
+        whenProposalIsInLastStage
+    {
+        // it should revert.
+        resetPrank(users.unauthorized);
+        vm.warp(sppPlugin.getProposal(proposalId).lastStageTransition + VOTE_DURATION + START_DATE);
+        vm.expectRevert(
+            abi.encodeWithSelector(Errors.ProposalExecutionForbidden.selector, proposalId)
+        );
+        sppPlugin.advanceProposal(proposalId);
+    }
+
+    function test_WhenCallerHasTryExecutePermission()
+        external
+        givenProposalExists
+        whenProposalCanAdvance
+        whenProposalIsInLastStage
+    {
+        // it should emit event.
+        // it should execute the proposal.
+
         // advance last stage
-        vm.warp(lastStageTransition + VOTE_DURATION + START_DATE);
+        vm.warp(sppPlugin.getProposal(proposalId).lastStageTransition + VOTE_DURATION + START_DATE);
+
+        // check event emitted
+        vm.expectEmit({emitter: address(sppPlugin)});
+        emit ProposalExecuted(proposalId);
+
         sppPlugin.advanceProposal(proposalId);
 
         // check proposal executed
@@ -82,7 +110,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
 
         // create proposal
         Action[] memory actions = _createDummyActions();
-        uint256 proposalId = sppPlugin.createProposal({
+        proposalId = sppPlugin.createProposal({
             _actions: actions,
             _allowFailureMap: 0,
             _metadata: DUMMY_METADATA,
@@ -138,7 +166,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
 
         // create proposal
         Action[] memory actions = _createDummyActions();
-        uint256 proposalId = sppPlugin.createProposal({
+        proposalId = sppPlugin.createProposal({
             _actions: actions,
             _allowFailureMap: 0,
             _metadata: DUMMY_METADATA,
@@ -208,7 +236,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
 
         // create proposal
         Action[] memory actions = _createDummyActions();
-        uint256 proposalId = sppPlugin.createProposal({
+        proposalId = sppPlugin.createProposal({
             _actions: actions,
             _allowFailureMap: 0,
             _metadata: DUMMY_METADATA,
@@ -272,7 +300,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
 
         // create proposal
         Action[] memory actions = _createDummyActions();
-        uint256 proposalId = sppPlugin.createProposal({
+        proposalId = sppPlugin.createProposal({
             _actions: actions,
             _allowFailureMap: 0,
             _metadata: DUMMY_METADATA,
@@ -320,7 +348,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
 
         // create proposal
         Action[] memory actions = _createDummyActions();
-        uint256 proposalId = sppPlugin.createProposal({
+        proposalId = sppPlugin.createProposal({
             _actions: actions,
             _allowFailureMap: 0,
             _metadata: DUMMY_METADATA,
@@ -354,6 +382,54 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         );
     }
 
+    function test_WhenCallerHasNoTryExecutePermission()
+        external
+        givenProposalExists
+        whenProposalCanAdvance
+        whenProposalIsNotInLastStage
+        whenAllPluginsOnNextStageAreNonManual
+    {
+        // it should emit event.
+        // it should advance proposal.
+        // it should create sub proposals.
+
+        // create proposal
+        Action[] memory actions = _createDummyActions();
+        proposalId = sppPlugin.createProposal({
+            _actions: actions,
+            _allowFailureMap: 0,
+            _metadata: DUMMY_METADATA,
+            _startDate: START_DATE,
+            _proposalParams: defaultCreationParams
+        });
+        uint256 initialStage;
+
+        // execute proposals on first stage
+        _executeStageProposals(initialStage);
+
+        vm.warp(VOTE_DURATION + START_DATE);
+
+        // check event emitted
+        vm.expectEmit({emitter: address(sppPlugin)});
+        emit ProposalAdvanced(proposalId, initialStage + 1);
+
+        resetPrank(users.unauthorized);
+        sppPlugin.advanceProposal(proposalId);
+
+        SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
+        SPP.Stage[] memory stages = sppPlugin.getStages();
+
+        // check proposal advanced
+        assertEq(proposal.currentStage, initialStage + 1, "currentStage");
+
+        // check sub proposal created
+        assertEq(
+            PluginA(stages[initialStage + 1].bodies[0].addr).proposalCount(),
+            1,
+            "proposalsCount"
+        );
+    }
+
     function test_WhenSomePluginsOnNextStageAreManual()
         external
         givenProposalExists
@@ -370,7 +446,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
 
         // create proposal
         Action[] memory actions = _createDummyActions();
-        uint256 proposalId = sppPlugin.createProposal({
+        proposalId = sppPlugin.createProposal({
             _actions: actions,
             _allowFailureMap: 0,
             _metadata: DUMMY_METADATA,
@@ -402,6 +478,58 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         );
     }
 
+    function test_WhenThereAreNoPluginsOnNextStage()
+        external
+        givenProposalExists
+        whenProposalCanAdvance
+        whenProposalIsNotInLastStage
+    {
+        // it should emit event.
+        // it should advance proposal.
+        // it should not be able to advance until minAdvance.
+
+        // configure stages (one of them non-manual)
+        SPP.Stage[] memory stages = _createDummyStages(2, false, true, true);
+        // remove bodies from stage 2
+        stages[1].bodies = new SPP.Body[](0);
+        stages[1].approvalThreshold = 0;
+        stages[1].vetoThreshold = 0;
+        sppPlugin.updateStages(stages);
+
+        // create proposal
+        Action[] memory actions = _createDummyActions();
+        proposalId = sppPlugin.createProposal({
+            _actions: actions,
+            _allowFailureMap: 0,
+            _metadata: DUMMY_METADATA,
+            _startDate: START_DATE,
+            _proposalParams: defaultCreationParams
+        });
+
+        uint256 initialStage;
+        // execute proposals on first stage
+        _executeStageProposals(initialStage);
+
+        vm.warp(VOTE_DURATION + START_DATE);
+
+        // check event emitted
+        vm.expectEmit({emitter: address(sppPlugin)});
+        emit ProposalAdvanced(proposalId, initialStage + 1);
+        sppPlugin.advanceProposal(proposalId);
+
+        SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
+
+        // check proposal advanced
+        assertEq(proposal.currentStage, initialStage + 1, "currentStage");
+
+        // check proposal can not advance
+        assertFalse(sppPlugin.canProposalAdvance(proposalId), "canAdvanceProposal");
+
+        // check can advance after minAdvance
+        vm.warp(sppPlugin.getProposal(proposalId).lastStageTransition + minAdvance);
+        assertTrue(sppPlugin.canProposalAdvance(proposalId), "canAdvance");
+    }
+
     function test_RevertWhen_ProposalCanNotAdvance() external givenProposalExists {
         // it should revert.
 
@@ -410,7 +538,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         sppPlugin.updateStages(stages);
 
         // create proposal
-        uint256 proposalId = sppPlugin.createProposal({
+        proposalId = sppPlugin.createProposal({
             _actions: _createDummyActions(),
             _allowFailureMap: 0,
             _metadata: DUMMY_METADATA,

@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import {Script} from "forge-std/Script.sol";
-
 import {BaseScript} from "./Base.sol";
-
 import {PluginSettings} from "../src/utils/PluginSettings.sol";
 import {StagedProposalProcessorSetup as SPPSetup} from "../src/StagedProposalProcessorSetup.sol";
 
@@ -12,17 +9,19 @@ import {PluginRepo} from "@aragon/osx/framework/plugin/repo/PluginRepo.sol";
 import {PermissionLib} from "@aragon/osx/core/permission/PermissionLib.sol";
 import {PluginRepoFactory} from "@aragon/osx/framework/plugin/repo/PluginRepoFactory.sol";
 
-import "forge-std/console.sol";
+import {console} from "forge-std/console.sol";
 
 contract Deploy is BaseScript {
     function run() external {
         // get deployed contracts
-        (pluginRepoFactory, managementDao) = getRepoContractAddresses(network);
+        pluginRepoFactory = getRepoFactoryAddress();
+        managementDao = getManagementDaoAddress();
 
         vm.startBroadcast(deployerPrivateKey);
 
         // crete plugin repo and version
-        (sppSetup, sppRepo) = _createPluginRepoAndVersion();
+        sppRepo = _createPluginRepo();
+        sppSetup = _createAndCheckNewVersion();
 
         //transfer ownership of the plugin to the management DAO and revoke from deployer
         _transferOwnershipToManagementDao();
@@ -30,28 +29,19 @@ contract Deploy is BaseScript {
         vm.stopBroadcast();
     }
 
-    function _createPluginRepoAndVersion()
-        internal
-        returns (SPPSetup _sppSetup, PluginRepo _sppRepo)
-    {
+    function _createPluginRepo() internal returns (PluginRepo _sppRepo) {
         // create plugin repo
         _sppRepo = PluginRepoFactory(pluginRepoFactory).createPluginRepo(
             PluginSettings.PLUGIN_REPO_ENS_SUBDOMAIN_NAME,
             deployer
         );
 
-        _sppSetup = new SPPSetup();
-
-        // create plugin version release 1
-        _sppRepo.createVersion(
-            PluginSettings.VERSION_RELEASE,
-            address(_sppSetup),
-            PluginSettings.BUILD_METADATA,
-            PluginSettings.RELEASE_METADATA
+        console.log(
+            "SPP repo deployed with ENS domain",
+            PluginSettings.PLUGIN_REPO_ENS_SUBDOMAIN_NAME,
+            "at address: ",
+            address(_sppRepo)
         );
-
-        console.log("SPP repo deployed at address: ", address(_sppRepo));
-        console.log("SPP setup deployed at address: ", address(_sppSetup));
     }
 
     function _transferOwnershipToManagementDao() internal {

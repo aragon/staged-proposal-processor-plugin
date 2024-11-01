@@ -23,9 +23,12 @@ contract PrepareUninstallation_SPPSetup_UnitTest is BaseTest {
     function test_WhenPreparingUninstallation() external {
         // it should return the correct permissions list to revoke.
 
+        address[] memory helpers = new address[](1);
+        helpers[0] = address(this);
+
         IPluginSetup.SetupPayload memory payload = IPluginSetup.SetupPayload({
             plugin: address(0),
-            currentHelpers: new address[](0),
+            currentHelpers: helpers,
             data: ""
         });
 
@@ -35,22 +38,16 @@ contract PrepareUninstallation_SPPSetup_UnitTest is BaseTest {
         );
 
         // check returned permissions list.
-        assertEq(permissions.length, 5, "permissionsLength");
-        for (uint256 i = 0; i < 5; i++) {
+        assertEq(permissions.length, _getSetupPermissions().length, "permissionsLength");
+        for (uint256 i = 0; i < 7; i++) {
+            bytes32 permissionId = permissions[i].permissionId;
             assertEq(
                 uint256(permissions[i].operation),
                 uint256(PermissionLib.Operation.Revoke),
                 "operation"
             );
-            if (
-                permissions[i].permissionId != sppSetup.UPDATE_STAGES_PERMISSION_ID() &&
-                permissions[i].permissionId != DAO(payable(address(dao))).EXECUTE_PERMISSION_ID() &&
-                permissions[i].permissionId != sppSetup.SET_TRUSTED_FORWARDER_PERMISSION_ID() &&
-                permissions[i].permissionId != sppSetup.SET_TARGET_CONFIG_PERMISSION_ID() &&
-                permissions[i].permissionId != sppSetup.SET_METADATA_PERMISSION_ID()
-            ) {
-                fail();
-            }
+
+            assertValueInList(permissionId, _getSetupPermissions(), "permissionId");
         }
     }
 }

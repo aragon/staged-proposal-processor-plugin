@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.8;
 
-import {TrustedForwarder} from "../../../src/utils/TrustedForwarder.sol";
+import {TrustedForwarder} from "../../../../src/utils/TrustedForwarder.sol";
 
 import {IPlugin} from "@aragon/osx-commons-contracts/src/plugin/IPlugin.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
@@ -17,7 +17,6 @@ import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 contract PluginA is IERC165, Proposal {
     bool public created;
     uint256 public proposalId;
-    // TrustedForwarder public trustedForwarder;
 
     IPlugin.TargetConfig public targetConfig;
 
@@ -27,6 +26,8 @@ contract PluginA is IERC165, Proposal {
     bool public revertOnCreateProposal;
     bool public needExtraParams;
     bool public canExecuteResult = true;
+
+    mapping(address => bool) public members;
 
     constructor(IPlugin.TargetConfig memory _targetConfig) {
         targetConfig = _targetConfig;
@@ -67,6 +68,14 @@ contract PluginA is IERC165, Proposal {
         }
 
         return _proposalId;
+    }
+
+    function isMember(address _who) public view returns (bool) {
+        return members[_who];
+    }
+
+    function setMember(address _who) external {
+        members[_who] = true;
     }
 
     function _createProposalId(bytes32) internal view override returns (uint256) {

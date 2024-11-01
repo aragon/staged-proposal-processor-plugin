@@ -2,7 +2,11 @@ AdvanceProposal_SPP_IntegrationTest
 ├── given proposal exists
 │   ├── when proposal can advance
 │   │   ├── when proposal is in last stage
-│   │   │   └── it should execute the proposal.
+│   │   │   ├── when caller has no try execute permission
+│   │   │   │   └── it should revert.
+│   │   │   └── when caller has try execute permission
+│   │   │       ├── it should emit event.
+│   │   │       └── it should execute the proposal.
 │   │   └── when proposal is not in last stage
 │   │       ├── when all plugins on next stage are non manual
 │   │       │   ├── when some sub proposal need extra params
@@ -22,14 +26,22 @@ AdvanceProposal_SPP_IntegrationTest
 │   │       │   │       ├── it should emit event.
 │   │       │   │       ├── it should advance proposal.
 │   │       │   │       └── it should not create sub proposals since extra param was not provided.
-│   │       │   └── when none sub proposal need extra params
+│   │       │   ├── when none sub proposal need extra params
+│   │       │   │   ├── it should emit event.
+│   │       │   │   ├── it should advance proposal.
+│   │       │   │   └── it should create sub proposals.
+│   │       │   └── when caller has no try execute permission
 │   │       │       ├── it should emit event.
 │   │       │       ├── it should advance proposal.
 │   │       │       └── it should create sub proposals.
-│   │       └── when some plugins on next stage are manual
+│   │       ├── when some plugins on next stage are manual
+│   │       │   ├── it should emit event.
+│   │       │   ├── it should advance proposal.
+│   │       │   └── it should not create sub proposals
+│   │       └── when there are no plugins on next stage
 │   │           ├── it should emit event.
 │   │           ├── it should advance proposal.
-│   │           └── it should not create sub proposals
+│   │           └── it should not be able to advance until minAdvance.
 │   └── when proposal can not advance
 │       └── it should revert.
 └── given proposal does not exist
