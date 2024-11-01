@@ -170,7 +170,7 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
             where: address(sppPlugin),
             who: users.manager,
             condition: PermissionLib.NO_CONDITION,
-            permissionId: sppPlugin.CREATE_PROPOSAL_PERMISSION_ID()
+            permissionId: sppPlugin.EXECUTE_PROPOSAL_PERMISSION_ID()
         });
 
         DAO(payable(address(dao))).applyMultiTargetPermissions(permissions);
