@@ -373,11 +373,11 @@ contract StagedProposalProcessor is
         _processProposalResult(_proposalId, _stageId, _resultType);
 
         if (_tryAdvance && _canProposalAdvance(_proposalId)) {
-            // If it's the last stage, only advance(i.e execute) if 
-            // caller has permission. Note that we don't revert in 
+            // If it's the last stage, only advance(i.e execute) if
+            // caller has permission. Note that we don't revert in
             // this case to still allow the records being reported.
             if (
-                proposal.currentStage == stages[proposal.stageConfigIndex].length - 1 &&
+                proposal.currentStage != stages[proposal.stageConfigIndex].length - 1 ||
                 hasExecutePermission()
             ) {
                 _advanceProposal(_proposalId);
@@ -398,7 +398,7 @@ contract StagedProposalProcessor is
             revert Errors.ProposalCannotAdvance(_proposalId);
         }
 
-        // If it's last stage, make sure that caller 
+        // If it's last stage, make sure that caller
         // has permission to execute, otherwise revert.
         if (
             proposal.currentStage == stages[proposal.stageConfigIndex].length - 1 &&
@@ -736,7 +736,7 @@ contract StagedProposalProcessor is
     }
 
     /// @notice Internal function to advance the proposal. It executes if it's the last stage.
-    /// @dev Note that it assumes the proposal can advance. 
+    /// @dev Note that it assumes the proposal can advance.
     /// @param _proposalId The proposal Id.
     function _advanceProposal(uint256 _proposalId) internal virtual {
         Proposal storage _proposal = proposals[_proposalId];
