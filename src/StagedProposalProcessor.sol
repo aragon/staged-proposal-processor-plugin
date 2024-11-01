@@ -398,8 +398,8 @@ contract StagedProposalProcessor is
             revert Errors.ProposalCannotAdvance(_proposalId);
         }
 
-        // If it's last stage, make sure that caller has permission 
-        // to execute, otherwise revert.
+        // If it's last stage, make sure that caller 
+        // has permission to execute, otherwise revert.
         if (
             proposal.currentStage == stages[proposal.stageConfigIndex].length - 1 &&
             !hasExecutePermission()
