@@ -44,7 +44,7 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
     /// @notice The ID of the permission required to call the `updateMetadata` function.
     bytes32 public constant SET_METADATA_PERMISSION_ID = keccak256("SET_METADATA_PERMISSION");
 
-    /// @notice The ID of the permission required to call the `execute` function.
+    /// @notice The ID of the permission required to execute the proposal if it's on the last stage.
     bytes32 public constant EXECUTE_PROPOSAL_PERMISSION_ID =
         keccak256("EXECUTE_PROPOSAL_PERMISSION");
 
