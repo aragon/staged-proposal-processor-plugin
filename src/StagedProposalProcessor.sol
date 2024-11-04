@@ -440,7 +440,7 @@ contract StagedProposalProcessor is
 
     /// @notice Necessary to abide the rules of IProposal interface.
     /// @param _proposalId The proposal Id.
-    /// @return bool Returns if proposal can be passes(i.e ready for execution).
+    /// @return bool Returns true if proposal has been passed(i.e ready for execution).
     function hasSucceeded(uint256 _proposalId) public view virtual override returns (bool) {
         Proposal storage proposal = proposals[_proposalId];
         if (proposal.lastStageTransition == 0) {
