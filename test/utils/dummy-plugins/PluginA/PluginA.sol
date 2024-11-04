@@ -82,7 +82,7 @@ contract PluginA is IERC165, Proposal {
         return proposalId;
     }
 
-    function canExecute(uint256) public view returns (bool) {
+    function hasSucceeded(uint256) public view returns (bool) {
         return canExecuteResult;
     }
 

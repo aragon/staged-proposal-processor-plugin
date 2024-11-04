@@ -32,7 +32,7 @@ contract CanExecute_SPP_IntegrationTest is BaseTest {
         // move timestamp
         vm.warp(lastStageTransition + VOTE_DURATION + START_DATE);
 
-        bool canExecute = sppPlugin.canExecute(uint256(proposalId));
+        bool canExecute = sppPlugin.hasSucceeded(uint256(proposalId));
         assertTrue(canExecute, "canExecute");
     }
 
@@ -43,7 +43,7 @@ contract CanExecute_SPP_IntegrationTest is BaseTest {
     {
         // it returns false.
 
-        bool canExecute = sppPlugin.canExecute(uint256(proposalId));
+        bool canExecute = sppPlugin.hasSucceeded(uint256(proposalId));
         assertFalse(canExecute, "canExecute");
     }
 
@@ -53,7 +53,7 @@ contract CanExecute_SPP_IntegrationTest is BaseTest {
             abi.encodeWithSelector(Errors.ProposalNotExists.selector, NON_EXISTENT_PROPOSAL_ID)
         );
 
-        sppPlugin.canExecute(uint256(NON_EXISTENT_PROPOSAL_ID));
+        sppPlugin.hasSucceeded(uint256(NON_EXISTENT_PROPOSAL_ID));
     }
 
     function test_WhenNonExistentProposal() external {
@@ -62,6 +62,6 @@ contract CanExecute_SPP_IntegrationTest is BaseTest {
             abi.encodeWithSelector(Errors.ProposalNotExists.selector, NON_EXISTENT_PROPOSAL_ID)
         );
 
-        sppPlugin.canExecute(uint256(NON_EXISTENT_PROPOSAL_ID));
+        sppPlugin.hasSucceeded(uint256(NON_EXISTENT_PROPOSAL_ID));
     }
 }

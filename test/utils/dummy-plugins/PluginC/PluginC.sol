@@ -40,7 +40,7 @@ contract PluginC is IProposal, IERC165 {
         return "";
     }
 
-    function canExecute(uint256) public pure returns (bool) {
+    function hasSucceeded(uint256) public pure returns (bool) {
         // TODO: for now
         return true;
     }

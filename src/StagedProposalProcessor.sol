@@ -440,8 +440,8 @@ contract StagedProposalProcessor is
 
     /// @notice Necessary to abide the rules of IProposal interface.
     /// @param _proposalId The proposal Id.
-    /// @return bool Returns if proposal can be executed or not.
-    function canExecute(uint256 _proposalId) public view virtual override returns (bool) {
+    /// @return bool Returns if proposal can be passes(i.e ready for execution).
+    function hasSucceeded(uint256 _proposalId) public view virtual override returns (bool) {
         Proposal storage proposal = proposals[_proposalId];
         if (proposal.lastStageTransition == 0) {
             revert Errors.ProposalNotExists(_proposalId);
@@ -724,7 +724,7 @@ contract StagedProposalProcessor is
                 resultType == ResultType.Approval ? ++votes : ++vetoes;
             } else if (bodyProposalId != PROPOSAL_WITHOUT_ID && !body.isManual) {
                 // result was not reported yet
-                if (IProposal(stage.bodies[i].addr).canExecute(bodyProposalId)) {
+                if (IProposal(stage.bodies[i].addr).hasSucceeded(bodyProposalId)) {
                     body.resultType == ResultType.Approval ? ++votes : ++vetoes;
                 }
             }
