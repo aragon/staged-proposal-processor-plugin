@@ -237,7 +237,7 @@ contract StagedProposalProcessor is
 
         Proposal storage proposal = proposals[proposalId];
 
-        if (proposal.lastStageTransition != 0) {
+        if (_proposalExists(proposal)) {
             revert Errors.ProposalAlreadyExists(proposalId);
         }
 
@@ -358,8 +358,8 @@ contract StagedProposalProcessor is
     ) external virtual {
         Proposal storage proposal = proposals[_proposalId];
 
-        if (proposal.lastStageTransition == 0) {
-            revert Errors.ProposalNotExists(_proposalId);
+        if (!_proposalExists(proposal)) {
+            revert Errors.NonexistentProposal(_proposalId);
         }
 
         uint16 currentStage = proposal.currentStage;
@@ -390,8 +390,8 @@ contract StagedProposalProcessor is
     function advanceProposal(uint256 _proposalId) public virtual {
         Proposal storage proposal = proposals[_proposalId];
 
-        if (proposal.lastStageTransition == 0) {
-            revert Errors.ProposalNotExists(_proposalId);
+        if (!_proposalExists(proposal)) {
+            revert Errors.NonexistentProposal(_proposalId);
         }
 
         if (!_canProposalAdvance(_proposalId)) {
@@ -415,8 +415,8 @@ contract StagedProposalProcessor is
     /// @return Returns `true` if the proposal can be advanced.
     function canProposalAdvance(uint256 _proposalId) public view virtual returns (bool) {
         Proposal storage proposal = proposals[_proposalId];
-        if (proposal.lastStageTransition == 0) {
-            revert Errors.ProposalNotExists(_proposalId);
+        if (!_proposalExists(proposal)) {
+            revert Errors.NonexistentProposal(_proposalId);
         }
 
         return _canProposalAdvance(_proposalId);
@@ -430,30 +430,38 @@ contract StagedProposalProcessor is
         uint256 _proposalId
     ) public view virtual returns (uint256 votes, uint256 vetoes) {
         Proposal storage proposal = proposals[_proposalId];
-
-        if (proposal.lastStageTransition == 0) {
-            revert Errors.ProposalNotExists(_proposalId);
+        
+        if (!_proposalExists(proposal)) {
+            revert Errors.NonexistentProposal(_proposalId);
         }
 
         return _getProposalTally(_proposalId);
     }
 
-    /// @notice Necessary to abide the rules of IProposal interface.
-    /// @param _proposalId The proposal Id.
-    /// @return bool Returns true if proposal has been passed(i.e ready for execution).
+    /// @inheritdoc IProposal
     function hasSucceeded(uint256 _proposalId) public view virtual override returns (bool) {
         Proposal storage proposal = proposals[_proposalId];
-        if (proposal.lastStageTransition == 0) {
-            revert Errors.ProposalNotExists(_proposalId);
+        if (!_proposalExists(proposal)) {
+            revert Errors.NonexistentProposal(_proposalId);
         }
 
         Stage[] storage _stages = stages[proposal.stageConfigIndex];
-
-        if (proposal.currentStage == _stages.length - 1 && _canProposalAdvance(_proposalId)) {
-            return true;
+        
+        // If it hasn't reached the last stage, return early.
+        if (proposal.currentStage != _stages.length - 1) {
+            return false;
         }
 
-        return false;
+        // Get the last stage configuration and count if it has succeeded.
+        Stage storage stage = _stages[_stages.length - 1];
+        
+        if (stage.vetoThreshold > 0) {
+            if (proposal.lastStageTransition + stage.voteDuration > block.timestamp) {
+                return false;
+            }
+        }
+
+        return _thresholdsMet(stage, _proposalId);
     }
 
     /// @notice Checks if caller has a permission to execute a proposal if it's on the last stage.
@@ -678,24 +686,13 @@ contract StagedProposalProcessor is
             return false;
         }
 
-        // Allow `voteDuration` to pass for bodies to have veto possibility.
         if (stage.vetoThreshold > 0) {
             if (proposal.lastStageTransition + stage.voteDuration > block.timestamp) {
                 return false;
             }
         }
 
-        (uint256 approvals, uint256 vetoes) = _getProposalTally(_proposalId);
-
-        if (stage.vetoThreshold > 0 && vetoes >= stage.vetoThreshold) {
-            return false;
-        }
-
-        if (approvals < stage.approvalThreshold) {
-            return false;
-        }
-
-        return true;
+        return _thresholdsMet(stage, _proposalId);
     }
 
     /// @notice Internal function to calculate the votes and vetoes for a proposal.
@@ -760,6 +757,31 @@ contract StagedProposalProcessor is
         } else {
             _executeProposal(_proposalId);
         }
+    }
+
+    /// @notice private helper function that decides if the stage's thresholds are satisfied.
+    /// @param _stage The stage struct.
+    /// @param _proposalId The ID of the proposal. 
+    /// @return Returns true if the thresholds are met, otherwise false.
+    function _thresholdsMet(Stage storage _stage, uint256 _proposalId) private view returns(bool) {
+        (uint256 approvals, uint256 vetoes) = _getProposalTally(_proposalId);
+
+        if (_stage.vetoThreshold > 0 && vetoes >= _stage.vetoThreshold) {
+            return false;
+        }
+
+        if (approvals < _stage.approvalThreshold) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /// @notice Checks if proposal exists or not.
+    /// @param _proposal The proposal struct.
+    /// @return Returns `true` if proposal exists, otherwise false.
+    function _proposalExists(Proposal storage _proposal) private view returns (bool) {
+        return _proposal.lastStageTransition != 0;
     }
 
     /// @notice Sets a new trusted forwarder address and emits the event.

@@ -592,7 +592,7 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         // it should revert.
 
         vm.expectRevert(
-            abi.encodeWithSelector(Errors.ProposalNotExists.selector, NON_EXISTENT_PROPOSAL_ID)
+            abi.encodeWithSelector(Errors.NonexistentProposal.selector, NON_EXISTENT_PROPOSAL_ID)
         );
         sppPlugin.reportProposalResult({
             _proposalId: NON_EXISTENT_PROPOSAL_ID,

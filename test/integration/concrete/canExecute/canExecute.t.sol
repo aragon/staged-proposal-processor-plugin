@@ -50,7 +50,7 @@ contract CanExecute_SPP_IntegrationTest is BaseTest {
     function test_WhenProposalIsNotInLastStage() external whenExistentProposal {
         // it should revert.
         vm.expectRevert(
-            abi.encodeWithSelector(Errors.ProposalNotExists.selector, NON_EXISTENT_PROPOSAL_ID)
+            abi.encodeWithSelector(Errors.NonexistentProposal.selector, NON_EXISTENT_PROPOSAL_ID)
         );
 
         sppPlugin.hasSucceeded(uint256(NON_EXISTENT_PROPOSAL_ID));
@@ -59,7 +59,7 @@ contract CanExecute_SPP_IntegrationTest is BaseTest {
     function test_WhenNonExistentProposal() external {
         // it should revert.
         vm.expectRevert(
-            abi.encodeWithSelector(Errors.ProposalNotExists.selector, NON_EXISTENT_PROPOSAL_ID)
+            abi.encodeWithSelector(Errors.NonexistentProposal.selector, NON_EXISTENT_PROPOSAL_ID)
         );
 
         sppPlugin.hasSucceeded(uint256(NON_EXISTENT_PROPOSAL_ID));

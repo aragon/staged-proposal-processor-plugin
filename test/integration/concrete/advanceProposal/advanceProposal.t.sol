@@ -557,7 +557,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         // it should revert.
 
         vm.expectRevert(
-            abi.encodeWithSelector(Errors.ProposalNotExists.selector, NON_EXISTENT_PROPOSAL_ID)
+            abi.encodeWithSelector(Errors.NonexistentProposal.selector, NON_EXISTENT_PROPOSAL_ID)
         );
         sppPlugin.advanceProposal(NON_EXISTENT_PROPOSAL_ID);
     }
