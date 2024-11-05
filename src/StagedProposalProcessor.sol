@@ -132,6 +132,30 @@ contract StagedProposalProcessor is
         address indexed body
     );
 
+    /// @notice Emitted when SPP successfully creates a proposal on sub-body.
+    /// @param proposalId The proposal id.
+    /// @param stageId The stage id.
+    /// @param body The sub-body on which sub-proposal has been created.
+    /// @param bodyProposalId The proposal id that sub-body returns for later usage by SPP.
+    event SubProposalCreated(
+        uint256 indexed proposalId,
+        uint16 indexed stageId,
+        address indexed body,
+        uint256 bodyProposalId
+    );
+
+    /// @notice Emitted when SPP fails in creating a proposal on sub-body.
+    /// @param proposalId The proposal id.
+    /// @param stageId The stage id.
+    /// @param body The sub-body on which sub-proposal failed to be created.
+    /// @param reason The reason why it was failed.
+    event SubProposalNotCreated(
+        uint256 indexed proposalId,
+        uint16 indexed stageId,
+        address indexed body,
+        bytes reason
+    );
+
     /// @notice Emitted when the stage configuration is updated.
     /// @param stages The stage configuration.
     event StagesUpdated(Stage[] stages);
@@ -446,7 +470,7 @@ contract StagedProposalProcessor is
         }
 
         // If the proposal has been executed, it means it has succeeded.
-        if(proposal.executed) {
+        if (proposal.executed) {
             return true;
         }
 
@@ -612,26 +636,36 @@ contract StagedProposalProcessor is
         uint64 _startDate,
         bytes[] memory _stageProposalParams
     ) internal virtual {
-        Proposal storage proposal = proposals[_proposalId];
+        Stage storage stage;
 
-        Stage storage stage = stages[proposal.stageConfigIndex][_stageId];
+        // avoid stack too deep.
+        {
+            Proposal storage proposal = proposals[_proposalId];
+            stage = stages[proposal.stageConfigIndex][_stageId];
+        }
 
         for (uint256 i = 0; i < stage.bodies.length; i++) {
-            Body storage body = stage.bodies[i];
+            Action[] memory actions;
 
-            // If body proposal creation should be manual, skip it.
-            if (body.isManual) continue;
+            {
+                Body storage body = stage.bodies[i];
 
-            Action[] memory actions = new Action[](1);
+                // If body proposal creation should be manual, skip it.
+                if (body.isManual) continue;
 
-            actions[0] = Action({
-                to: address(this),
-                value: 0,
-                data: abi.encodeCall(
-                    this.reportProposalResult,
-                    (_proposalId, _stageId, body.resultType, body.tryAdvance)
-                )
-            });
+                actions = new Action[](1);
+
+                actions[0] = Action({
+                    to: address(this),
+                    value: 0,
+                    data: abi.encodeCall(
+                        this.reportProposalResult,
+                        (_proposalId, _stageId, body.resultType, body.tryAdvance)
+                    )
+                });
+            }
+
+            address bodyAddr = stage.bodies[i].addr;
 
             // Make sure that the `createProposal` call did not fail because
             // 63/64 of `gasleft()` was insufficient to execute the external call.
@@ -640,29 +674,44 @@ contract StagedProposalProcessor is
             // the remaining 1/64 gas are sufficient to successfully finish the call.
             uint256 gasBefore = gasleft();
 
-            try
-                IProposal(stage.bodies[i].addr).createProposal(
-                    abi.encode(address(this), _proposalId, _stageId),
-                    actions,
-                    _startDate,
-                    _startDate + stage.voteDuration,
-                    _stageProposalParams.length > i ? _stageProposalParams[i] : new bytes(0)
+            (bool success, bytes memory data) = bodyAddr.call(
+                abi.encodeCall(
+                    IProposal.createProposal,
+                    (
+                        abi.encode(address(this), _proposalId, _stageId),
+                        actions,
+                        _startDate,
+                        _startDate + stage.voteDuration,
+                        _stageProposalParams.length > i ? _stageProposalParams[i] : new bytes(0)
+                    )
                 )
-            returns (uint256 bodyProposalId) {
-                bodyProposalIds[_proposalId][_stageId][stage.bodies[i].addr] = bodyProposalId;
-            } catch {
-                // Handles the edge case where:
-                // on success: it could return 0.
-                // on failure: default 0 would be used.
-                // In order to differentiate, we store `uint256.max` on failure.
+            );
 
-                uint256 gasAfter = gasleft();
+            uint256 gasAfter = gasleft();
 
+            // NOTE: Handles the edge case where:
+            // on success: it could return 0.
+            // on failure: default 0 would be used.
+            // In order to differentiate, we store `PROPOSAL_WITHOUT_ID` on failure.
+
+            // sub-proposal was not created on sub-body, emit
+            // the event and try the next sub-body.
+            if (!success) {
+                
                 if (gasAfter < gasBefore / 64) {
                     revert Errors.InsufficientGas();
                 }
+            }
 
-                bodyProposalIds[_proposalId][_stageId][stage.bodies[i].addr] = PROPOSAL_WITHOUT_ID;
+            if (success && data.length == 32) {
+                uint256 subProposalId = abi.decode(data, (uint256));
+                bodyProposalIds[_proposalId][_stageId][bodyAddr] = subProposalId;
+
+                emit SubProposalCreated(_proposalId, _stageId, bodyAddr, subProposalId);
+            } else {
+                bodyProposalIds[_proposalId][_stageId][bodyAddr] = PROPOSAL_WITHOUT_ID;
+
+                emit SubProposalNotCreated(_proposalId, _stageId, bodyAddr, data);
             }
         }
     }
@@ -726,7 +775,7 @@ contract StagedProposalProcessor is
                 resultType == ResultType.Approval ? ++votes : ++vetoes;
             } else if (bodyProposalId != PROPOSAL_WITHOUT_ID && !body.isManual) {
                 // result was not reported yet
-                // Use low-level call to ensure that outer tx doesn't revert 
+                // Use low-level call to ensure that outer tx doesn't revert
                 // which would cause proposal to never be able to advance.
                 (bool success, bytes memory data) = stage.bodies[i].addr.staticcall(
                     abi.encodeCall(IProposal.hasSucceeded, (bodyProposalId))
