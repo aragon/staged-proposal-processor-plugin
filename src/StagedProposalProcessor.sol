@@ -645,27 +645,21 @@ contract StagedProposalProcessor is
         }
 
         for (uint256 i = 0; i < stage.bodies.length; i++) {
-            Action[] memory actions;
+            Body storage body = stage.bodies[i];
 
-            {
-                Body storage body = stage.bodies[i];
+            // If body proposal creation should be manual, skip it.
+            if (body.isManual) continue;
 
-                // If body proposal creation should be manual, skip it.
-                if (body.isManual) continue;
+            Action[] memory actions = new Action[](1);
 
-                actions = new Action[](1);
-
-                actions[0] = Action({
-                    to: address(this),
-                    value: 0,
-                    data: abi.encodeCall(
-                        this.reportProposalResult,
-                        (_proposalId, _stageId, body.resultType, body.tryAdvance)
-                    )
-                });
-            }
-
-            address bodyAddr = stage.bodies[i].addr;
+            actions[0] = Action({
+                to: address(this),
+                value: 0,
+                data: abi.encodeCall(
+                    this.reportProposalResult,
+                    (_proposalId, _stageId, body.resultType, body.tryAdvance)
+                )
+            });
 
             // Make sure that the `createProposal` call did not fail because
             // 63/64 of `gasleft()` was insufficient to execute the external call.
@@ -674,7 +668,7 @@ contract StagedProposalProcessor is
             // the remaining 1/64 gas are sufficient to successfully finish the call.
             uint256 gasBefore = gasleft();
 
-            (bool success, bytes memory data) = bodyAddr.call(
+            (bool success, bytes memory data) = body.addr.call(
                 abi.encodeCall(
                     IProposal.createProposal,
                     (
@@ -697,7 +691,6 @@ contract StagedProposalProcessor is
             // sub-proposal was not created on sub-body, emit
             // the event and try the next sub-body.
             if (!success) {
-                
                 if (gasAfter < gasBefore / 64) {
                     revert Errors.InsufficientGas();
                 }
@@ -705,13 +698,13 @@ contract StagedProposalProcessor is
 
             if (success && data.length == 32) {
                 uint256 subProposalId = abi.decode(data, (uint256));
-                bodyProposalIds[_proposalId][_stageId][bodyAddr] = subProposalId;
+                bodyProposalIds[_proposalId][_stageId][body.addr] = subProposalId;
 
-                emit SubProposalCreated(_proposalId, _stageId, bodyAddr, subProposalId);
+                emit SubProposalCreated(_proposalId, _stageId, body.addr, subProposalId);
             } else {
-                bodyProposalIds[_proposalId][_stageId][bodyAddr] = PROPOSAL_WITHOUT_ID;
+                bodyProposalIds[_proposalId][_stageId][body.addr] = PROPOSAL_WITHOUT_ID;
 
-                emit SubProposalNotCreated(_proposalId, _stageId, bodyAddr, data);
+                emit SubProposalNotCreated(_proposalId, _stageId, body.addr, data);
             }
         }
     }
