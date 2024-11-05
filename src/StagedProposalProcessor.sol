@@ -666,6 +666,7 @@ contract StagedProposalProcessor is
             // In specific scenarios, the sender could force-fail `createProposal`
             // where 63/64 is insufficient causing it to fail, but where
             // the remaining 1/64 gas are sufficient to successfully finish the call.
+            // See `InsufficientGas` revert below.
             uint256 gasBefore = gasleft();
 
             (bool success, bytes memory data) = body.addr.call(
@@ -688,8 +689,6 @@ contract StagedProposalProcessor is
             // on failure: default 0 would be used.
             // In order to differentiate, we store `PROPOSAL_WITHOUT_ID` on failure.
 
-            // sub-proposal was not created on sub-body, emit
-            // the event and try the next sub-body.
             if (!success) {
                 if (gasAfter < gasBefore / 64) {
                     revert Errors.InsufficientGas();
@@ -702,6 +701,9 @@ contract StagedProposalProcessor is
 
                 emit SubProposalCreated(_proposalId, _stageId, body.addr, subProposalId);
             } else {
+                // sub-proposal was not created on sub-body, emit
+                // the event and try the next sub-body without failing 
+                // the main(outer) tx.
                 bodyProposalIds[_proposalId][_stageId][body.addr] = PROPOSAL_WITHOUT_ID;
 
                 emit SubProposalNotCreated(_proposalId, _stageId, body.addr, data);
