@@ -430,7 +430,7 @@ contract StagedProposalProcessor is
         uint256 _proposalId
     ) public view virtual returns (uint256 votes, uint256 vetoes) {
         Proposal storage proposal = proposals[_proposalId];
-        
+
         if (!_proposalExists(proposal)) {
             revert Errors.NonexistentProposal(_proposalId);
         }
@@ -446,7 +446,7 @@ contract StagedProposalProcessor is
         }
 
         Stage[] storage _stages = stages[proposal.stageConfigIndex];
-        
+
         // If it hasn't reached the last stage, return early.
         if (proposal.currentStage != _stages.length - 1) {
             return false;
@@ -454,7 +454,7 @@ contract StagedProposalProcessor is
 
         // Get the last stage configuration and count if it has succeeded.
         Stage storage stage = _stages[_stages.length - 1];
-        
+
         if (stage.vetoThreshold > 0) {
             if (proposal.lastStageTransition + stage.voteDuration > block.timestamp) {
                 return false;
@@ -721,8 +721,17 @@ contract StagedProposalProcessor is
                 resultType == ResultType.Approval ? ++votes : ++vetoes;
             } else if (bodyProposalId != PROPOSAL_WITHOUT_ID && !body.isManual) {
                 // result was not reported yet
-                if (IProposal(stage.bodies[i].addr).hasSucceeded(bodyProposalId)) {
-                    body.resultType == ResultType.Approval ? ++votes : ++vetoes;
+                // Use low-level call to ensure that outer tx doesn't revert 
+                // which would cause proposal to never be able to advance.
+                (bool success, bytes memory data) = stage.bodies[i].addr.staticcall(
+                    abi.encodeCall(IProposal.hasSucceeded, (bodyProposalId))
+                );
+
+                if (success && data.length == 32) {
+                    bool succeeded = abi.decode(data, (bool));
+                    if (succeeded) {
+                        body.resultType == ResultType.Approval ? ++votes : ++vetoes;
+                    }
                 }
             }
 
@@ -761,9 +770,9 @@ contract StagedProposalProcessor is
 
     /// @notice private helper function that decides if the stage's thresholds are satisfied.
     /// @param _stage The stage struct.
-    /// @param _proposalId The ID of the proposal. 
+    /// @param _proposalId The ID of the proposal.
     /// @return Returns true if the thresholds are met, otherwise false.
-    function _thresholdsMet(Stage storage _stage, uint256 _proposalId) private view returns(bool) {
+    function _thresholdsMet(Stage storage _stage, uint256 _proposalId) private view returns (bool) {
         (uint256 approvals, uint256 vetoes) = _getProposalTally(_proposalId);
 
         if (_stage.vetoThreshold > 0 && vetoes >= _stage.vetoThreshold) {
