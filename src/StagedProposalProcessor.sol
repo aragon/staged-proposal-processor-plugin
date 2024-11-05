@@ -445,6 +445,11 @@ contract StagedProposalProcessor is
             revert Errors.NonexistentProposal(_proposalId);
         }
 
+        // If the proposal has been executed, it means it has succeeded.
+        if(proposal.executed) {
+            return true;
+        }
+
         Stage[] storage _stages = stages[proposal.stageConfigIndex];
 
         // If it hasn't reached the last stage, return early.
