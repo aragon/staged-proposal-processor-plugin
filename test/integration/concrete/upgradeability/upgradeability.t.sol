@@ -92,6 +92,6 @@ contract Upgradeability_SPP_IntegrationTest is BaseTest {
          *  tets for storage layout and _gaps are needed
          */
 
-        vm.skip();
+        vm.skip(true);
     }
 }
