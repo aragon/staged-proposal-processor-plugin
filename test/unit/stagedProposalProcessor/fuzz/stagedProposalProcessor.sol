@@ -5,7 +5,7 @@ import {Stage, Body} from "../../../utils/Types.sol";
 import {BaseTest} from "../../../BaseTest.t.sol";
 import {StagedProposalProcessor as SPP} from "../../../../src/StagedProposalProcessor.sol";
 
-import {DaoUnauthorized} from "@aragon/osx/core/utils/auth.sol";
+import {DaoUnauthorized} from "@aragon/osx-commons-contracts/src/permission/auth/auth.sol";
 
 contract SPP_Unit_FuzzTest is BaseTest {
     function testFuzz_updateMetadata_RevertWhen_IsNotAllowed(address _randomAddress) external {

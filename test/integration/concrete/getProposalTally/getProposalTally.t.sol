@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.8;
 
-import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
-
 import {BaseTest} from "../../../BaseTest.t.sol";
 import {Errors} from "../../../../src/libraries/Errors.sol";
 import {PluginA} from "../../../utils/dummy-plugins/PluginA/PluginA.sol";
 import {StagedProposalProcessor as SPP} from "../../../../src/StagedProposalProcessor.sol";
+
+import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
 
 contract GetProposalTally_SPP_IntegrationTest is BaseTest {
     uint256 proposalId;
