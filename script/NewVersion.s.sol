@@ -88,6 +88,7 @@ contract NewVersion is BaseScript {
         vm.serializeString(proposalData, "description", _proposalData.description);
 
         string[] memory actions = new string[](1);
+        // solhint-disable quotes
         actions[0] = string(
             abi.encodePacked(
                 '{"to": "',
