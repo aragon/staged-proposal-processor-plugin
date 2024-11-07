@@ -4,8 +4,6 @@ ds-test/=node_modules/ds-test/src
 @openzeppelin/contracts-upgradeable/=node_modules/@openzeppelin/contracts-upgradeable/
 
 @aragon/osx/=node_modules/@aragon/osx/
-@aragon/osx-new/=node_modules/@aragon/osx-new/packages/contracts/src/
-
 @aragon/osx-commons-contracts/=node_modules/@aragon/osx-commons-contracts/
 
 @ensdomains/ens-contracts/=node_modules/@ensdomains/ens-contracts/

@@ -3,6 +3,7 @@
 pragma solidity ^0.8.8;
 
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
+
 import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
 import {
     IPermissionCondition

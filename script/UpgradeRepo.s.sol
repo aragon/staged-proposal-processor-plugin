@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.8;
+
+import {console} from "forge-std/console.sol";
 
 import {BaseScript} from "./Base.sol";
-import {StagedProposalProcessorSetup as SPPSetup} from "../src/StagedProposalProcessorSetup.sol";
 
 import {PluginRepo} from "@aragon/osx/framework/plugin/repo/PluginRepo.sol";
-import {console} from "forge-std/console.sol";
 
 contract UpgradeRepo is BaseScript {
     error UpgradingToSameVersion(uint8[3] currentProtocolVersion, uint8[3] latestProtocolVersion);
@@ -13,6 +13,8 @@ contract UpgradeRepo is BaseScript {
     error NotAllowed(address user);
 
     function run() external {
+        _printAragonArt();
+
         // get deployed contracts
         PluginRepo latestBaseRepo = PluginRepo(getBasePluginRepoAddress());
         sppRepo = PluginRepo(getPluginRepoAddress());

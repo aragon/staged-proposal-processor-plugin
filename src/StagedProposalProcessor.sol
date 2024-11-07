@@ -4,20 +4,21 @@ pragma solidity ^0.8.8;
 import {Errors} from "./libraries/Errors.sol";
 
 import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
-import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
 import {
     PluginUUPSUpgradeable
 } from "@aragon/osx-commons-contracts/src/plugin/PluginUUPSUpgradeable.sol";
+import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
 import {
     IProposal
 } from "@aragon/osx-commons-contracts/src/plugin/extensions/proposal/IProposal.sol";
 import {
     MetadataExtensionUpgradeable
 } from "@aragon/osx-commons-contracts/src/utils/metadata/MetadataExtensionUpgradeable.sol";
-import {ERC165Checker} from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 import {
     ProposalUpgradeable
 } from "@aragon/osx-commons-contracts/src/plugin/extensions/proposal/ProposalUpgradeable.sol";
+
+import {ERC165Checker} from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 
 contract StagedProposalProcessor is
     ProposalUpgradeable,
@@ -54,7 +55,8 @@ contract StagedProposalProcessor is
     }
 
     /// @notice A container for Body-related information.
-    /// @param addr The address responsible for reporting results. For automatic bodies, it is also where the SPP creates proposals.
+    /// @param addr The address responsible for reporting results. For automatic bodies,
+    ///        it is also where the SPP creates proposals.
     /// @param isManual Whether SPP should create a proposal on a body. If true, it will not create.
     /// @param tryAdvance Whether to try to automatically advance the stage when a body reports results.
     /// @param resultType The type(`Approval` or `Veto`) this body is registered with.
@@ -69,9 +71,11 @@ contract StagedProposalProcessor is
     /// @param bodies The bodies that are responsible for advancing the stage.
     /// @param maxAdvance The maximum duration after which stage can not be advanced.
     /// @param minAdvance The minimum duration until when stage can not be advanced.
-    /// @param voteDuration The time to give vetoing bodies to make decisions in optimistic stage. Note that this also is used as an endDate time for bodies, see `_createBodyProposals`.
+    /// @param voteDuration The time to give vetoing bodies to make decisions in optimistic stage.
+    ///        Note that this also is used as an endDate time for bodies, see `_createBodyProposals`.
     /// @param approvalThreshold The number of bodies that are required to pass to advance the proposal.
-    /// @param vetoThreshold If this number of bodies veto, the proposal can never advance even if `approvalThreshold` is satisfied.
+    /// @param vetoThreshold If this number of bodies veto, the proposal can never advance
+    ///        even if `approvalThreshold` is satisfied.
     struct Stage {
         Body[] bodies;
         uint64 maxAdvance;
@@ -505,7 +509,8 @@ contract StagedProposalProcessor is
             );
     }
 
-    /// @notice Useful function for UI to get any sub-bodies'(not including first stage's sub-bodies) `createProposal`'s `data` param.
+    /// @notice Useful function for UI to get any sub-bodies'(not including first stage's sub-bodies)
+    ///         `createProposal`'s `data` param.
     /// @param _proposalId The ID of the proposal.
     /// @param _proposalId The ID of the stage.
     /// @param _index The index of a body in an array.
@@ -668,7 +673,7 @@ contract StagedProposalProcessor is
             // the remaining 1/64 gas are sufficient to successfully finish the call.
             // See `InsufficientGas` revert below.
             uint256 gasBefore = gasleft();
-
+            // solhint-disable-next-line avoid-low-level-calls
             (bool success, bytes memory data) = body.addr.call(
                 abi.encodeCall(
                     IProposal.createProposal,
@@ -702,7 +707,7 @@ contract StagedProposalProcessor is
                 emit SubProposalCreated(_proposalId, _stageId, body.addr, subProposalId);
             } else {
                 // sub-proposal was not created on sub-body, emit
-                // the event and try the next sub-body without failing 
+                // the event and try the next sub-body without failing
                 // the main(outer) tx.
                 bodyProposalIds[_proposalId][_stageId][body.addr] = PROPOSAL_WITHOUT_ID;
 
@@ -855,6 +860,7 @@ contract StagedProposalProcessor is
         // it would have appended the original sender in the calldata.
         if (msg.sender == trustedForwarder) {
             address sender;
+            // solhint-disable-next-line no-inline-assembly
             assembly {
                 // get the last 20 bytes as an address which was appended
                 // by the trustedForwarder before calling this function.

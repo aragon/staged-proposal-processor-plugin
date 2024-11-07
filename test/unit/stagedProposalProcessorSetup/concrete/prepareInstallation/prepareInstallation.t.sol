@@ -1,13 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.8;
 
-import {PermissionLib} from "@aragon/osx-commons-contracts/src/permission/PermissionLib.sol";
-import {IPluginSetup} from "@aragon/osx-commons-contracts/src/plugin/setup/IPluginSetup.sol";
-import {
-    RuledCondition
-} from "@aragon/osx-commons-contracts/src/permission/condition/extensions/RuledCondition.sol";
-import {DAO} from "@aragon/osx/core/dao/DAO.sol";
-
 import {BaseTest} from "../../../../BaseTest.t.sol";
 import {
     StagedProposalProcessorSetup as SPPSetup
@@ -15,6 +8,12 @@ import {
 import {SPPRuleCondition} from "../../../../../src/utils/SPPRuleCondition.sol";
 import {CREATE_PROPOSAL_PERMISSION_ID} from "../../../../utils/Permissions.sol";
 import {StagedProposalProcessor as SPP} from "../../../../../src/StagedProposalProcessor.sol";
+
+import {PermissionLib} from "@aragon/osx-commons-contracts/src/permission/PermissionLib.sol";
+import {IPluginSetup} from "@aragon/osx-commons-contracts/src/plugin/setup/IPluginSetup.sol";
+import {
+    RuledCondition
+} from "@aragon/osx-commons-contracts/src/permission/condition/extensions/RuledCondition.sol";
 
 contract PrepareInstallation_SPPSetup_UnitTest is BaseTest {
     SPPSetup sppSetup;

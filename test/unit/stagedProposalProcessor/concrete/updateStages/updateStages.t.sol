@@ -6,7 +6,7 @@ import {Errors} from "../../../../../src/libraries/Errors.sol";
 import {PluginB} from "../../../../utils/dummy-plugins/PluginB/PluginB.sol";
 import {StagedProposalProcessor as SPP} from "../../../../../src/StagedProposalProcessor.sol";
 
-import {DaoUnauthorized} from "@aragon/osx/core/utils/auth.sol";
+import {DaoUnauthorized} from "@aragon/osx-commons-contracts/src/permission/auth/auth.sol";
 
 contract UpdateStages_SPP_UnitTest is BaseTest {
     function test_RevertWhen_CallerIsNotAllowedToUpdateStages() external {

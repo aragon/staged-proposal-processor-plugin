@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.8;
 
+import {StdAssertions} from "forge-std/StdAssertions.sol";
+
 import {StagedProposalProcessor as SPP} from "../../src/StagedProposalProcessor.sol";
 import {SPPRuleCondition} from "../../src/utils/SPPRuleCondition.sol";
 
 import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
-
-import {StdAssertions} from "forge-std/StdAssertions.sol";
 
 abstract contract Assertions is StdAssertions {
     event log_named_array(string key, SPP.Stage[] stage);

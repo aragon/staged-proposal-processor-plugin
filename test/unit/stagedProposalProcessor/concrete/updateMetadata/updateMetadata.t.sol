@@ -3,7 +3,7 @@ pragma solidity ^0.8.8;
 
 import {BaseTest} from "../../../../BaseTest.t.sol";
 
-import {DaoUnauthorized} from "@aragon/osx/core/utils/auth.sol";
+import {DaoUnauthorized} from "@aragon/osx-commons-contracts/src/permission/auth/auth.sol";
 
 contract UpdateMetadata_SPP_UnitTest is BaseTest {
     function test_RevertWhen_CallerIsNotAllowed() external {

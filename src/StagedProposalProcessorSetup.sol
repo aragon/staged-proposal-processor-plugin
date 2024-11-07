@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.8;
 
+import {SPPRuleCondition} from "./utils/SPPRuleCondition.sol";
+import {StagedProposalProcessor as SPP} from "./StagedProposalProcessor.sol";
+
 import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
 import {IPlugin} from "@aragon/osx-commons-contracts/src/plugin/IPlugin.sol";
 import {
@@ -12,9 +15,6 @@ import {PermissionLib} from "@aragon/osx-commons-contracts/src/permission/Permis
 import {
     RuledCondition
 } from "@aragon/osx-commons-contracts/src/permission/condition/extensions/RuledCondition.sol";
-
-import {StagedProposalProcessor as SPP} from "./StagedProposalProcessor.sol";
-import {SPPRuleCondition} from "./utils/SPPRuleCondition.sol";
 
 /// @title MyPluginSetup
 /// @dev Release 1, Build 1

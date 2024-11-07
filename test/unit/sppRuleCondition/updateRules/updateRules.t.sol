@@ -8,10 +8,10 @@ import {
 import {SPPRuleCondition} from "../../../../src/utils/SPPRuleCondition.sol";
 import {RuleConditionConfiguredTest} from "../../../RuleConditionConfiguredTest.t.sol";
 
-import {DaoUnauthorized} from "@aragon/osx/core/utils/auth.sol";
 import {
     RuledCondition
 } from "@aragon/osx-commons-contracts/src/permission/condition/extensions/RuledCondition.sol";
+import {DaoUnauthorized} from "@aragon/osx-commons-contracts/src/permission/auth/auth.sol";
 
 contract UpdateRules_SPPRuleCondition_UnitTest is RuleConditionConfiguredTest {
     modifier whenUpdatingRules() {

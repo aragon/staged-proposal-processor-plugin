@@ -6,7 +6,6 @@ import {Errors} from "../../../../src/libraries/Errors.sol";
 import {PluginA} from "../../../utils/dummy-plugins/PluginA/PluginA.sol";
 import {StagedProposalProcessor as SPP} from "../../../../src/StagedProposalProcessor.sol";
 
-import {DAO} from "@aragon/osx/core/dao/DAO.sol";
 import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
 
 contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
