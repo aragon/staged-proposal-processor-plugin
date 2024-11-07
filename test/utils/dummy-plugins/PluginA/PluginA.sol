@@ -90,9 +90,13 @@ contract PluginA is IERC165, Proposal {
         return "";
     }
 
+    function canExecute(uint256 _proposalId) external view returns (bool) {
+        return true;
+    }
+    
     function execute(
         uint256 _proposalId
-    ) external returns (bytes[] memory execResults, uint256 failureMap) {
+    ) external {
         Action[] memory mainActions = new Action[](1);
         mainActions[0] = actions[_proposalId];
         if (targetConfig.operation == IPlugin.Operation.DelegateCall) {
@@ -101,7 +105,7 @@ contract PluginA is IERC165, Proposal {
             (success, data) = targetConfig.target.delegatecall(
                 abi.encodeCall(IExecutor.execute, (bytes32(_proposalId), mainActions, 1))
             );
-            (execResults, failureMap) = abi.decode(data, (bytes[], uint256));
+            abi.decode(data, (bytes[], uint256));
 
             // (execResults, failureMap) = targetConfig.target.execute(
             //     bytes32(_proposalId),
@@ -109,7 +113,7 @@ contract PluginA is IERC165, Proposal {
             //     1
             // );
         } else {
-            (execResults, failureMap) = IExecutor(targetConfig.target).execute(
+            IExecutor(targetConfig.target).execute(
                 bytes32(_proposalId),
                 mainActions,
                 0

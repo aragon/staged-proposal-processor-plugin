@@ -52,12 +52,14 @@ contract GasExpensivePlugin is IProposal, IERC165 {
         return true;
     }
 
-    function execute(
-        uint256 _proposalId
-    ) external returns (bytes[] memory execResults, uint256 failureMap) {
+    function canExecute(uint256 _proposalId) external view returns (bool) {
+        return true;
+    }
+
+    function execute(uint256 _proposalId) external {
         Action[] memory mainActions = new Action[](1);
         mainActions[0] = actions[_proposalId];
-        (execResults, failureMap) = trustedForwarder.execute(bytes32(_proposalId), mainActions, 0);
+        trustedForwarder.execute(bytes32(_proposalId), mainActions, 0);
     }
 
     function proposalCount() external view override returns (uint256) {
