@@ -16,7 +16,7 @@ struct Body {
     address addr;
     bool isManual;
     bool tryAdvance;
-    uint8 resultType;    
+    uint8 resultType;
 }
 
 struct Stage {

@@ -68,7 +68,7 @@
                   "name": "approvalThreshold",
                   "type": "uint16",
                   "internalType": "uint16",
-                  "description": "The number of bodies that are required to pass to advance the proposal.",
+                  "description": "The number of bodies that are required to pass to advance the proposal."
                 },
                 {
                   "name": "vetoThreshold",
