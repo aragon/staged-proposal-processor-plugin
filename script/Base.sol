@@ -32,7 +32,7 @@ contract BaseScript is Script, Constants {
 
     error SomethingWentWrong();
 
-    function _printAragonArt() internal {
+    function _printAragonArt() internal pure {
         console.log(ARAGON_OSX_ASCII_ART);
     }
 
