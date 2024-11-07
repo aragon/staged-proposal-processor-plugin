@@ -22,6 +22,7 @@ contract BaseScript is Script, Constants {
     string internal network = vm.envString("NETWORK_NAME");
     string internal protocolVersion = vm.envString("PROTOCOL_VERSION");
 
+    // solhint-disable immutable-vars-naming
     address internal immutable deployer = vm.addr(deployerPrivateKey);
 
     error UnsupportedNetwork(string network);
@@ -30,6 +31,10 @@ contract BaseScript is Script, Constants {
     error InvalidVersionBuild(uint8 build, uint8 latestBuild);
 
     error SomethingWentWrong();
+
+    function _printAragonArt() internal {
+        console.log(ARAGON_OSX_ASCII_ART);
+    }
 
     function getRepoFactoryAddress() public view returns (address _repoFactory) {
         string memory _json = _getOsxConfigs(network);
