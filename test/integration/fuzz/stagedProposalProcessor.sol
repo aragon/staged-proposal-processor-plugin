@@ -7,7 +7,7 @@ import {Errors} from "../../../src/libraries/Errors.sol";
 contract SPP_Integration_FuzzTest is BaseTest {
     function testFuzz_advanceProposal_RevertWhen_NonExistent(uint256 _randomProposalId) external {
         vm.expectRevert(
-            abi.encodeWithSelector(Errors.ProposalNotExists.selector, _randomProposalId)
+            abi.encodeWithSelector(Errors.NonexistentProposal.selector, _randomProposalId)
         );
         sppPlugin.advanceProposal(_randomProposalId);
     }

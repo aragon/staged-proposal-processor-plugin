@@ -1,0 +1,16 @@
+HasSucceeded_SPP_IntegrationTest
+├── when existent proposal
+│   ├── when proposal was executed
+│   │   └── it should return true.
+│   ├── when proposal is in last stage
+│   │   ├── when proposal has veto threshold
+│   │   │   └── when voting period has not passed
+│   │   │      └── it should return false.
+│   │   ├── when threshold is met 
+│   │   │   └── it returns true.
+│   │   └── when threshold is not met 
+│   │       └── it returns false.
+│   └── when proposal is not in last stage
+│       └── it should return false.
+└── when non existent proposal
+    └── it should revert.

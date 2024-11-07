@@ -37,6 +37,24 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         _;
     }
 
+    function test_RevertWhen_ReportingForNotCurrentStage()
+        external
+        givenExistentProposal
+        whenVoteDurationHasNotPassed
+        whenTheCallerIsAnAllowedBody
+    {
+        // it should revert.
+
+        uint16 randomStageId = 5;
+        vm.expectRevert(abi.encodeWithSelector(Errors.StageIdInvalid.selector, 0, randomStageId));
+        sppPlugin.reportProposalResult({
+            _proposalId: proposalId,
+            _stageId: randomStageId,
+            _resultType: SPP.ResultType.Approval,
+            _tryAdvance: _tryAdvance
+        });
+    }
+
     modifier whenShouldTryAdvanceStage() {
         _tryAdvance = true;
         _;
@@ -592,7 +610,7 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         // it should revert.
 
         vm.expectRevert(
-            abi.encodeWithSelector(Errors.ProposalNotExists.selector, NON_EXISTENT_PROPOSAL_ID)
+            abi.encodeWithSelector(Errors.NonexistentProposal.selector, NON_EXISTENT_PROPOSAL_ID)
         );
         sppPlugin.reportProposalResult({
             _proposalId: NON_EXISTENT_PROPOSAL_ID,

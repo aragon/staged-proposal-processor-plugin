@@ -132,6 +132,30 @@ contract StagedProposalProcessor is
         address indexed body
     );
 
+    /// @notice Emitted when SPP successfully creates a proposal on sub-body.
+    /// @param proposalId The proposal id.
+    /// @param stageId The stage id.
+    /// @param body The sub-body on which sub-proposal has been created.
+    /// @param bodyProposalId The proposal id that sub-body returns for later usage by SPP.
+    event SubProposalCreated(
+        uint256 indexed proposalId,
+        uint16 indexed stageId,
+        address indexed body,
+        uint256 bodyProposalId
+    );
+
+    /// @notice Emitted when SPP fails in creating a proposal on sub-body.
+    /// @param proposalId The proposal id.
+    /// @param stageId The stage id.
+    /// @param body The sub-body on which sub-proposal failed to be created.
+    /// @param reason The reason why it was failed.
+    event SubProposalNotCreated(
+        uint256 indexed proposalId,
+        uint16 indexed stageId,
+        address indexed body,
+        bytes reason
+    );
+
     /// @notice Emitted when the stage configuration is updated.
     /// @param stages The stage configuration.
     event StagesUpdated(Stage[] stages);
@@ -237,7 +261,7 @@ contract StagedProposalProcessor is
 
         Proposal storage proposal = proposals[proposalId];
 
-        if (proposal.lastStageTransition != 0) {
+        if (_proposalExists(proposal)) {
             revert Errors.ProposalAlreadyExists(proposalId);
         }
 
@@ -358,8 +382,8 @@ contract StagedProposalProcessor is
     ) external virtual {
         Proposal storage proposal = proposals[_proposalId];
 
-        if (proposal.lastStageTransition == 0) {
-            revert Errors.ProposalNotExists(_proposalId);
+        if (!_proposalExists(proposal)) {
+            revert Errors.NonexistentProposal(_proposalId);
         }
 
         uint16 currentStage = proposal.currentStage;
@@ -390,8 +414,8 @@ contract StagedProposalProcessor is
     function advanceProposal(uint256 _proposalId) public virtual {
         Proposal storage proposal = proposals[_proposalId];
 
-        if (proposal.lastStageTransition == 0) {
-            revert Errors.ProposalNotExists(_proposalId);
+        if (!_proposalExists(proposal)) {
+            revert Errors.NonexistentProposal(_proposalId);
         }
 
         if (!_canProposalAdvance(_proposalId)) {
@@ -415,8 +439,8 @@ contract StagedProposalProcessor is
     /// @return Returns `true` if the proposal can be advanced.
     function canProposalAdvance(uint256 _proposalId) public view virtual returns (bool) {
         Proposal storage proposal = proposals[_proposalId];
-        if (proposal.lastStageTransition == 0) {
-            revert Errors.ProposalNotExists(_proposalId);
+        if (!_proposalExists(proposal)) {
+            revert Errors.NonexistentProposal(_proposalId);
         }
 
         return _canProposalAdvance(_proposalId);
@@ -431,29 +455,42 @@ contract StagedProposalProcessor is
     ) public view virtual returns (uint256 votes, uint256 vetoes) {
         Proposal storage proposal = proposals[_proposalId];
 
-        if (proposal.lastStageTransition == 0) {
-            revert Errors.ProposalNotExists(_proposalId);
+        if (!_proposalExists(proposal)) {
+            revert Errors.NonexistentProposal(_proposalId);
         }
 
         return _getProposalTally(_proposalId);
     }
 
-    /// @notice Necessary to abide the rules of IProposal interface.
-    /// @param _proposalId The proposal Id.
-    /// @return bool Returns if proposal can be executed or not.
-    function canExecute(uint256 _proposalId) public view virtual override returns (bool) {
+    /// @inheritdoc IProposal
+    function hasSucceeded(uint256 _proposalId) public view virtual override returns (bool) {
         Proposal storage proposal = proposals[_proposalId];
-        if (proposal.lastStageTransition == 0) {
-            revert Errors.ProposalNotExists(_proposalId);
+        if (!_proposalExists(proposal)) {
+            revert Errors.NonexistentProposal(_proposalId);
+        }
+
+        // If the proposal has been executed, it means it has succeeded.
+        if (proposal.executed) {
+            return true;
         }
 
         Stage[] storage _stages = stages[proposal.stageConfigIndex];
 
-        if (proposal.currentStage == _stages.length - 1 && _canProposalAdvance(_proposalId)) {
-            return true;
+        // If it hasn't reached the last stage, return early.
+        if (proposal.currentStage != _stages.length - 1) {
+            return false;
         }
 
-        return false;
+        // Get the last stage configuration and count if it has succeeded.
+        Stage storage stage = _stages[_stages.length - 1];
+
+        if (stage.vetoThreshold > 0) {
+            if (proposal.lastStageTransition + stage.voteDuration > block.timestamp) {
+                return false;
+            }
+        }
+
+        return _thresholdsMet(stage, _proposalId);
     }
 
     /// @notice Checks if caller has a permission to execute a proposal if it's on the last stage.
@@ -599,9 +636,13 @@ contract StagedProposalProcessor is
         uint64 _startDate,
         bytes[] memory _stageProposalParams
     ) internal virtual {
-        Proposal storage proposal = proposals[_proposalId];
+        Stage storage stage;
 
-        Stage storage stage = stages[proposal.stageConfigIndex][_stageId];
+        // avoid stack too deep.
+        {
+            Proposal storage proposal = proposals[_proposalId];
+            stage = stages[proposal.stageConfigIndex][_stageId];
+        }
 
         for (uint256 i = 0; i < stage.bodies.length; i++) {
             Body storage body = stage.bodies[i];
@@ -625,31 +666,47 @@ contract StagedProposalProcessor is
             // In specific scenarios, the sender could force-fail `createProposal`
             // where 63/64 is insufficient causing it to fail, but where
             // the remaining 1/64 gas are sufficient to successfully finish the call.
+            // See `InsufficientGas` revert below.
             uint256 gasBefore = gasleft();
 
-            try
-                IProposal(stage.bodies[i].addr).createProposal(
-                    abi.encode(address(this), _proposalId, _stageId),
-                    actions,
-                    _startDate,
-                    _startDate + stage.voteDuration,
-                    _stageProposalParams.length > i ? _stageProposalParams[i] : new bytes(0)
+            (bool success, bytes memory data) = body.addr.call(
+                abi.encodeCall(
+                    IProposal.createProposal,
+                    (
+                        abi.encode(address(this), _proposalId, _stageId),
+                        actions,
+                        _startDate,
+                        _startDate + stage.voteDuration,
+                        _stageProposalParams.length > i ? _stageProposalParams[i] : new bytes(0)
+                    )
                 )
-            returns (uint256 bodyProposalId) {
-                bodyProposalIds[_proposalId][_stageId][stage.bodies[i].addr] = bodyProposalId;
-            } catch {
-                // Handles the edge case where:
-                // on success: it could return 0.
-                // on failure: default 0 would be used.
-                // In order to differentiate, we store `uint256.max` on failure.
+            );
 
-                uint256 gasAfter = gasleft();
+            uint256 gasAfter = gasleft();
 
+            // NOTE: Handles the edge case where:
+            // on success: it could return 0.
+            // on failure: default 0 would be used.
+            // In order to differentiate, we store `PROPOSAL_WITHOUT_ID` on failure.
+
+            if (!success) {
                 if (gasAfter < gasBefore / 64) {
                     revert Errors.InsufficientGas();
                 }
+            }
 
-                bodyProposalIds[_proposalId][_stageId][stage.bodies[i].addr] = PROPOSAL_WITHOUT_ID;
+            if (success && data.length == 32) {
+                uint256 subProposalId = abi.decode(data, (uint256));
+                bodyProposalIds[_proposalId][_stageId][body.addr] = subProposalId;
+
+                emit SubProposalCreated(_proposalId, _stageId, body.addr, subProposalId);
+            } else {
+                // sub-proposal was not created on sub-body, emit
+                // the event and try the next sub-body without failing 
+                // the main(outer) tx.
+                bodyProposalIds[_proposalId][_stageId][body.addr] = PROPOSAL_WITHOUT_ID;
+
+                emit SubProposalNotCreated(_proposalId, _stageId, body.addr, data);
             }
         }
     }
@@ -678,24 +735,13 @@ contract StagedProposalProcessor is
             return false;
         }
 
-        // Allow `voteDuration` to pass for bodies to have veto possibility.
         if (stage.vetoThreshold > 0) {
             if (proposal.lastStageTransition + stage.voteDuration > block.timestamp) {
                 return false;
             }
         }
 
-        (uint256 approvals, uint256 vetoes) = _getProposalTally(_proposalId);
-
-        if (stage.vetoThreshold > 0 && vetoes >= stage.vetoThreshold) {
-            return false;
-        }
-
-        if (approvals < stage.approvalThreshold) {
-            return false;
-        }
-
-        return true;
+        return _thresholdsMet(stage, _proposalId);
     }
 
     /// @notice Internal function to calculate the votes and vetoes for a proposal.
@@ -724,8 +770,17 @@ contract StagedProposalProcessor is
                 resultType == ResultType.Approval ? ++votes : ++vetoes;
             } else if (bodyProposalId != PROPOSAL_WITHOUT_ID && !body.isManual) {
                 // result was not reported yet
-                if (IProposal(stage.bodies[i].addr).canExecute(bodyProposalId)) {
-                    body.resultType == ResultType.Approval ? ++votes : ++vetoes;
+                // Use low-level call to ensure that outer tx doesn't revert
+                // which would cause proposal to never be able to advance.
+                (bool success, bytes memory data) = stage.bodies[i].addr.staticcall(
+                    abi.encodeCall(IProposal.hasSucceeded, (bodyProposalId))
+                );
+
+                if (success && data.length == 32) {
+                    bool succeeded = abi.decode(data, (bool));
+                    if (succeeded) {
+                        body.resultType == ResultType.Approval ? ++votes : ++vetoes;
+                    }
                 }
             }
 
@@ -760,6 +815,31 @@ contract StagedProposalProcessor is
         } else {
             _executeProposal(_proposalId);
         }
+    }
+
+    /// @notice private helper function that decides if the stage's thresholds are satisfied.
+    /// @param _stage The stage struct.
+    /// @param _proposalId The ID of the proposal.
+    /// @return Returns true if the thresholds are met, otherwise false.
+    function _thresholdsMet(Stage storage _stage, uint256 _proposalId) private view returns (bool) {
+        (uint256 approvals, uint256 vetoes) = _getProposalTally(_proposalId);
+
+        if (_stage.vetoThreshold > 0 && vetoes >= _stage.vetoThreshold) {
+            return false;
+        }
+
+        if (approvals < _stage.approvalThreshold) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /// @notice Checks if proposal exists or not.
+    /// @param _proposal The proposal struct.
+    /// @return Returns `true` if proposal exists, otherwise false.
+    function _proposalExists(Proposal storage _proposal) private view returns (bool) {
+        return _proposal.lastStageTransition != 0;
     }
 
     /// @notice Sets a new trusted forwarder address and emits the event.
