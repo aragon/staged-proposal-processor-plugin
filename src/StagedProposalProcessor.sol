@@ -876,6 +876,5 @@ contract StagedProposalProcessor is
     /// variables without shifting down storage in the inheritance chain.
     /// https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
 
-    /// TODO: adjust the reserved gap size
-    uint256[43] private __gap;
+    uint256[44] private __gap;
 }

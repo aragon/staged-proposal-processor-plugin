@@ -5,6 +5,9 @@ import {BaseTest} from "../../../BaseTest.t.sol";
 import {Errors} from "../../../../src/libraries/Errors.sol";
 import {StagedProposalProcessor as SPP} from "../../../../src/StagedProposalProcessor.sol";
 
+import {Options} from "openzeppelin-foundry-upgrades/Options.sol";
+import {Upgrades} from "openzeppelin-foundry-upgrades/LegacyUpgrades.sol";
+
 contract Upgradeability_SPP_IntegrationTest is BaseTest {
     address implementation;
     address proxy;
@@ -52,7 +55,7 @@ contract Upgradeability_SPP_IntegrationTest is BaseTest {
         assertFalse(success);
     }
 
-    function test_proxyImplSlot() external {
+    function test_proxyImplSlot() external view {
         // checks the implementation address inside the IMPL_SLOT
 
         bytes32 proxySlot = vm.load(address(proxy), IMPL_SLOT);
@@ -84,14 +87,16 @@ contract Upgradeability_SPP_IntegrationTest is BaseTest {
         assertEq(proxySlotAfter, bytes32(uint256(uint160(address(implementation)))));
     }
 
+    /**
+     * since package is not allowing verification on deployment of legacy upgrades
+     * dummy contract was used to validate upgrade to real implementation,
+     * to validate storage layout and gaps
+     */
     function test_validateUpgrade() external {
-        /**
-         *  todo add a validity test using oz foundry upgrades,
-         *  todo it is no currently validating legacy upgrades new deployments
-         *  todo just new upgrades,
-         *  tets for storage layout and _gaps are needed
-         */
+        Options memory ops;
+        ops.referenceContract = "DummySPP.sol:DummySPP";
+        ops.unsafeAllow = "delegatecall";
 
-        vm.skip(true);
+        Upgrades.validateUpgrade("StagedProposalProcessor.sol", ops);
     }
 }
