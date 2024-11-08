@@ -1,11 +1,5 @@
 {
-  "name": "@aragon/proposal-processor-poc",
-  "description": "",
-  "version": "1.0.0",
-  "author": {
-    "name": "aragon",
-    "url": "https://github.com/Aragon"
-  },
+  "license": "AGPL-3.0-or-later",
   "keywords": [
     "blockchain",
     "ethereum",
