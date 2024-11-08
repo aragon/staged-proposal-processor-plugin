@@ -36,7 +36,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         _;
     }
 
-    function test_RevertWhen_CallerHasNoTryExecutePermission()
+    function test_RevertWhen_CallerHasNoExecutePermission()
         external
         givenProposalExists
         whenProposalCanAdvance
@@ -51,7 +51,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         sppPlugin.advanceProposal(proposalId);
     }
 
-    function test_WhenCallerHasTryExecutePermission()
+    function test_WhenCallerHasExecutePermission()
         external
         givenProposalExists
         whenProposalCanAdvance
@@ -382,7 +382,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         );
     }
 
-    function test_WhenCallerHasNoTryExecutePermission()
+    function test_WhenCallerHasNoExecutePermission()
         external
         givenProposalExists
         whenProposalCanAdvance

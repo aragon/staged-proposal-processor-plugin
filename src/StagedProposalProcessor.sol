@@ -434,6 +434,21 @@ contract StagedProposalProcessor is
         _advanceProposal(_proposalId);
     }
 
+    /// @inheritdoc IProposal
+    function execute(uint256 _proposalId) public virtual auth(EXECUTE_PROPOSAL_PERMISSION_ID) {
+        Proposal storage proposal = proposals[_proposalId];
+
+        if (!_proposalExists(proposal)) {
+            revert Errors.NonexistentProposal(_proposalId);
+        }
+
+        if (!canExecute(_proposalId)) {
+            revert Errors.ProposalExecutionForbidden(_proposalId);
+        }
+
+        _executeProposal(_proposalId);
+    }
+
     /// @notice Decides if the proposal can be advanced to the next stage.
     /// @param _proposalId The ID of the proposal.
     /// @return Returns `true` if the proposal can be advanced.
@@ -444,6 +459,24 @@ contract StagedProposalProcessor is
         }
 
         return _canProposalAdvance(_proposalId);
+    }
+
+    /// @inheritdoc IProposal
+    function canExecute(uint256 _proposalId) public view virtual returns (bool) {
+        Proposal storage proposal = proposals[_proposalId];
+
+        if (!_proposalExists(proposal)) {
+            revert Errors.NonexistentProposal(_proposalId);
+        }
+
+        if (
+            proposal.currentStage == stages[proposal.stageConfigIndex].length - 1 &&
+            _canProposalAdvance(_proposalId)
+        ) {
+            return true;
+        }
+
+        return false;
     }
 
     /// @notice Calculates the votes and vetoes for a proposal.
@@ -467,11 +500,6 @@ contract StagedProposalProcessor is
         Proposal storage proposal = proposals[_proposalId];
         if (!_proposalExists(proposal)) {
             revert Errors.NonexistentProposal(_proposalId);
-        }
-
-        // If the proposal has been executed, it means it has succeeded.
-        if (proposal.executed) {
-            return true;
         }
 
         Stage[] storage _stages = stages[proposal.stageConfigIndex];
@@ -702,7 +730,7 @@ contract StagedProposalProcessor is
                 emit SubProposalCreated(_proposalId, _stageId, body.addr, subProposalId);
             } else {
                 // sub-proposal was not created on sub-body, emit
-                // the event and try the next sub-body without failing 
+                // the event and try the next sub-body without failing
                 // the main(outer) tx.
                 bodyProposalIds[_proposalId][_stageId][body.addr] = PROPOSAL_WITHOUT_ID;
 
@@ -797,11 +825,10 @@ contract StagedProposalProcessor is
         Proposal storage _proposal = proposals[_proposalId];
         Stage[] storage _stages = stages[_proposal.stageConfigIndex];
 
-        _proposal.lastStageTransition = uint64(block.timestamp);
-
         if (_proposal.currentStage < _stages.length - 1) {
             // is not last stage
             uint16 newStage = ++_proposal.currentStage;
+            _proposal.lastStageTransition = uint64(block.timestamp);
 
             // Grab the next stage's bodies' custom params of `createProposal`.
             bytes[] memory customParams = new bytes[](_stages[newStage].bodies.length);

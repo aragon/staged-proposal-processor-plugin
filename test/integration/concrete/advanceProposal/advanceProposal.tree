@@ -2,9 +2,9 @@ AdvanceProposal_SPP_IntegrationTest
 ├── given proposal exists
 │   ├── when proposal can advance
 │   │   ├── when proposal is in last stage
-│   │   │   ├── when caller has no try execute permission
+│   │   │   ├── when caller has no execute permission
 │   │   │   │   └── it should revert.
-│   │   │   └── when caller has try execute permission
+│   │   │   └── when caller has execute permission
 │   │   │       ├── it should emit event.
 │   │   │       └── it should execute the proposal.
 │   │   └── when proposal is not in last stage
@@ -30,7 +30,7 @@ AdvanceProposal_SPP_IntegrationTest
 │   │       │   │   ├── it should emit event.
 │   │       │   │   ├── it should advance proposal.
 │   │       │   │   └── it should create sub proposals.
-│   │       │   └── when caller has no try execute permission
+│   │       │   └── when caller has no execute permission
 │   │       │       ├── it should emit event.
 │   │       │       ├── it should advance proposal.
 │   │       │       └── it should create sub proposals.
