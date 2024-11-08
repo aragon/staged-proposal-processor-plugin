@@ -435,7 +435,7 @@ contract StagedProposalProcessor is
     }
 
     /// @inheritdoc IProposal
-    function execute(uint256 _proposalId) public virtual {
+    function execute(uint256 _proposalId) public virtual auth(EXECUTE_PROPOSAL_PERMISSION_ID) {
         Proposal storage proposal = proposals[_proposalId];
 
         if (!_proposalExists(proposal)) {
