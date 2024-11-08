@@ -1,0 +1,11 @@
+CanExecute_SPP_IntegrationTest
+├── when existent proposal
+│   ├── when proposal is in last stage
+│   │   ├── when proposal can advance
+│   │   │   └── it returns true.
+│   │   └── when proposal can not advance
+│   │       └── it returns false.
+│   └── when proposal is not in last stage
+│       └── it should revert.
+└── when non existent proposal
+    └── it should revert.
