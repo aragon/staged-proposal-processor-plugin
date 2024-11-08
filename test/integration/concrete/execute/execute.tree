@@ -1,0 +1,12 @@
+Execute_SPP_IntegrationTest
+├── when proposal exists
+│   ├── when caller is allowed
+│   │   ├── when proposal can execute
+│   │   │   ├── it should emit event.
+│   │   │   └── it should execute proposal.
+│   │   └── when proposal can not execute
+│   │       └── it should revert.
+│   └── when caller is not allowed
+│       └── it should revert.
+└── when proposal does not exist
+    └── it should revert.
