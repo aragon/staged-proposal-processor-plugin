@@ -446,7 +446,7 @@ contract StagedProposalProcessor is
             revert Errors.ProposalExecutionForbidden(_proposalId);
         }
 
-        _advanceProposal(_proposalId);
+        _executeProposal(_proposalId);
     }
 
     /// @notice Decides if the proposal can be advanced to the next stage.
@@ -500,11 +500,6 @@ contract StagedProposalProcessor is
         Proposal storage proposal = proposals[_proposalId];
         if (!_proposalExists(proposal)) {
             revert Errors.NonexistentProposal(_proposalId);
-        }
-
-        // If the proposal has been executed, it means it has succeeded.
-        if (proposal.executed) {
-            return true;
         }
 
         Stage[] storage _stages = stages[proposal.stageConfigIndex];
@@ -830,11 +825,10 @@ contract StagedProposalProcessor is
         Proposal storage _proposal = proposals[_proposalId];
         Stage[] storage _stages = stages[_proposal.stageConfigIndex];
 
-        _proposal.lastStageTransition = uint64(block.timestamp);
-
         if (_proposal.currentStage < _stages.length - 1) {
             // is not last stage
             uint16 newStage = ++_proposal.currentStage;
+            _proposal.lastStageTransition = uint64(block.timestamp);
 
             // Grab the next stage's bodies' custom params of `createProposal`.
             bytes[] memory customParams = new bytes[](_stages[newStage].bodies.length);
