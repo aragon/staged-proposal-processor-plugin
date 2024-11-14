@@ -2,6 +2,7 @@
 pragma solidity ^0.8.8;
 
 import {Errors} from "../libraries/Errors.sol";
+
 import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
 
 /// @notice DON'T USE IN PRODUCTION.

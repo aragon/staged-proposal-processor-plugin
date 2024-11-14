@@ -7,9 +7,9 @@ import {PluginA} from "../../../utils/dummy-plugins/PluginA/PluginA.sol";
 import {PluginC} from "../../../utils/dummy-plugins/PluginC/PluginC.sol";
 import {StagedProposalProcessor as SPP} from "../../../../src/StagedProposalProcessor.sol";
 
-import {DaoUnauthorized} from "@aragon/osx/core/utils/auth.sol";
 import {IPlugin} from "@aragon/osx-commons-contracts/src/plugin/IPlugin.sol";
 import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
+import {DaoUnauthorized} from "@aragon/osx-commons-contracts/src/permission/auth/auth.sol";
 
 contract CreateProposal_SPP_IntegrationTest is BaseTest {
     function test_RevertWhen_CallerIsNotAllowed() external {

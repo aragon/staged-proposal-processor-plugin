@@ -4,8 +4,6 @@ pragma solidity ^0.8.8;
 import {BaseTest} from "../../../../BaseTest.t.sol";
 import {StagedProposalProcessor as SPP} from "../../../../../src/StagedProposalProcessor.sol";
 
-import {DAO} from "@aragon/osx/core/dao/DAO.sol";
-
 contract Initialize_SPP_UnitTest is BaseTest {
     SPP internal newSppPlugin;
 

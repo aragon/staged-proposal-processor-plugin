@@ -7,8 +7,6 @@ import {StdUtils} from "forge-std/StdUtils.sol";
 import {Stage, Body} from "../utils/Types.sol";
 import {StagedProposalProcessor as SPP} from "../../src/StagedProposalProcessor.sol";
 
-import "forge-std/console.sol";
-
 abstract contract Fuzzers is StdUtils {
     function fuzzSppStages(
         Stage[] memory _stages,

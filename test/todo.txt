@@ -1,2 +1,0 @@
-Missing tests
-- test with allowed bodies instead of default trusted forwarder
