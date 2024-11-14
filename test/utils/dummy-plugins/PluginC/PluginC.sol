@@ -3,11 +3,12 @@ pragma solidity ^0.8.8;
 
 import {TrustedForwarder} from "../../../../src/utils/TrustedForwarder.sol";
 
-import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
 import {
     IProposal
 } from "@aragon/osx-commons-contracts/src/plugin/extensions/proposal/IProposal.sol";
+
+import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
 // dummy plugin that implements IProposal but the create function always reverts
 contract PluginC is IProposal, IERC165 {
@@ -40,17 +41,21 @@ contract PluginC is IProposal, IERC165 {
         return "";
     }
 
-    function canExecute(uint256) public pure returns (bool) {
+    function hasSucceeded(uint256) public pure returns (bool) {
         // TODO: for now
+        return true;
+    }
+    
+    function canExecute(uint256 _proposalId) external view returns (bool) {
         return true;
     }
 
     function execute(
         uint256 _proposalId
-    ) external returns (bytes[] memory execResults, uint256 failureMap) {
+    ) external {
         Action[] memory mainActions = new Action[](1);
         mainActions[0] = actions[_proposalId];
-        (execResults, failureMap) = trustedForwarder.execute(bytes32(_proposalId), mainActions, 0);
+        trustedForwarder.execute(bytes32(_proposalId), mainActions, 0);
     }
 
     function proposalCount() external view override returns (uint256) {

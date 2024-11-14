@@ -5,8 +5,10 @@ pragma solidity ^0.8.8;
 /// @notice Library containing all custom errors the plugin may revert with.
 library Errors {
     // SPP
-    /// @notice Thrown the proposal does not exist.
-    error ProposalNotExists(uint256);
+
+    /// @notice Thrown when a proposal doesn't exist.
+    /// @param proposalId The ID of the proposal which doesn't exist.
+    error NonexistentProposal(uint256 proposalId);
 
     /// @notice Thrown if the start date is less than current timestamp.
     error StartDateInvalid(uint64);

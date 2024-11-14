@@ -2,6 +2,8 @@ ReportProposalResult_SPP_UnitTest
 ├── given existent proposal
 │   ├── when voteDuration has not passed
 │   │   ├── when the caller is an allowed body
+│   │   │   ├── when reporting for not current stage
+│   │   │   │   └── it should revert.
 │   │   │   ├── when should try advance stage
 │   │   │   │   ├── when caller is trusted forwarder
 │   │   │   │   │   ├── when proposal is in last stage
@@ -59,60 +61,4 @@ ReportProposalResult_SPP_UnitTest
 │       └── it should emit event.
 └── given non existent proposal
     └── it should revert.
-// # given existent proposal
-//   ## when voteDuration has not passed
-//     ### when the caller is an allowed body
-//       #### when should try advance stage
-//         ##### when caller is trusted forwarder
-//             ###### when proposal is in last stage
-//                 ####### when body has no execute permission 
-//                     ######## it should record the result.
-//                     ######## it not execute proposal.
-//                 ####### when body has execute permission 
-//                     ######## it should record the result.
-//                     ######## it execute proposal.
-//             ###### when proposal is not in last stage
-//                 ####### it should use the sender stored in the call data.
-//                 ####### it should record the result.
-//                 ####### it should emit event proposal result reported.
-//                 ####### it should call advanceProposal function and emit event.
-//         ##### when caller is executor using delegatecall
-//             ###### given proposal is in last stage
-//                 ####### given body has no execute permission 
-//                     ######## it should record the result.
-//                     ######## it execute proposal.
-//                 ####### given body has execute permission 
-//                     ######## it should record the result.
-//                     ######## it execute proposal.
-//             ###### given proposal is not in last stage
-//                 ####### it should use the msg.sender that is the plugin.
-//                 ####### it should record the result.
-//                 ####### it should emit event proposal result reported.
-//                 ####### it should call advanceProposal function and emit event.
-//         ##### when proposal can be advanced
-//           ###### it should record the result.
-//           ###### it should emit event proposal result reported.
-//           ###### it should call advanceProposal function and emit event.
-//         ##### when proposal can not be advanced
-//           ###### it should record the result.
-//           ###### it should emit event proposal result reported.
-//           ###### it should not call advanceProposal function nor emit event.
-//       #### when should not try advance stage
-//         ##### given caller is trusted forwarder
-//           ###### it should use the sender stored in the call data.
-//           ###### it should record the result.
-//           ###### it should emit event proposal result reported.
-//           ###### it should not call advanceProposal function nor emit event.
-//         ##### given caller is executor using delegatecall
-//           ###### it should use the msg.sender that is the plugin.
-//           ###### it should record the result.
-//           ###### it should emit event proposal result reported.
-//           ###### it should not call advanceProposal function nor emit event.
-//     ### when the caller is not an allowed body
-//       #### it should not record the result in the right proposal path.
-//       #### it should record the result for historical data.
-//   ## when voteDuration has passed
-//     ### it should record the result.
-//     ### it should emit event.
-// # given non existent proposal
-//   ## it should revert.
+

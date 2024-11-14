@@ -6,9 +6,9 @@
       "description": "The information required for the installation of build 1.",
       "inputs": [
         {
-          "internalType": "bytes",
           "name": "pluginMetadata",
           "type": "bytes",
+          "internalType": "bytes",
           "description": "The metadata that contains the information about the staged proposal processor."
         },
         {
@@ -18,33 +18,41 @@
                 {
                   "components": [
                     {
-                      "name": "addr",
-                      "type": "address",
-                      "internalType": "address",
-                      "description": "The address responsible for reporting results. For automatic bodies, it is also where the SPP creates proposals."
-                    },
-                    {
-                      "name": "isManual",
-                      "type": "bool",
-                      "internalType": "bool",
-                      "description": "Whether SPP should create a proposal on a body. If true, it will not create."
-                    },
-                    {
-                      "name": "tryAdvance",
-                      "type": "bool",
-                      "internalType": "bool",
-                      "description": "Whether to try to automatically advance the stage when a body reports results."
-                    },
-                    {
-                      "name": "resultType",
-                      "type": "uint8",
-                      "internalType": "uint8",
-                      "description": "The type(`Approval` or `Veto`) this body is registered with."
+                      "components": [
+                        {
+                          "name": "addr",
+                          "type": "address",
+                          "internalType": "address",
+                          "description": "The address responsible for reporting results. For automatic bodies, it is also where the SPP creates proposals."
+                        },
+                        {
+                          "name": "isManual",
+                          "type": "bool",
+                          "internalType": "bool",
+                          "description": "Whether SPP should create a proposal on a body. If true, it will not create."
+                        },
+                        {
+                          "name": "tryAdvance",
+                          "type": "bool",
+                          "internalType": "bool",
+                          "description": "Whether to try to automatically advance the stage when a body reports results."
+                        },
+                        {
+                          "name": "resultType",
+                          "type": "uint8",
+                          "internalType": "uint8",
+                          "description": "The type(`None`, `Approval` or `Veto`) this body is registered with."
+                        }
+                      ],
+                      "name": "body",
+                      "type": "tuple",
+                      "internalType": "struct StagedProposalProcessor.Body"
                     }
                   ],
-                  "internalType": "struct StagedProposalProcessor.Body",
                   "name": "bodies",
-                  "type": "tuple[]"
+                  "type": "tuple[]",
+                  "internalType": "struct StagedProposalProcessor.Body[]",
+                  "description": "The bodies that are responsible for advancing the stage."
                 },
                 {
                   "name": "maxAdvance",
@@ -61,59 +69,69 @@
                 {
                   "name": "voteDuration",
                   "type": "uint64",
-                  "internalType": "uint16",
+                  "internalType": "uint64",
                   "description": "The time to give vetoing bodies to make decisions in optimistic stage. Note that this also is used as an endDate time for bodies"
                 },
                 {
                   "name": "approvalThreshold",
                   "type": "uint16",
                   "internalType": "uint16",
-                  "description": "The number of bodies that are required to pass to advance the proposal.",
+                  "description": "The number of bodies that are required to pass to advance the proposal."
                 },
                 {
                   "name": "vetoThreshold",
                   "type": "uint16",
+                  "internalType": "uint16",
                   "description": "If this number of bodies veto, the proposal can never advance even if `approvalThreshold` is satisfied."
                 }
               ],
-              "internalType": "struct StagedProposalProcessor.Stage",
-              "name": "stages",
-              "type": "tuple[]"
+              "name": "stage",
+              "type": "tuple",
+              "internalType": "struct StagedProposalProcessor.Stage"
             }
           ],
           "name": "stages",
-          "type": "tuple[]"
+          "type": "tuple[]",
+          "internalType": "struct StagedProposalProcessor.Stage[]",
+          "description": "The stages that the proposal will go through."
         },
-
         {
           "components": [
             {
-              "name": "id",
-              "type": "uint8",
-              "description": "The ID representing the identifier of the rule.",
-              "internalType": "uint8"
-            },
-            {
-              "name": "op",
-              "type": "uint8",
-              "description": "The operation to apply, as defined in the `Op` enum.",
-              "internalType": "uint8"
-            },
-            {
-              "name": "value",
-              "type": "uint240",
-              "description": "The value associated with this rule, which could be an address, timestamp, etc.",
-              "internalType": "uint240"
-            },
-            {
-              "name": "permissionId",
-              "type": "bytes32",
-              "description": "The specific permission ID to use for evaluating this rule. If set to `0x`, the passed permission ID will be used.",
-              "internalType": "bytes32"
+              "components": [
+                {
+                  "name": "id",
+                  "type": "uint8",
+                  "internalType": "uint8",
+                  "description": "The ID representing the identifier of the rule."
+                },
+                {
+                  "name": "op",
+                  "type": "uint8",
+                  "internalType": "uint8",
+                  "description": "The operation to apply, as defined in the `Op` enum."
+                },
+                {
+                  "name": "value",
+                  "type": "uint240",
+                  "internalType": "uint240",
+                  "description": "The value associated with this rule, which could be an address, timestamp, etc."
+                },
+                {
+                  "name": "permissionId",
+                  "type": "bytes32",
+                  "internalType": "bytes32",
+                  "description": "The specific permission ID to use for evaluating this rule. If set to `0x`, the passed permission ID will be used."
+                }
+              ],
+              "name": "rule",
+              "type": "tuple",
+              "internalType": "struct RuledCondition.Rule"
             }
           ],
           "name": "rules",
           "type": "tuple[]",
+          "internalType": "struct RuledCondition.Rule[]",
           "description": "Allows conditional permissions of who can create proposals using specific rules."
         },
         {
@@ -131,9 +149,9 @@
               "description": "The operation type(either `call` or `delegatecall`) that will be used for execution forwarding."
             }
           ],
-          "internalType": "struct StagedProposalProcessor.TargetConfig",
           "name": "TargetConfig",
           "type": "tuple",
+          "internalType": "struct StagedProposalProcessor.TargetConfig",
           "description": "The initial target config"
         }
       ]

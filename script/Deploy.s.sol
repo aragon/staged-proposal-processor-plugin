@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.0;
-
-import {BaseScript} from "./Base.sol";
-import {PluginSettings} from "../src/utils/PluginSettings.sol";
-import {StagedProposalProcessorSetup as SPPSetup} from "../src/StagedProposalProcessorSetup.sol";
-
-import {PluginRepo} from "@aragon/osx/framework/plugin/repo/PluginRepo.sol";
-import {PermissionLib} from "@aragon/osx/core/permission/PermissionLib.sol";
-import {PluginRepoFactory} from "@aragon/osx/framework/plugin/repo/PluginRepoFactory.sol";
+pragma solidity ^0.8.8;
 
 import {console} from "forge-std/console.sol";
 
+import {BaseScript} from "./Base.sol";
+import {PluginSettings} from "../src/utils/PluginSettings.sol";
+
+import {PluginRepo} from "@aragon/osx/framework/plugin/repo/PluginRepo.sol";
+import {PluginRepoFactory} from "@aragon/osx/framework/plugin/repo/PluginRepoFactory.sol";
+import {PermissionLib} from "@aragon/osx-commons-contracts/src/permission/PermissionLib.sol";
+
 contract Deploy is BaseScript {
     function run() external {
+        _printAragonArt();
         // get deployed contracts
         pluginRepoFactory = getRepoFactoryAddress();
         managementDao = getManagementDaoAddress();

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.8;
 
 import {BaseScript} from "./Base.sol";
 import {PluginSettings} from "../src/utils/PluginSettings.sol";
@@ -16,6 +16,7 @@ contract NewVersion is BaseScript {
     }
 
     function run() external {
+        _printAragonArt();
         // get deployed contracts
         sppRepo = PluginRepo(getPluginRepoAddress());
         managementDao = getManagementDaoAddress();
@@ -87,6 +88,7 @@ contract NewVersion is BaseScript {
         vm.serializeString(proposalData, "description", _proposalData.description);
 
         string[] memory actions = new string[](1);
+        // solhint-disable quotes
         actions[0] = string(
             abi.encodePacked(
                 '{"to": "',

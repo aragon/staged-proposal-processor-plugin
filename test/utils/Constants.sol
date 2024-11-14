@@ -21,4 +21,7 @@ contract Constants {
     address internal constant TARGET_ADDRESS = address(0x1234567890123456789012345678901234567890);
 
     uint8 internal constant CONDITION_RULE_ID = 202;
+
+    bytes32 internal constant IMPL_SLOT =
+        bytes32(uint256(keccak256("eip1967.proxy.implementation")) - 1);
 }

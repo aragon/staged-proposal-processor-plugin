@@ -6,10 +6,10 @@ import {
     StagedProposalProcessorSetup as SPPSetup
 } from "../../../../../src/StagedProposalProcessorSetup.sol";
 
-import {IPluginSetup} from "@aragon/osx-commons-contracts/src/plugin/setup/IPluginSetup.sol";
 import {
     PluginUpgradeableSetup
 } from "@aragon/osx-commons-contracts/src/plugin/setup/PluginUpgradeableSetup.sol";
+import {IPluginSetup} from "@aragon/osx-commons-contracts/src/plugin/setup/IPluginSetup.sol";
 
 contract PrepareUpdate_SPPSetup_UnitTest is BaseTest {
     SPPSetup sppSetup;

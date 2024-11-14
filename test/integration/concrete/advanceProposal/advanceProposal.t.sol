@@ -6,7 +6,6 @@ import {Errors} from "../../../../src/libraries/Errors.sol";
 import {PluginA} from "../../../utils/dummy-plugins/PluginA/PluginA.sol";
 import {StagedProposalProcessor as SPP} from "../../../../src/StagedProposalProcessor.sol";
 
-import {DAO} from "@aragon/osx/core/dao/DAO.sol";
 import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
 
 contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
@@ -36,7 +35,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         _;
     }
 
-    function test_RevertWhen_CallerHasNoTryExecutePermission()
+    function test_RevertWhen_CallerHasNoExecutePermission()
         external
         givenProposalExists
         whenProposalCanAdvance
@@ -51,7 +50,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         sppPlugin.advanceProposal(proposalId);
     }
 
-    function test_WhenCallerHasTryExecutePermission()
+    function test_WhenCallerHasExecutePermission()
         external
         givenProposalExists
         whenProposalCanAdvance
@@ -382,7 +381,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         );
     }
 
-    function test_WhenCallerHasNoTryExecutePermission()
+    function test_WhenCallerHasNoExecutePermission()
         external
         givenProposalExists
         whenProposalCanAdvance
@@ -557,7 +556,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         // it should revert.
 
         vm.expectRevert(
-            abi.encodeWithSelector(Errors.ProposalNotExists.selector, NON_EXISTENT_PROPOSAL_ID)
+            abi.encodeWithSelector(Errors.NonexistentProposal.selector, NON_EXISTENT_PROPOSAL_ID)
         );
         sppPlugin.advanceProposal(NON_EXISTENT_PROPOSAL_ID);
     }

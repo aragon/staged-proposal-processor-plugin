@@ -4,12 +4,11 @@ pragma solidity ^0.8.8;
 import {TrustedForwarder} from "../../../../src/utils/TrustedForwarder.sol";
 
 import {IPlugin} from "@aragon/osx-commons-contracts/src/plugin/IPlugin.sol";
-import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
-import {IExecutor} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
 import {
     IProposal
 } from "@aragon/osx-commons-contracts/src/plugin/extensions/proposal/IProposal.sol";
+import {IExecutor} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
 import {Proposal} from "@aragon/osx-commons-contracts/src/plugin/extensions/proposal/Proposal.sol";
 
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
@@ -82,7 +81,7 @@ contract PluginA is IERC165, Proposal {
         return proposalId;
     }
 
-    function canExecute(uint256) public view returns (bool) {
+    function hasSucceeded(uint256) public view returns (bool) {
         return canExecuteResult;
     }
 
@@ -90,9 +89,13 @@ contract PluginA is IERC165, Proposal {
         return "";
     }
 
+    function canExecute(uint256 _proposalId) external view returns (bool) {
+        return true;
+    }
+    
     function execute(
         uint256 _proposalId
-    ) external returns (bytes[] memory execResults, uint256 failureMap) {
+    ) external {
         Action[] memory mainActions = new Action[](1);
         mainActions[0] = actions[_proposalId];
         if (targetConfig.operation == IPlugin.Operation.DelegateCall) {
@@ -101,7 +104,7 @@ contract PluginA is IERC165, Proposal {
             (success, data) = targetConfig.target.delegatecall(
                 abi.encodeCall(IExecutor.execute, (bytes32(_proposalId), mainActions, 1))
             );
-            (execResults, failureMap) = abi.decode(data, (bytes[], uint256));
+            abi.decode(data, (bytes[], uint256));
 
             // (execResults, failureMap) = targetConfig.target.execute(
             //     bytes32(_proposalId),
@@ -109,7 +112,7 @@ contract PluginA is IERC165, Proposal {
             //     1
             // );
         } else {
-            (execResults, failureMap) = IExecutor(targetConfig.target).execute(
+            IExecutor(targetConfig.target).execute(
                 bytes32(_proposalId),
                 mainActions,
                 0

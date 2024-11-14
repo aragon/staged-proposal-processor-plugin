@@ -14,7 +14,7 @@ import {
 } from "@aragon/osx-commons-contracts/src/permission/condition/extensions/RuledCondition.sol";
 
 contract IsGranted_SPPRuleCondition_UnitTest is RuleConditionConfiguredTest {
-    function test_WhenRulesAreEmpty() external {
+    function test_WhenRulesAreEmpty() external view {
         // it should return true.
 
         assertTrue(
