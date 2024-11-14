@@ -8,8 +8,8 @@ import {EXECUTE_PROPOSAL_PERMISSION_ID} from "../../../utils/Permissions.sol";
 import {StagedProposalProcessor as SPP} from "../../../../src/StagedProposalProcessor.sol";
 
 import {DAO} from "@aragon/osx/core/dao/DAO.sol";
-import {DaoUnauthorized} from "@aragon/osx/core/utils/auth.sol";
 import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
+import {DaoUnauthorized} from "@aragon/osx-commons-contracts/src/permission/auth/auth.sol";
 
 contract Execute_SPP_IntegrationTest is BaseTest {
     uint256 proposalId;
