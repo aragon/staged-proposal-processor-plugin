@@ -370,7 +370,7 @@ contract StagedProposalProcessor is
 
     /// @notice Retrieves the result type submitted by a body for a specific proposal and stage.
     /// @param _proposalId The ID of the proposal.
-    /// @param _stageId Stage number in the stages array.
+    /// @param _stageId The ID of the stage.
     /// @return ResultType Returns what resultType the body reported the result with.
     ///     Returns `None (0)` if no result has been provided yet.
     function getBodyResult(
@@ -393,13 +393,15 @@ contract StagedProposalProcessor is
         return stages[getCurrentConfigIndex()];
     }
 
-    /// @dev This can be called by any address that is not in the stage configuration.
-    // `canProposalAdvance` is where it checks whether addresses that reported are actually in the stage configuration.
-    /// @notice Reports and records the result.
+    /// @notice Reports and records the result for a proposal at a specific stage.
+    /// @dev This function can be called by any address even if it is not included in the stage configuration.
+    ///      The `canProposalAdvance` function ensures that only records from addresses in the stage configuration calculated.
+    ///      If `_tryAdvance` is true, the proposal will attempt to advance to the next stage if eligible.
+    ///      Requires the caller to have the `EXECUTE_PROPOSAL_PERMISSION_ID` permission to execute the final stage.
     /// @param _proposalId The ID of the proposal.
-    /// @param _stageId The ID of the stage. It must not be more than current stage.
-    /// @param _resultType Whether to include report as a veto or approval.
-    /// @param _tryAdvance If true, tries to advance the proposal if it can be advanced.
+    /// @param _stageId The ID of the stage being reported on. Must not exceed the current stage of the proposal.
+    /// @param _resultType The result type being reported (`Approval` or `Veto`).
+    /// @param _tryAdvance Whether to attempt advancing the proposal to the next stage if conditions are met.
     function reportProposalResult(
         uint256 _proposalId,
         uint16 _stageId,
@@ -435,7 +437,10 @@ contract StagedProposalProcessor is
         }
     }
 
-    /// @notice Advances the proposal to the next stage in case it's allowed.
+    /// @notice Advances the specified proposal to the next stage if allowed.
+    /// @dev This function checks whether the proposal exists and can advance based on its current state.
+    ///      If the proposal is in the final stage, the caller must have the
+    ///      `EXECUTE_PROPOSAL_PERMISSION_ID` permission to execute it.
     /// @param _proposalId The ID of the proposal.
     function advanceProposal(uint256 _proposalId) public virtual {
         Proposal storage proposal = proposals[_proposalId];
@@ -461,6 +466,7 @@ contract StagedProposalProcessor is
     }
 
     /// @inheritdoc IProposal
+    /// @dev Requires the `EXECUTE_PROPOSAL_PERMISSION_ID` permission.
     function execute(uint256 _proposalId) public virtual auth(EXECUTE_PROPOSAL_PERMISSION_ID) {
         Proposal storage proposal = proposals[_proposalId];
 
@@ -475,9 +481,10 @@ contract StagedProposalProcessor is
         _executeProposal(_proposalId);
     }
 
-    /// @notice Decides if the proposal can be advanced to the next stage.
-    /// @param _proposalId The ID of the proposal.
-    /// @return Returns `true` if the proposal can be advanced.
+    /// @notice Determines whether the specified proposal can be advanced to the next stage.
+    /// @dev Reverts if the proposal with the given `_proposalId` does not exist.
+    /// @param _proposalId The unique identifier of the proposal to check.
+    /// @return Returns `true` if the proposal can be advanced to the next stage, otherwise `false`.
     function canProposalAdvance(uint256 _proposalId) public view virtual returns (bool) {
         Proposal storage proposal = proposals[_proposalId];
         if (!_proposalExists(proposal)) {
@@ -505,10 +512,10 @@ contract StagedProposalProcessor is
         return false;
     }
 
-    /// @notice Calculates the votes and vetoes for a proposal.
+    /// @notice Calculates and retrieves the number of votes (approvals) and vetoes for a proposal.
     /// @param _proposalId The ID of the proposal.
-    /// @return votes The number of votes for the proposal.
-    /// @return vetoes The number of vetoes for the proposal.
+    /// @return votes The total number of votes (approvals) for the proposal.
+    /// @return vetoes The total number of vetoes for the proposal.
     function getProposalTally(
         uint256 _proposalId
     ) public view virtual returns (uint256 votes, uint256 vetoes) {
@@ -547,8 +554,8 @@ contract StagedProposalProcessor is
         return _thresholdsMet(stage, _proposalId);
     }
 
-    /// @notice Checks if caller has a permission to execute a proposal if it's on the last stage.
-    /// @return Returns true if the caller has permission to execute.
+    /// @notice Checks whether the caller has the required permission to execute a proposal at the last stage.
+    /// @return hasPermission Returns `true` if the caller has the `EXECUTE_PROPOSAL_PERMISSION_ID` permission, otherwise `false`.
     function hasExecutePermission() public view returns (bool) {
         return
             dao().hasPermission(
@@ -559,12 +566,12 @@ contract StagedProposalProcessor is
             );
     }
 
-    /// @notice Useful function for UI to get any sub-bodies'(not including first stage's sub-bodies)
-    ///         `createProposal`'s `data` param.
+    /// @notice Retrieves the `data` parameter encoded for a sub-body's `createProposal` function in a specific stage.
+    ///         Excludes sub-bodies from the first stage, as their parameters are not stored.
     /// @param _proposalId The ID of the proposal.
-    /// @param _proposalId The ID of the stage.
-    /// @param _index The index of a body in an array.
-    /// @return The sub-body's createProposal's `data` parameter encoded.
+    /// @param _stageId The ID of the stage.
+    /// @param _index The index of the body within the stage.
+    /// @return data The encoded `data` parameter for the specified sub-body's `createProposal` function.
     function getCreateProposalParams(
         uint256 _proposalId,
         uint16 _stageId,
@@ -666,7 +673,7 @@ contract StagedProposalProcessor is
     /// @dev Assumes that bodies are not duplicated in the same stage. See `_updateStages` function.
     /// @dev Results can be recorded at any time, but only once per body.
     /// @param _proposalId The ID of the proposal.
-    /// @param _proposalId The ID of the stage.
+    /// @param _stageId The ID of the stage.
     /// @param _resultType which method to use when reporting(veto or approval)
     function _processProposalResult(
         uint256 _proposalId,
@@ -682,7 +689,7 @@ contract StagedProposalProcessor is
     /// @notice Creates proposals on the non-manual bodies of the `stageId`.
     /// @dev Assumes that bodies are not duplicated in the same stage. See `_updateStages` function.
     /// @param _proposalId The ID of the proposal.
-    /// @param _stageId stage number of the stages configuration array.
+    /// @param _stageId The ID of the stage.
     /// @param _startDate The start date that proposals on sub-bodies will be created with.
     /// @param _stageProposalParams The custom params required for each sub-body.
     function _createBodyProposals(
