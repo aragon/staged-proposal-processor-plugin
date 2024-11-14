@@ -229,7 +229,9 @@ contract StagedProposalProcessor is
     }
 
     /// @notice Allows to update stage configuration.
-    /// @param _stages The stages configuration.
+    /// @dev Requires the caller to have the `UPDATE_STAGES_PERMISSION_ID` permission.
+    ///      Reverts if the provided `_stages` array is empty.
+    /// @param _stages The new stage configuration as an array of `Stage` structs.
     function updateStages(Stage[] calldata _stages) external auth(UPDATE_STAGES_PERMISSION_ID) {
         if (_stages.length == 0) {
             revert Errors.StageCountZero();
@@ -238,14 +240,16 @@ contract StagedProposalProcessor is
     }
 
     /// @notice Sets a new trusted forwarder address.
-    /// @param _forwarder The trusted forwarder.
+    /// @dev Requires the caller to have the `SET_TRUSTED_FORWARDER_PERMISSION_ID` permission.
+    /// @param _forwarder The new trusted forwarder address.
     function setTrustedForwarder(
         address _forwarder
     ) public virtual auth(SET_TRUSTED_FORWARDER_PERMISSION_ID) {
         _setTrustedForwarder(_forwarder);
     }
 
-    /// @return Returns the address of the trusted forwarder.
+    /// @notice Retrieves the address of the trusted forwarder.
+    /// @return The address of the trusted forwarder.
     function getTrustedForwarder() public view virtual returns (address) {
         return trustedForwarder;
     }
@@ -254,9 +258,9 @@ contract StagedProposalProcessor is
     /// @param _metadata The metadata of the proposal.
     /// @param _actions The actions that will be executed after the proposal passes.
     /// @param _allowFailureMap Allows proposal to succeed even if an action reverts.
-    /// Uses bitmap representation.
-    /// If the bit at index `x` is 1, the tx succeeds even if the action at `x` failed.
-    /// Passing 0 will be treated as atomic execution.
+    ///     Uses bitmap representation.
+    ///     If the bit at index `x` is 1, the tx succeeds even if the action at `x` failed.
+    ///     Passing 0 will be treated as atomic execution.
     /// @param _startDate The date at which first stage's bodies' proposals must be started at.
     /// @param _proposalParams The extra abi encoded parameters for each sub-body's createProposal function.
     /// @return proposalId The ID of the proposal.
