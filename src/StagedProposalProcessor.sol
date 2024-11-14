@@ -254,7 +254,9 @@ contract StagedProposalProcessor is
         return trustedForwarder;
     }
 
-    /// @notice Creates a proposal only on non-manual bodies of the first stage.
+    /// @notice Creates a new proposal in this `StagedProposalProcessor` plugin.
+    /// @dev Requires the caller to have the `CREATE_PROPOSAL_PERMISSION_ID` permission.
+    ///      Also creates proposals for non-manual bodies in the first stage of the proposal process.
     /// @param _metadata The metadata of the proposal.
     /// @param _actions The actions that will be executed after the proposal passes.
     /// @param _allowFailureMap Allows proposal to succeed even if an action reverts.
@@ -336,6 +338,7 @@ contract StagedProposalProcessor is
     }
 
     /// @inheritdoc IProposal
+    /// @dev Calls a public function that equires the `CREATE_PROPOSAL_PERMISSION_ID` permission.
     function createProposal(
         bytes memory _metadata,
         Action[] memory _actions,
@@ -353,22 +356,23 @@ contract StagedProposalProcessor is
     }
 
     /// @inheritdoc IProposal
-    /// @dev Since SPP is also IProposal, it's required to override.
+    /// @dev This plugin inherits from `IProposal`, requiring an override for this function.
     function customProposalParamsABI() external pure virtual override returns (string memory) {
         return "(bytes[][] subBodiesCustomProposalParamsABI)";
     }
 
-    /// @notice Returns all information for a proposal by its ID.
+    /// @notice Retrieves all information associated with a proposal by its ID.
     /// @param _proposalId The ID of the proposal.
     /// @return Proposal The proposal struct
     function getProposal(uint256 _proposalId) public view returns (Proposal memory) {
         return proposals[_proposalId];
     }
 
-    /// @notice Returns whether the body has submitted its result or not.
+    /// @notice Retrieves the result type submitted by a body for a specific proposal and stage.
     /// @param _proposalId The ID of the proposal.
     /// @param _stageId Stage number in the stages array.
-    /// @return ResultType Returns what resultType the body reported the result with. 0 if no result provided yet.
+    /// @return ResultType Returns what resultType the body reported the result with.
+    ///     Returns `None (0)` if no result has been provided yet.
     function getBodyResult(
         uint256 _proposalId,
         uint16 _stageId,
@@ -377,14 +381,14 @@ contract StagedProposalProcessor is
         return bodyResults[_proposalId][_stageId][_body];
     }
 
-    /// @notice Returns the current config index at which current configurations of stages are stored.
-    /// @return The current config index.
+    /// @notice Retrieves the current configuration index at which the current configurations of stages are stored.
+    /// @return currentConfigIndex The index of the current configuration in the `stages` mapping.
     function getCurrentConfigIndex() public view virtual returns (uint16) {
         return currentConfigIndex;
     }
 
-    /// @notice Returns the current stages.
-    /// @return The currently applied stages.
+    /// @notice Retrieves the currently applied stages for the active configuration.
+    /// @return stages The array of `Stage` structs representing the current stage configuration.
     function getStages() public view virtual returns (Stage[] memory) {
         return stages[getCurrentConfigIndex()];
     }
