@@ -438,6 +438,7 @@ contract StagedProposalProcessor is
         _advanceProposal(_proposalId);
     }
 
+    /// @inheritdoc IProposal
     function execute(uint256 _proposalId) public virtual auth(EXECUTE_PROPOSAL_PERMISSION_ID) {
         Proposal storage proposal = proposals[_proposalId];
 
@@ -464,6 +465,7 @@ contract StagedProposalProcessor is
         return _canProposalAdvance(_proposalId);
     }
 
+    /// @inheritdoc IProposal
     function canExecute(uint256 _proposalId) public view virtual returns (bool) {
         Proposal storage proposal = proposals[_proposalId];
 
