@@ -2,6 +2,7 @@
 pragma solidity ^0.8.8;
 
 /// @title Errors
+/// @author Aragon X - 2024
 /// @notice Library containing all custom errors the plugin may revert with.
 library Errors {
     // SPP

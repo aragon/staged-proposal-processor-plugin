@@ -20,6 +20,11 @@ import {
 
 import {ERC165Checker} from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 
+/// @title StagedProposalProcessor
+/// @author Aragon X - 2024
+/// @notice A multi-stage proposal processor where proposals progress through defined stages.
+///         Each stage is evaluated by the responsible bodies, determining whether the proposal advances
+///         to the next stage. Once a proposal successfully passes all stages, it can be executed.
 contract StagedProposalProcessor is
     ProposalUpgradeable,
     MetadataExtensionUpgradeable,
@@ -44,7 +49,7 @@ contract StagedProposalProcessor is
     /// @notice Used to distinguish proposals where the SPP was not able to create a proposal on a sub-body.
     uint256 private constant PROPOSAL_WITHOUT_ID = type(uint256).max;
 
-    /// @notice The different types that bodies can are registered with.
+    /// @notice The different types that bodies can be registered as.
     /// @param None Used to check if the body reported the result or not.
     /// @param Approval Used to allow a body to report approval result.
     /// @param Veto Used to allow a body to report veto result.

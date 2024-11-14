@@ -15,6 +15,8 @@ import {
     RuledCondition
 } from "@aragon/osx-commons-contracts/src/permission/condition/extensions/RuledCondition.sol";
 
+/// @title SPPRuleCondition
+/// @author Aragon X - 2024
 /// @notice The SPP Condition that must be granted for `createProposal` function of `StagedProposalProcessor`.
 /// @dev This contract must be deployed either with clonable or `new` keyword.
 contract SPPRuleCondition is DaoAuthorizableUpgradeable, RuledCondition {

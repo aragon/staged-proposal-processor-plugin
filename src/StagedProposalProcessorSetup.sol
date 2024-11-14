@@ -17,6 +17,8 @@ import {
 } from "@aragon/osx-commons-contracts/src/permission/condition/extensions/RuledCondition.sol";
 
 /// @title MyPluginSetup
+/// @author Aragon X - 2024
+/// @notice The setup contract of the `StagedProposalProcessor` plugin.
 /// @dev Release 1, Build 1
 contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
     using ProxyLib for address;
