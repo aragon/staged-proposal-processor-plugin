@@ -103,22 +103,31 @@ contract StagedProposalProcessor is
         TargetConfig targetConfig;
     }
 
-    // proposalId => stageId => body => subProposalId
+    /// @notice A mapping to track sub-proposal IDs for a given proposal, stage, and body.
+    /// @dev Maps `proposalId` => `stageId` => `body` => `subProposalId`.
     mapping(uint256 => mapping(uint256 => mapping(address => uint256))) public bodyProposalIds;
 
-    // proposalId => stageId => body => resultType
+    /// @notice A mapping to store the result types reported by bodies for a given proposal and stage.
+    /// @dev Maps `proposalId` => `stageId` => `body` => `ResultType`.
     mapping(uint256 => mapping(uint16 => mapping(address => ResultType))) private bodyResults;
 
-    // proposalId => stageId => body index => custom proposal params data.
+    /// @notice A mapping to store custom proposal parameters data for a given proposal, stage, and body index.
+    /// @dev Maps `proposalId` => `stageId` => `bodyIndex` => `custom proposal parameters`.
     mapping(uint256 => mapping(uint16 => mapping(uint256 => bytes))) private createProposalParams;
 
-    /// @notice A mapping between proposal IDs and proposal information.
+    /// @notice A mapping between proposal IDs and their associated proposal information.
     mapping(uint256 => Proposal) private proposals;
 
-    /// @notice A mapping between stage config index and actual stage configuration on that index.
+    /// @notice A mapping between stage configuration indices and the corresponding stage configurations.
+    /// @dev Maps `configIndex` => array of `Stage` structs.
     mapping(uint256 => Stage[]) private stages;
 
-    uint16 private currentConfigIndex; // Index from `stages` storage mapping
+    /// @notice The index of the current stage configuration in the `stages` mapping.
+    uint16 private currentConfigIndex;
+
+    /// @notice The address of the trusted forwarder.
+    /// @dev The trusted forwarder appends the original sender's address to the calldata. If an executor is the
+    ///      trusted forwarder, the `_msgSender` function extracts the original sender from the calldata.
     address private trustedForwarder;
 
     /// @notice Emitted when the proposal is advanced to the next stage.
@@ -136,11 +145,11 @@ contract StagedProposalProcessor is
         address indexed body
     );
 
-    /// @notice Emitted when SPP successfully creates a proposal on sub-body.
+    /// @notice Emitted when this plugin successfully creates a proposal on sub-body.
     /// @param proposalId The proposal id.
     /// @param stageId The stage id.
     /// @param body The sub-body on which sub-proposal has been created.
-    /// @param bodyProposalId The proposal id that sub-body returns for later usage by SPP.
+    /// @param bodyProposalId The proposal id that sub-body returns for later usage by this plugin.
     event SubProposalCreated(
         uint256 indexed proposalId,
         uint16 indexed stageId,
@@ -148,7 +157,7 @@ contract StagedProposalProcessor is
         uint256 bodyProposalId
     );
 
-    /// @notice Emitted when SPP fails in creating a proposal on sub-body.
+    /// @notice Emitted when this plugin fails in creating a proposal on sub-body.
     /// @param proposalId The proposal id.
     /// @param stageId The stage id.
     /// @param body The sub-body on which sub-proposal failed to be created.
@@ -160,8 +169,8 @@ contract StagedProposalProcessor is
         bytes reason
     );
 
-    /// @notice Emitted when the stage configuration is updated.
-    /// @param stages The stage configuration.
+    /// @notice Emitted when the stage configuration is updated for a proposal process.
+    /// @param stages The array of `Stage` structs representing the updated stage configuration.
     event StagesUpdated(Stage[] stages);
 
     /// @notice Emitted when the trusted forwarder is updated.
