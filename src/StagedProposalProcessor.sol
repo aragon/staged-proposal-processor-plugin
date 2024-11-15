@@ -514,13 +514,13 @@ contract StagedProposalProcessor is
         return false;
     }
 
-    /// @notice Calculates and retrieves the number of votes (approvals) and vetoes for a proposal.
+    /// @notice Calculates and retrieves the number of approvals and vetoes for a proposal.
     /// @param _proposalId The ID of the proposal.
-    /// @return votes The total number of votes (approvals) for the proposal.
+    /// @return approvals The total number of approvals for the proposal.
     /// @return vetoes The total number of vetoes for the proposal.
     function getProposalTally(
         uint256 _proposalId
-    ) public view virtual returns (uint256 votes, uint256 vetoes) {
+    ) public view virtual returns (uint256 approvals, uint256 vetoes) {
         Proposal storage proposal = proposals[_proposalId];
 
         if (!_proposalExists(proposal)) {
@@ -807,15 +807,15 @@ contract StagedProposalProcessor is
         return _thresholdsMet(stage, _proposalId);
     }
 
-    /// @notice Internal function to Calculates and retrieves the number of votes (approvals) and vetoes for a proposal.
+    /// @notice Internal function to Calculates and retrieves the number of approvals and vetoes for a proposal.
     /// @dev Assumes that bodies are not duplicated in the same stage. See `_updateStages` function.
     ///      This function ensures that only records from addresses in the stage configuration are used.
     /// @param _proposalId The proposal Id.
-    /// @return votes The number of votes (approvals) for the proposal.
+    /// @return approvals The number of approvals for the proposal.
     /// @return vetoes The number of vetoes for the proposal.
     function _getProposalTally(
         uint256 _proposalId
-    ) internal view returns (uint256 votes, uint256 vetoes) {
+    ) internal view returns (uint256 approvals, uint256 vetoes) {
         // Cheaper to do 2nd sload than to pass Proposal memory.
         Proposal storage proposal = proposals[_proposalId];
 
@@ -831,7 +831,7 @@ contract StagedProposalProcessor is
 
             if (resultType != ResultType.None) {
                 // result was already reported
-                resultType == ResultType.Approval ? ++votes : ++vetoes;
+                resultType == ResultType.Approval ? ++approvals : ++vetoes;
             } else if (bodyProposalId != PROPOSAL_WITHOUT_ID && !body.isManual) {
                 // result was not reported yet
                 // Use low-level call to ensure that outer tx doesn't revert
@@ -843,7 +843,7 @@ contract StagedProposalProcessor is
                 if (success && data.length == 32) {
                     bool succeeded = abi.decode(data, (bool));
                     if (succeeded) {
-                        body.resultType == ResultType.Approval ? ++votes : ++vetoes;
+                        body.resultType == ResultType.Approval ? ++approvals : ++vetoes;
                     }
                 }
             }
