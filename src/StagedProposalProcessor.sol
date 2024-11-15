@@ -338,7 +338,7 @@ contract StagedProposalProcessor is
     }
 
     /// @inheritdoc IProposal
-    /// @dev Calls a public function that equires the `CREATE_PROPOSAL_PERMISSION_ID` permission.
+    /// @dev Calls a public function that requires the `CREATE_PROPOSAL_PERMISSION_ID` permission.
     function createProposal(
         bytes memory _metadata,
         Action[] memory _actions,
