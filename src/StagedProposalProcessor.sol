@@ -363,7 +363,7 @@ contract StagedProposalProcessor is
 
     /// @notice Retrieves all information associated with a proposal by its ID.
     /// @param _proposalId The ID of the proposal.
-    /// @return Proposal The proposal struct
+    /// @return The proposal struct
     function getProposal(uint256 _proposalId) public view returns (Proposal memory) {
         return proposals[_proposalId];
     }
@@ -371,7 +371,8 @@ contract StagedProposalProcessor is
     /// @notice Retrieves the result type submitted by a body for a specific proposal and stage.
     /// @param _proposalId The ID of the proposal.
     /// @param _stageId The ID of the stage.
-    /// @return ResultType Returns what resultType the body reported the result with.
+    /// @param _body The address of the sub-body.
+    /// @return Returns what resultType the body reported the result with.
     ///     Returns `None (0)` if no result has been provided yet.
     function getBodyResult(
         uint256 _proposalId,
@@ -382,20 +383,20 @@ contract StagedProposalProcessor is
     }
 
     /// @notice Retrieves the current configuration index at which the current configurations of stages are stored.
-    /// @return currentConfigIndex The index of the current configuration in the `stages` mapping.
+    /// @return The index of the current configuration in the `stages` mapping.
     function getCurrentConfigIndex() public view virtual returns (uint16) {
         return currentConfigIndex;
     }
 
     /// @notice Retrieves the currently applied stages for the active configuration.
-    /// @return stages The array of `Stage` structs representing the current stage configuration.
+    /// @return The array of `Stage` structs representing the current stage configuration.
     function getStages() public view virtual returns (Stage[] memory) {
         return stages[getCurrentConfigIndex()];
     }
 
     /// @notice Reports and records the result for a proposal at a specific stage.
     /// @dev This function can be called by any address even if it is not included in the stage configuration.
-    ///      The `canProposalAdvance` function ensures that only records from addresses in the stage configuration are used.
+    ///      `canProposalAdvance` function ensures that only records from addresses in the stage configuration are used.
     ///      If `_tryAdvance` is true, the proposal will attempt to advance to the next stage if eligible.
     ///      Requires the caller to have the `EXECUTE_PROPOSAL_PERMISSION_ID` permission to execute the final stage.
     /// @param _proposalId The ID of the proposal.
@@ -555,7 +556,7 @@ contract StagedProposalProcessor is
     }
 
     /// @notice Checks whether the caller has the required permission to execute a proposal at the last stage.
-    /// @return hasPermission Returns `true` if the caller has the `EXECUTE_PROPOSAL_PERMISSION_ID` permission, otherwise `false`.
+    /// @return Returns `true` if the caller has the `EXECUTE_PROPOSAL_PERMISSION_ID` permission, otherwise `false`.
     function hasExecutePermission() public view returns (bool) {
         return
             dao().hasPermission(
@@ -571,7 +572,7 @@ contract StagedProposalProcessor is
     /// @param _proposalId The ID of the proposal.
     /// @param _stageId The ID of the stage.
     /// @param _index The index of the body within the stage.
-    /// @return data The encoded `data` parameter for the specified sub-body's `createProposal` function.
+    /// @return The encoded `data` parameter for the specified sub-body's `createProposal` function.
     function getCreateProposalParams(
         uint256 _proposalId,
         uint16 _stageId,
