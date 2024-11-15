@@ -396,7 +396,7 @@ contract StagedProposalProcessor is
 
     /// @notice Reports and records the result for a proposal at a specific stage.
     /// @dev This function can be called by any address even if it is not included in the stage configuration.
-    ///      `canProposalAdvance` function ensures that only records from addresses in the stage configuration are used.
+    ///      `_canProposalAdvance` function ensures that only records from addresses in the stage configuration are used.
     ///      If `_tryAdvance` is true, the proposal will attempt to advance to the next stage if eligible.
     ///      Requires the caller to have the `EXECUTE_PROPOSAL_PERMISSION_ID` permission to execute the final stage.
     /// @param _proposalId The ID of the proposal.
@@ -585,8 +585,8 @@ contract StagedProposalProcessor is
 
     /// @notice Internal function to update stage configuration.
     /// @dev It's a caller's responsibility not to call this in case `_stages` are empty.
-    /// This function can not be overridden as it's crucial to not allow duplicating bodies
-    //  in the same stage, because proposal creation and report functions depend on this assumption.
+    ///      This function can not be overridden as it's crucial to not allow duplicating bodies
+    ///      in the same stage, because proposal creation and report functions depend on this assumption.
     /// @param _stages The stages configuration.
     function _updateStages(Stage[] memory _stages) internal {
         Stage[] storage storedStages = stages[++currentConfigIndex];
@@ -672,10 +672,9 @@ contract StagedProposalProcessor is
 
     /// @notice Records the result by the caller.
     /// @dev Assumes that bodies are not duplicated in the same stage. See `_updateStages` function.
-    ///      Results can be recorded at any time, but only once per body.
     /// @param _proposalId The ID of the proposal.
     /// @param _stageId The ID of the stage.
-    /// @param _resultType which method to use when reporting(veto or approval)
+    /// @param _resultType The result type being reported (`Approval` or `Veto`).
     function _processProposalResult(
         uint256 _proposalId,
         uint16 _stageId,
@@ -692,7 +691,7 @@ contract StagedProposalProcessor is
     /// @param _proposalId The ID of the proposal.
     /// @param _stageId The ID of the stage.
     /// @param _startDate The start date that proposals on sub-bodies will be created with.
-    /// @param _stageProposalParams The custom params required for each sub-body.
+    /// @param _stageProposalParams The custom params required for each sub-body to create a proposal.
     function _createBodyProposals(
         uint256 _proposalId,
         uint16 _stageId,
@@ -774,10 +773,10 @@ contract StagedProposalProcessor is
         }
     }
 
-    /// @notice Internal function that decides if the proposal can be advanced to the next stage.
+    /// @notice Internal function that determines whether the specified proposal can be advanced to the next stage.
     /// @dev Note that it's a caller's responsibility to check if proposal exists.
     /// @param _proposalId The ID of the proposal.
-    /// @return Returns `true` if the proposal can be advanced.
+    /// @return Returns `true` if the proposal can be advanced to the next stage, otherwise `false`.
     function _canProposalAdvance(uint256 _proposalId) internal view virtual returns (bool) {
         // Cheaper to do 2nd sload than to pass Proposal memory.
         Proposal storage proposal = proposals[_proposalId];
@@ -807,10 +806,11 @@ contract StagedProposalProcessor is
         return _thresholdsMet(stage, _proposalId);
     }
 
-    /// @notice Internal function to calculate the votes and vetoes for a proposal.
+    /// @notice Internal function to Calculates and retrieves the number of votes (approvals) and vetoes for a proposal.
     /// @dev Assumes that bodies are not duplicated in the same stage. See `_updateStages` function.
+    ///      This function ensures that only records from addresses in the stage configuration are used.
     /// @param _proposalId The proposal Id.
-    /// @return votes The number of votes for the proposal.
+    /// @return votes The number of votes (approvals) for the proposal.
     /// @return vetoes The number of vetoes for the proposal.
     function _getProposalTally(
         uint256 _proposalId
@@ -853,9 +853,10 @@ contract StagedProposalProcessor is
         }
     }
 
-    /// @notice Internal function to advance the proposal. It executes if it's the last stage.
-    /// @dev Note that it assumes the proposal can advance.
-    /// @param _proposalId The proposal Id.
+    /// @notice Advances a proposal to the next stage or executes it if it is in the final stage.
+    /// @dev Assumes the proposal is eligible to advance. If the proposal is not in the final stage, it creates proposals
+    ///      for the sub-bodies in the next stage. If the proposal is in the final stage, it triggers execution.
+    /// @param _proposalId The ID of the proposal.
     function _advanceProposal(uint256 _proposalId) internal virtual {
         Proposal storage _proposal = proposals[_proposalId];
         Stage[] storage _stages = stages[_proposal.stageConfigIndex];
@@ -912,6 +913,9 @@ contract StagedProposalProcessor is
         emit TrustedForwarderUpdated(_forwarder);
     }
 
+    /// @notice Retrieves the original sender address, considering if the call was made through a trusted forwarder.
+    /// @dev If the `msg.sender` is the trusted forwarder, extracts the original sender from the last 20 bytes of the calldata.
+    /// @return sender The address of the original caller or the `msg.sender` if not called through the trusted forwarder.
     function _msgSender() internal view override returns (address) {
         // If sender is a trusted Forwarder, that means
         // it would have appended the original sender in the calldata.
@@ -932,6 +936,5 @@ contract StagedProposalProcessor is
     /// @dev This empty reserved space is put in place to allow future versions to add new
     /// variables without shifting down storage in the inheritance chain.
     /// https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
-
     uint256[44] private __gap;
 }
