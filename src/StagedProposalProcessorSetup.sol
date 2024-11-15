@@ -56,7 +56,7 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
     /// @notice The address of the condition implementation contract.
     address public immutable CONDITION_IMPLEMENTATION;
 
-    /// @notice Constructs the `PluginUpgradeableSetup` by storing the `MyPlugin` implementation address.
+    /// @notice Constructs the `PluginUpgradeableSetup` by storing the `SPP` implementation address.
     /// @dev The implementation address is used to deploy UUPS proxies referencing it and
     /// to verify the plugin on the respective block explorers.
     constructor() PluginUpgradeableSetup(address(new SPP())) {

@@ -46,7 +46,7 @@ contract PluginC is IProposal, IERC165 {
         return true;
     }
     
-    function canExecute(uint256 _proposalId) external view returns (bool) {
+    function canExecute(uint256) external pure returns (bool) {
         return true;
     }
 

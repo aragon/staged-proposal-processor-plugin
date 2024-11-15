@@ -61,7 +61,7 @@ contract StagedProposalProcessor is
 
     /// @notice A container for Body-related information.
     /// @param addr The address responsible for reporting results. For automatic bodies,
-    ///        it is also where the SPP creates proposals.
+    ///     it is also where the SPP creates proposals.
     /// @param isManual Whether SPP should create a proposal on a body. If true, it will not create.
     /// @param tryAdvance Whether to try to automatically advance the stage when a body reports results.
     /// @param resultType The type(`Approval` or `Veto`) this body is registered with.
@@ -77,10 +77,10 @@ contract StagedProposalProcessor is
     /// @param maxAdvance The maximum duration after which stage can not be advanced.
     /// @param minAdvance The minimum duration until when stage can not be advanced.
     /// @param voteDuration The time to give vetoing bodies to make decisions in optimistic stage.
-    ///        Note that this also is used as an endDate time for bodies, see `_createBodyProposals`.
+    ///     Note that this also is used as an endDate time for bodies, see `_createBodyProposals`.
     /// @param approvalThreshold The number of bodies that are required to pass to advance the proposal.
     /// @param vetoThreshold If this number of bodies veto, the proposal can never advance
-    ///        even if `approvalThreshold` is satisfied.
+    ///     even if `approvalThreshold` is satisfied.
     struct Stage {
         Body[] bodies;
         uint64 maxAdvance;
@@ -395,7 +395,7 @@ contract StagedProposalProcessor is
 
     /// @notice Reports and records the result for a proposal at a specific stage.
     /// @dev This function can be called by any address even if it is not included in the stage configuration.
-    ///      The `canProposalAdvance` function ensures that only records from addresses in the stage configuration calculated.
+    ///      The `canProposalAdvance` function ensures that only records from addresses in the stage configuration are used.
     ///      If `_tryAdvance` is true, the proposal will attempt to advance to the next stage if eligible.
     ///      Requires the caller to have the `EXECUTE_PROPOSAL_PERMISSION_ID` permission to execute the final stage.
     /// @param _proposalId The ID of the proposal.
@@ -567,7 +567,7 @@ contract StagedProposalProcessor is
     }
 
     /// @notice Retrieves the `data` parameter encoded for a sub-body's `createProposal` function in a specific stage.
-    ///         Excludes sub-bodies from the first stage, as their parameters are not stored.
+    ///         Excludes sub-bodies from the first stage, as their parameters are not stored for efficiency.
     /// @param _proposalId The ID of the proposal.
     /// @param _stageId The ID of the stage.
     /// @param _index The index of the body within the stage.
@@ -671,7 +671,7 @@ contract StagedProposalProcessor is
 
     /// @notice Records the result by the caller.
     /// @dev Assumes that bodies are not duplicated in the same stage. See `_updateStages` function.
-    /// @dev Results can be recorded at any time, but only once per body.
+    ///      Results can be recorded at any time, but only once per body.
     /// @param _proposalId The ID of the proposal.
     /// @param _stageId The ID of the stage.
     /// @param _resultType which method to use when reporting(veto or approval)

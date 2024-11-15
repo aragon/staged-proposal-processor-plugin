@@ -29,7 +29,11 @@ contract DummySPP is ProposalUpgradeable, MetadataExtensionUpgradeable, PluginUU
 
     /// @dev inherits from IProposal
     function hasSucceeded(uint256) public pure override returns (bool) {}
+    
+    function execute(uint256) public override {}
 
+    function canExecute(uint256) public view override returns (bool) {}
+    
     /// @dev inherits from IProposal
     function createProposal(
         bytes memory _metadata,
