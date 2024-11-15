@@ -396,7 +396,8 @@ contract StagedProposalProcessor is
 
     /// @notice Reports and records the result for a proposal at a specific stage.
     /// @dev This function can be called by any address even if it is not included in the stage configuration.
-    ///      `_canProposalAdvance` function ensures that only records from addresses in the stage configuration are used.
+    ///      `_canProposalAdvance` function ensures that only records from addresses
+    ///      in the stage configuration are used.
     ///      If `_tryAdvance` is true, the proposal will attempt to advance to the next stage if eligible.
     ///      Requires the caller to have the `EXECUTE_PROPOSAL_PERMISSION_ID` permission to execute the final stage.
     /// @param _proposalId The ID of the proposal.
@@ -854,8 +855,9 @@ contract StagedProposalProcessor is
     }
 
     /// @notice Advances a proposal to the next stage or executes it if it is in the final stage.
-    /// @dev Assumes the proposal is eligible to advance. If the proposal is not in the final stage, it creates proposals
-    ///      for the sub-bodies in the next stage. If the proposal is in the final stage, it triggers execution.
+    /// @dev Assumes the proposal is eligible to advance. If the proposal is not in the final stage,
+    ///      it creates proposals for the sub-bodies in the next stage.
+    ///      If the proposal is in the final stage, it triggers execution.
     /// @param _proposalId The ID of the proposal.
     function _advanceProposal(uint256 _proposalId) internal virtual {
         Proposal storage _proposal = proposals[_proposalId];
@@ -914,8 +916,9 @@ contract StagedProposalProcessor is
     }
 
     /// @notice Retrieves the original sender address, considering if the call was made through a trusted forwarder.
-    /// @dev If the `msg.sender` is the trusted forwarder, extracts the original sender from the last 20 bytes of the calldata.
-    /// @return sender The address of the original caller or the `msg.sender` if not called through the trusted forwarder.
+    /// @dev If the `msg.sender` is the trusted forwarder, extracts the original sender from the calldata.
+    /// @return sender The address of the original caller
+    ///     or the `msg.sender` if not called through the trusted forwarder.
     function _msgSender() internal view override returns (address) {
         // If sender is a trusted Forwarder, that means
         // it would have appended the original sender in the calldata.
