@@ -45,14 +45,12 @@ contract PluginC is IProposal, IERC165 {
         // TODO: for now
         return true;
     }
-    
+
     function canExecute(uint256) external pure returns (bool) {
         return true;
     }
 
-    function execute(
-        uint256 _proposalId
-    ) external {
+    function execute(uint256 _proposalId) external {
         Action[] memory mainActions = new Action[](1);
         mainActions[0] = actions[_proposalId];
         trustedForwarder.execute(bytes32(_proposalId), mainActions, 0);

@@ -34,7 +34,8 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
         keccak256("SET_TRUSTED_FORWARDER_PERMISSION");
 
     /// @notice The ID of the permission required to call the `createProposal` function.
-    bytes32 private constant CREATE_PROPOSAL_PERMISSION_ID = keccak256("CREATE_PROPOSAL_PERMISSION");
+    bytes32 private constant CREATE_PROPOSAL_PERMISSION_ID =
+        keccak256("CREATE_PROPOSAL_PERMISSION");
 
     /// @notice The ID of the permission required to call the `updateRules` function.
     bytes32 private constant UPDATE_RULES_PERMISSION_ID = keccak256("UPDATE_RULES_PERMISSION");
