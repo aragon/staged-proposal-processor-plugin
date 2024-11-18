@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-pragma solidity ^0.8.8;
+pragma solidity ^0.8.18;
 
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
@@ -58,7 +58,7 @@ contract SPPRuleCondition is DaoAuthorizableUpgradeable, RuledCondition {
     /// @notice Internal function that updates the rules.
     /// @param _rules The rules that decide who can create a proposal on `StagedProposalProcessor`.
     function _updateRules(Rule[] memory _rules) internal override {
-        for (uint256 i = 0; i < _rules.length; i++) {
+        for (uint256 i = 0; i < _rules.length; ++i) {
             Rule memory rule = _rules[i];
 
             // Make sure that `isGranted` doesn't revert
