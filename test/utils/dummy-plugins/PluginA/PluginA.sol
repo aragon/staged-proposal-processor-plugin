@@ -89,13 +89,11 @@ contract PluginA is IERC165, Proposal {
         return "";
     }
 
-    function canExecute(uint256 _proposalId) external view returns (bool) {
+    function canExecute(uint256) external pure returns (bool) {
         return true;
     }
-    
-    function execute(
-        uint256 _proposalId
-    ) external {
+
+    function execute(uint256 _proposalId) external {
         Action[] memory mainActions = new Action[](1);
         mainActions[0] = actions[_proposalId];
         if (targetConfig.operation == IPlugin.Operation.DelegateCall) {
@@ -112,11 +110,7 @@ contract PluginA is IERC165, Proposal {
             //     1
             // );
         } else {
-            IExecutor(targetConfig.target).execute(
-                bytes32(_proposalId),
-                mainActions,
-                0
-            );
+            IExecutor(targetConfig.target).execute(bytes32(_proposalId), mainActions, 0);
         }
     }
 

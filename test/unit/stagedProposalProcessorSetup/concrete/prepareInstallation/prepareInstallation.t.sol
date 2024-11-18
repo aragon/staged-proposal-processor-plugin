@@ -72,7 +72,7 @@ contract PrepareInstallation_SPPSetup_UnitTest is BaseTest {
             bytes32 permissionId = setupData.permissions[i].permissionId;
             assertEq(
                 uint256(setupData.permissions[i].operation),
-                permissionId == sppSetup.CREATE_PROPOSAL_PERMISSION_ID()
+                permissionId == CREATE_PROPOSAL_PERMISSION_ID
                     ? uint256(PermissionLib.Operation.GrantWithCondition)
                     : uint256(PermissionLib.Operation.Grant),
                 "operation"

@@ -20,6 +20,11 @@ import {
 
 import {ERC165Checker} from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 
+/// @title StagedProposalProcessor
+/// @author Aragon X - 2024
+/// @notice A multi-stage proposal processor where proposals progress through defined stages.
+///         Each stage is evaluated by the responsible bodies, determining whether the proposal advances
+///         to the next stage. Once a proposal successfully passes all stages, it can be executed.
 contract StagedProposalProcessor is
     ProposalUpgradeable,
     MetadataExtensionUpgradeable,
@@ -44,7 +49,7 @@ contract StagedProposalProcessor is
     /// @notice Used to distinguish proposals where the SPP was not able to create a proposal on a sub-body.
     uint256 private constant PROPOSAL_WITHOUT_ID = type(uint256).max;
 
-    /// @notice The different types that bodies can are registered with.
+    /// @notice The different types that bodies can be registered as.
     /// @param None Used to check if the body reported the result or not.
     /// @param Approval Used to allow a body to report approval result.
     /// @param Veto Used to allow a body to report veto result.
@@ -56,7 +61,7 @@ contract StagedProposalProcessor is
 
     /// @notice A container for Body-related information.
     /// @param addr The address responsible for reporting results. For automatic bodies,
-    ///        it is also where the SPP creates proposals.
+    ///     it is also where the SPP creates proposals.
     /// @param isManual Whether SPP should create a proposal on a body. If true, it will not create.
     /// @param tryAdvance Whether to try to automatically advance the stage when a body reports results.
     /// @param resultType The type(`Approval` or `Veto`) this body is registered with.
@@ -72,10 +77,10 @@ contract StagedProposalProcessor is
     /// @param maxAdvance The maximum duration after which stage can not be advanced.
     /// @param minAdvance The minimum duration until when stage can not be advanced.
     /// @param voteDuration The time to give vetoing bodies to make decisions in optimistic stage.
-    ///        Note that this also is used as an endDate time for bodies, see `_createBodyProposals`.
+    ///     Note that this also is used as an endDate time for bodies, see `_createBodyProposals`.
     /// @param approvalThreshold The number of bodies that are required to pass to advance the proposal.
     /// @param vetoThreshold If this number of bodies veto, the proposal can never advance
-    ///        even if `approvalThreshold` is satisfied.
+    ///     even if `approvalThreshold` is satisfied.
     struct Stage {
         Body[] bodies;
         uint64 maxAdvance;
@@ -103,22 +108,31 @@ contract StagedProposalProcessor is
         TargetConfig targetConfig;
     }
 
-    // proposalId => stageId => body => subProposalId
+    /// @notice A mapping to track sub-proposal IDs for a given proposal, stage, and body.
+    /// @dev Maps `proposalId` => `stageId` => `body` => `subProposalId`.
     mapping(uint256 => mapping(uint256 => mapping(address => uint256))) public bodyProposalIds;
 
-    // proposalId => stageId => body => resultType
+    /// @notice A mapping to store the result types reported by bodies for a given proposal and stage.
+    /// @dev Maps `proposalId` => `stageId` => `body` => `ResultType`.
     mapping(uint256 => mapping(uint16 => mapping(address => ResultType))) private bodyResults;
 
-    // proposalId => stageId => body index => custom proposal params data.
+    /// @notice A mapping to store custom proposal parameters data for a given proposal, stage, and body index.
+    /// @dev Maps `proposalId` => `stageId` => `bodyIndex` => `custom proposal parameters`.
     mapping(uint256 => mapping(uint16 => mapping(uint256 => bytes))) private createProposalParams;
 
-    /// @notice A mapping between proposal IDs and proposal information.
+    /// @notice A mapping between proposal IDs and their associated proposal information.
     mapping(uint256 => Proposal) private proposals;
 
-    /// @notice A mapping between stage config index and actual stage configuration on that index.
+    /// @notice A mapping between stage configuration indices and the corresponding stage configurations.
+    /// @dev Maps `configIndex` => array of `Stage` structs.
     mapping(uint256 => Stage[]) private stages;
 
-    uint16 private currentConfigIndex; // Index from `stages` storage mapping
+    /// @notice The index of the current stage configuration in the `stages` mapping.
+    uint16 private currentConfigIndex;
+
+    /// @notice The address of the trusted forwarder.
+    /// @dev The trusted forwarder appends the original sender's address to the calldata. If an executor is the
+    ///      trusted forwarder, the `_msgSender` function extracts the original sender from the calldata.
     address private trustedForwarder;
 
     /// @notice Emitted when the proposal is advanced to the next stage.
@@ -136,11 +150,11 @@ contract StagedProposalProcessor is
         address indexed body
     );
 
-    /// @notice Emitted when SPP successfully creates a proposal on sub-body.
+    /// @notice Emitted when this plugin successfully creates a proposal on sub-body.
     /// @param proposalId The proposal id.
     /// @param stageId The stage id.
     /// @param body The sub-body on which sub-proposal has been created.
-    /// @param bodyProposalId The proposal id that sub-body returns for later usage by SPP.
+    /// @param bodyProposalId The proposal id that sub-body returns for later usage by this plugin.
     event SubProposalCreated(
         uint256 indexed proposalId,
         uint16 indexed stageId,
@@ -148,7 +162,7 @@ contract StagedProposalProcessor is
         uint256 bodyProposalId
     );
 
-    /// @notice Emitted when SPP fails in creating a proposal on sub-body.
+    /// @notice Emitted when this plugin fails in creating a proposal on sub-body.
     /// @param proposalId The proposal id.
     /// @param stageId The stage id.
     /// @param body The sub-body on which sub-proposal failed to be created.
@@ -160,8 +174,8 @@ contract StagedProposalProcessor is
         bytes reason
     );
 
-    /// @notice Emitted when the stage configuration is updated.
-    /// @param stages The stage configuration.
+    /// @notice Emitted when the stage configuration is updated for a proposal process.
+    /// @param stages The array of `Stage` structs representing the updated stage configuration.
     event StagesUpdated(Stage[] stages);
 
     /// @notice Emitted when the trusted forwarder is updated.
@@ -215,7 +229,9 @@ contract StagedProposalProcessor is
     }
 
     /// @notice Allows to update stage configuration.
-    /// @param _stages The stages configuration.
+    /// @dev Requires the caller to have the `UPDATE_STAGES_PERMISSION_ID` permission.
+    ///      Reverts if the provided `_stages` array is empty.
+    /// @param _stages The new stage configuration as an array of `Stage` structs.
     function updateStages(Stage[] calldata _stages) external auth(UPDATE_STAGES_PERMISSION_ID) {
         if (_stages.length == 0) {
             revert Errors.StageCountZero();
@@ -224,25 +240,29 @@ contract StagedProposalProcessor is
     }
 
     /// @notice Sets a new trusted forwarder address.
-    /// @param _forwarder The trusted forwarder.
+    /// @dev Requires the caller to have the `SET_TRUSTED_FORWARDER_PERMISSION_ID` permission.
+    /// @param _forwarder The new trusted forwarder address.
     function setTrustedForwarder(
         address _forwarder
     ) public virtual auth(SET_TRUSTED_FORWARDER_PERMISSION_ID) {
         _setTrustedForwarder(_forwarder);
     }
 
-    /// @return Returns the address of the trusted forwarder.
+    /// @notice Retrieves the address of the trusted forwarder.
+    /// @return The address of the trusted forwarder.
     function getTrustedForwarder() public view virtual returns (address) {
         return trustedForwarder;
     }
 
-    /// @notice Creates a proposal only on non-manual bodies of the first stage.
+    /// @notice Creates a new proposal in this `StagedProposalProcessor` plugin.
+    /// @dev Requires the caller to have the `CREATE_PROPOSAL_PERMISSION_ID` permission.
+    ///      Also creates proposals for non-manual bodies in the first stage of the proposal process.
     /// @param _metadata The metadata of the proposal.
     /// @param _actions The actions that will be executed after the proposal passes.
     /// @param _allowFailureMap Allows proposal to succeed even if an action reverts.
-    /// Uses bitmap representation.
-    /// If the bit at index `x` is 1, the tx succeeds even if the action at `x` failed.
-    /// Passing 0 will be treated as atomic execution.
+    ///     Uses bitmap representation.
+    ///     If the bit at index `x` is 1, the tx succeeds even if the action at `x` failed.
+    ///     Passing 0 will be treated as atomic execution.
     /// @param _startDate The date at which first stage's bodies' proposals must be started at.
     /// @param _proposalParams The extra abi encoded parameters for each sub-body's createProposal function.
     /// @return proposalId The ID of the proposal.
@@ -318,6 +338,7 @@ contract StagedProposalProcessor is
     }
 
     /// @inheritdoc IProposal
+    /// @dev Calls a public function that requires the `CREATE_PROPOSAL_PERMISSION_ID` permission.
     function createProposal(
         bytes memory _metadata,
         Action[] memory _actions,
@@ -335,22 +356,24 @@ contract StagedProposalProcessor is
     }
 
     /// @inheritdoc IProposal
-    /// @dev Since SPP is also IProposal, it's required to override.
+    /// @dev This plugin inherits from `IProposal`, requiring an override for this function.
     function customProposalParamsABI() external pure virtual override returns (string memory) {
         return "(bytes[][] subBodiesCustomProposalParamsABI)";
     }
 
-    /// @notice Returns all information for a proposal by its ID.
+    /// @notice Retrieves all information associated with a proposal by its ID.
     /// @param _proposalId The ID of the proposal.
-    /// @return Proposal The proposal struct
+    /// @return The proposal struct
     function getProposal(uint256 _proposalId) public view returns (Proposal memory) {
         return proposals[_proposalId];
     }
 
-    /// @notice Returns whether the body has submitted its result or not.
+    /// @notice Retrieves the result type submitted by a body for a specific proposal and stage.
     /// @param _proposalId The ID of the proposal.
-    /// @param _stageId Stage number in the stages array.
-    /// @return ResultType Returns what resultType the body reported the result with. 0 if no result provided yet.
+    /// @param _stageId The ID of the stage.
+    /// @param _body The address of the sub-body.
+    /// @return Returns what resultType the body reported the result with.
+    ///     Returns `None (0)` if no result has been provided yet.
     function getBodyResult(
         uint256 _proposalId,
         uint16 _stageId,
@@ -359,25 +382,28 @@ contract StagedProposalProcessor is
         return bodyResults[_proposalId][_stageId][_body];
     }
 
-    /// @notice Returns the current config index at which current configurations of stages are stored.
-    /// @return The current config index.
+    /// @notice Retrieves the current configuration index at which the current configurations of stages are stored.
+    /// @return The index of the current configuration in the `stages` mapping.
     function getCurrentConfigIndex() public view virtual returns (uint16) {
         return currentConfigIndex;
     }
 
-    /// @notice Returns the current stages.
-    /// @return The currently applied stages.
+    /// @notice Retrieves the currently applied stages for the active configuration.
+    /// @return The array of `Stage` structs representing the current stage configuration.
     function getStages() public view virtual returns (Stage[] memory) {
         return stages[getCurrentConfigIndex()];
     }
 
-    /// @dev This can be called by any address that is not in the stage configuration.
-    // `canProposalAdvance` is where it checks whether addresses that reported are actually in the stage configuration.
-    /// @notice Reports and records the result.
+    /// @notice Reports and records the result for a proposal at a specific stage.
+    /// @dev This function can be called by any address even if it is not included in the stage configuration.
+    ///      `_canProposalAdvance` function ensures that only records from addresses
+    ///      in the stage configuration are used.
+    ///      If `_tryAdvance` is true, the proposal will attempt to advance to the next stage if eligible.
+    ///      Requires the caller to have the `EXECUTE_PROPOSAL_PERMISSION_ID` permission to execute the final stage.
     /// @param _proposalId The ID of the proposal.
-    /// @param _stageId The ID of the stage. It must not be more than current stage.
-    /// @param _resultType Whether to include report as a veto or approval.
-    /// @param _tryAdvance If true, tries to advance the proposal if it can be advanced.
+    /// @param _stageId The ID of the stage being reported on. Must not exceed the current stage of the proposal.
+    /// @param _resultType The result type being reported (`Approval` or `Veto`).
+    /// @param _tryAdvance Whether to attempt advancing the proposal to the next stage if conditions are met.
     function reportProposalResult(
         uint256 _proposalId,
         uint16 _stageId,
@@ -413,7 +439,10 @@ contract StagedProposalProcessor is
         }
     }
 
-    /// @notice Advances the proposal to the next stage in case it's allowed.
+    /// @notice Advances the specified proposal to the next stage if allowed.
+    /// @dev This function checks whether the proposal exists and can advance based on its current state.
+    ///      If the proposal is in the final stage, the caller must have the
+    ///      `EXECUTE_PROPOSAL_PERMISSION_ID` permission to execute it.
     /// @param _proposalId The ID of the proposal.
     function advanceProposal(uint256 _proposalId) public virtual {
         Proposal storage proposal = proposals[_proposalId];
@@ -439,6 +468,7 @@ contract StagedProposalProcessor is
     }
 
     /// @inheritdoc IProposal
+    /// @dev Requires the `EXECUTE_PROPOSAL_PERMISSION_ID` permission.
     function execute(uint256 _proposalId) public virtual auth(EXECUTE_PROPOSAL_PERMISSION_ID) {
         Proposal storage proposal = proposals[_proposalId];
 
@@ -453,9 +483,10 @@ contract StagedProposalProcessor is
         _executeProposal(_proposalId);
     }
 
-    /// @notice Decides if the proposal can be advanced to the next stage.
-    /// @param _proposalId The ID of the proposal.
-    /// @return Returns `true` if the proposal can be advanced.
+    /// @notice Determines whether the specified proposal can be advanced to the next stage.
+    /// @dev Reverts if the proposal with the given `_proposalId` does not exist.
+    /// @param _proposalId The unique identifier of the proposal to check.
+    /// @return Returns `true` if the proposal can be advanced to the next stage, otherwise `false`.
     function canProposalAdvance(uint256 _proposalId) public view virtual returns (bool) {
         Proposal storage proposal = proposals[_proposalId];
         if (!_proposalExists(proposal)) {
@@ -483,13 +514,13 @@ contract StagedProposalProcessor is
         return false;
     }
 
-    /// @notice Calculates the votes and vetoes for a proposal.
+    /// @notice Calculates and retrieves the number of approvals and vetoes for a proposal.
     /// @param _proposalId The ID of the proposal.
-    /// @return votes The number of votes for the proposal.
-    /// @return vetoes The number of vetoes for the proposal.
+    /// @return approvals The total number of approvals for the proposal.
+    /// @return vetoes The total number of vetoes for the proposal.
     function getProposalTally(
         uint256 _proposalId
-    ) public view virtual returns (uint256 votes, uint256 vetoes) {
+    ) public view virtual returns (uint256 approvals, uint256 vetoes) {
         Proposal storage proposal = proposals[_proposalId];
 
         if (!_proposalExists(proposal)) {
@@ -525,8 +556,8 @@ contract StagedProposalProcessor is
         return _thresholdsMet(stage, _proposalId);
     }
 
-    /// @notice Checks if caller has a permission to execute a proposal if it's on the last stage.
-    /// @return Returns true if the caller has permission to execute.
+    /// @notice Checks whether the caller has the required permission to execute a proposal at the last stage.
+    /// @return Returns `true` if the caller has the `EXECUTE_PROPOSAL_PERMISSION_ID` permission, otherwise `false`.
     function hasExecutePermission() public view returns (bool) {
         return
             dao().hasPermission(
@@ -537,12 +568,12 @@ contract StagedProposalProcessor is
             );
     }
 
-    /// @notice Useful function for UI to get any sub-bodies'(not including first stage's sub-bodies)
-    ///         `createProposal`'s `data` param.
+    /// @notice Retrieves the `data` parameter encoded for a sub-body's `createProposal` function in a specific stage.
+    ///         Excludes sub-bodies from the first stage, as their parameters are not stored for efficiency.
     /// @param _proposalId The ID of the proposal.
-    /// @param _proposalId The ID of the stage.
-    /// @param _index The index of a body in an array.
-    /// @return The sub-body's createProposal's `data` parameter encoded.
+    /// @param _stageId The ID of the stage.
+    /// @param _index The index of the body within the stage.
+    /// @return The encoded `data` parameter for the specified sub-body's `createProposal` function.
     function getCreateProposalParams(
         uint256 _proposalId,
         uint16 _stageId,
@@ -555,8 +586,8 @@ contract StagedProposalProcessor is
 
     /// @notice Internal function to update stage configuration.
     /// @dev It's a caller's responsibility not to call this in case `_stages` are empty.
-    /// This function can not be overridden as it's crucial to not allow duplicating bodies
-    //  in the same stage, because proposal creation and report functions depend on this assumption.
+    ///      This function can not be overridden as it's crucial to not allow duplicating bodies
+    ///      in the same stage, because proposal creation and report functions depend on this assumption.
     /// @param _stages The stages configuration.
     function _updateStages(Stage[] memory _stages) internal {
         Stage[] storage storedStages = stages[++currentConfigIndex];
@@ -642,10 +673,9 @@ contract StagedProposalProcessor is
 
     /// @notice Records the result by the caller.
     /// @dev Assumes that bodies are not duplicated in the same stage. See `_updateStages` function.
-    /// @dev Results can be recorded at any time, but only once per body.
     /// @param _proposalId The ID of the proposal.
-    /// @param _proposalId The ID of the stage.
-    /// @param _resultType which method to use when reporting(veto or approval)
+    /// @param _stageId The ID of the stage.
+    /// @param _resultType The result type being reported (`Approval` or `Veto`).
     function _processProposalResult(
         uint256 _proposalId,
         uint16 _stageId,
@@ -660,9 +690,9 @@ contract StagedProposalProcessor is
     /// @notice Creates proposals on the non-manual bodies of the `stageId`.
     /// @dev Assumes that bodies are not duplicated in the same stage. See `_updateStages` function.
     /// @param _proposalId The ID of the proposal.
-    /// @param _stageId stage number of the stages configuration array.
+    /// @param _stageId The ID of the stage.
     /// @param _startDate The start date that proposals on sub-bodies will be created with.
-    /// @param _stageProposalParams The custom params required for each sub-body.
+    /// @param _stageProposalParams The custom params required for each sub-body to create a proposal.
     function _createBodyProposals(
         uint256 _proposalId,
         uint16 _stageId,
@@ -744,10 +774,10 @@ contract StagedProposalProcessor is
         }
     }
 
-    /// @notice Internal function that decides if the proposal can be advanced to the next stage.
+    /// @notice Internal function that determines whether the specified proposal can be advanced to the next stage.
     /// @dev Note that it's a caller's responsibility to check if proposal exists.
     /// @param _proposalId The ID of the proposal.
-    /// @return Returns `true` if the proposal can be advanced.
+    /// @return Returns `true` if the proposal can be advanced to the next stage, otherwise `false`.
     function _canProposalAdvance(uint256 _proposalId) internal view virtual returns (bool) {
         // Cheaper to do 2nd sload than to pass Proposal memory.
         Proposal storage proposal = proposals[_proposalId];
@@ -777,14 +807,15 @@ contract StagedProposalProcessor is
         return _thresholdsMet(stage, _proposalId);
     }
 
-    /// @notice Internal function to calculate the votes and vetoes for a proposal.
+    /// @notice Internal function to Calculates and retrieves the number of approvals and vetoes for a proposal.
     /// @dev Assumes that bodies are not duplicated in the same stage. See `_updateStages` function.
+    ///      This function ensures that only records from addresses in the stage configuration are used.
     /// @param _proposalId The proposal Id.
-    /// @return votes The number of votes for the proposal.
+    /// @return approvals The number of approvals for the proposal.
     /// @return vetoes The number of vetoes for the proposal.
     function _getProposalTally(
         uint256 _proposalId
-    ) internal view returns (uint256 votes, uint256 vetoes) {
+    ) internal view returns (uint256 approvals, uint256 vetoes) {
         // Cheaper to do 2nd sload than to pass Proposal memory.
         Proposal storage proposal = proposals[_proposalId];
 
@@ -800,7 +831,7 @@ contract StagedProposalProcessor is
 
             if (resultType != ResultType.None) {
                 // result was already reported
-                resultType == ResultType.Approval ? ++votes : ++vetoes;
+                resultType == ResultType.Approval ? ++approvals : ++vetoes;
             } else if (bodyProposalId != PROPOSAL_WITHOUT_ID && !body.isManual) {
                 // result was not reported yet
                 // Use low-level call to ensure that outer tx doesn't revert
@@ -812,7 +843,7 @@ contract StagedProposalProcessor is
                 if (success && data.length == 32) {
                     bool succeeded = abi.decode(data, (bool));
                     if (succeeded) {
-                        body.resultType == ResultType.Approval ? ++votes : ++vetoes;
+                        body.resultType == ResultType.Approval ? ++approvals : ++vetoes;
                     }
                 }
             }
@@ -823,9 +854,11 @@ contract StagedProposalProcessor is
         }
     }
 
-    /// @notice Internal function to advance the proposal. It executes if it's the last stage.
-    /// @dev Note that it assumes the proposal can advance.
-    /// @param _proposalId The proposal Id.
+    /// @notice Advances a proposal to the next stage or executes it if it is in the final stage.
+    /// @dev Assumes the proposal is eligible to advance. If the proposal is not in the final stage,
+    ///      it creates proposals for the sub-bodies in the next stage.
+    ///      If the proposal is in the final stage, it triggers execution.
+    /// @param _proposalId The ID of the proposal.
     function _advanceProposal(uint256 _proposalId) internal virtual {
         Proposal storage _proposal = proposals[_proposalId];
         Stage[] storage _stages = stages[_proposal.stageConfigIndex];
@@ -882,6 +915,10 @@ contract StagedProposalProcessor is
         emit TrustedForwarderUpdated(_forwarder);
     }
 
+    /// @notice Retrieves the original sender address, considering if the call was made through a trusted forwarder.
+    /// @dev If the `msg.sender` is the trusted forwarder, extracts the original sender from the calldata.
+    /// @return sender The address of the original caller
+    ///     or the `msg.sender` if not called through the trusted forwarder.
     function _msgSender() internal view override returns (address) {
         // If sender is a trusted Forwarder, that means
         // it would have appended the original sender in the calldata.
@@ -902,6 +939,5 @@ contract StagedProposalProcessor is
     /// @dev This empty reserved space is put in place to allow future versions to add new
     /// variables without shifting down storage in the inheritance chain.
     /// https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
-
     uint256[44] private __gap;
 }

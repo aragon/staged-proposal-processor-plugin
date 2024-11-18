@@ -2,6 +2,10 @@
 
 pragma solidity ^0.8.8;
 
+/// @title PluginSettings
+/// @author Aragon X - 2024
+/// @notice Provides constant values and metadata for the "StagedProposalProcessor" plugin,
+///         including contract names, versioning, and IPFS metadata for builds and releases.
 library PluginSettings {
     string public constant PLUGIN_CONTRACT_NAME = "StagedProposalProcessor";
     string public constant PLUGIN_SETUP_CONTRACT_NAME = "StagedProposalProcessorSetup";
