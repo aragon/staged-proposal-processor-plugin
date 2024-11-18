@@ -58,7 +58,7 @@ contract SPPRuleCondition is DaoAuthorizableUpgradeable, RuledCondition {
     /// @notice Internal function that updates the rules.
     /// @param _rules The rules that decide who can create a proposal on `StagedProposalProcessor`.
     function _updateRules(Rule[] memory _rules) internal override {
-        for (uint256 i = 0; i < _rules.length; i++) {
+        for (uint256 i = 0; i < _rules.length; ++i) {
             Rule memory rule = _rules[i];
 
             // Make sure that `isGranted` doesn't revert

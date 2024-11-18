@@ -110,15 +110,18 @@ contract StagedProposalProcessor is
 
     /// @notice A mapping to track sub-proposal IDs for a given proposal, stage, and body.
     /// @dev Maps `proposalId` => `stageId` => `body` => `subProposalId`.
-    mapping(uint256 => mapping(uint256 => mapping(address => uint256))) public bodyProposalIds;
+    mapping(uint256 proposalId => mapping(uint16 stageId => mapping(address body => uint256 subProposalId)))
+        public bodyProposalIds;
 
     /// @notice A mapping to store the result types reported by bodies for a given proposal and stage.
-    /// @dev Maps `proposalId` => `stageId` => `body` => `ResultType`.
-    mapping(uint256 => mapping(uint16 => mapping(address => ResultType))) private bodyResults;
+    /// @dev Maps `proposalId` => `stageId` => `body` => `resultType`.
+    mapping(uint256 proposalId => mapping(uint16 stageId => mapping(address body => ResultType resultType)))
+        private bodyResults;
 
     /// @notice A mapping to store custom proposal parameters data for a given proposal, stage, and body index.
     /// @dev Maps `proposalId` => `stageId` => `bodyIndex` => `custom proposal parameters`.
-    mapping(uint256 => mapping(uint16 => mapping(uint256 => bytes))) private createProposalParams;
+    mapping(uint256 proposalId => mapping(uint16 stageId => mapping(uint256 bodyIndex => bytes customParams)))
+        private createProposalParams;
 
     /// @notice A mapping between proposal IDs and their associated proposal information.
     mapping(uint256 => Proposal) private proposals;
@@ -303,19 +306,15 @@ contract StagedProposalProcessor is
 
         proposal.lastStageTransition = _startDate == 0 ? uint64(block.timestamp) : _startDate;
 
-        for (uint256 i = 0; i < _actions.length; ) {
+        for (uint256 i = 0; i < _actions.length; ++i) {
             proposal.actions.push(_actions[i]);
-
-            unchecked {
-                ++i;
-            }
         }
 
         // To reduce the gas costs significantly, don't store the very
         // first stage's params in storage as they only get used in this
         // current tx and will not be needed later on for advancing.
-        for (uint256 i = 1; i < _proposalParams.length; i++) {
-            for (uint256 j = 0; j < _proposalParams[i].length; j++)
+        for (uint256 i = 1; i < _proposalParams.length; ++i) {
+            for (uint256 j = 0; j < _proposalParams[i].length; ++j)
                 createProposalParams[proposalId][uint16(i)][j] = _proposalParams[i][j];
         }
 
@@ -592,7 +591,7 @@ contract StagedProposalProcessor is
     function _updateStages(Stage[] memory _stages) internal {
         Stage[] storage storedStages = stages[++currentConfigIndex];
 
-        for (uint256 i = 0; i < _stages.length; ) {
+        for (uint256 i = 0; i < _stages.length; ++i) {
             Stage storage stage = storedStages.push();
             Body[] memory bodies = _stages[i].bodies;
 
@@ -610,15 +609,11 @@ contract StagedProposalProcessor is
                 revert Errors.StageThresholdsInvalid();
             }
 
-            for (uint256 j = 0; j < bodies.length; ) {
+            for (uint256 j = 0; j < bodies.length; ++j) {
                 // Ensure that body addresses are not duplicated in the same stage.
-                for (uint256 k = j + 1; k < bodies.length; ) {
+                for (uint256 k = j + 1; k < bodies.length; ++k) {
                     if (bodies[j].addr == bodies[k].addr) {
                         revert Errors.DuplicateBodyAddress(i, bodies[j].addr);
-                    }
-
-                    unchecked {
-                        ++k;
                     }
                 }
 
@@ -634,10 +629,6 @@ contract StagedProposalProcessor is
                 // If not copied manually, requires via-ir compilation
                 // pipeline which is still slow.
                 stage.bodies.push(bodies[j]);
-
-                unchecked {
-                    ++j;
-                }
             }
 
             stage.maxAdvance = maxAdvance;
@@ -645,10 +636,6 @@ contract StagedProposalProcessor is
             stage.voteDuration = voteDuration;
             stage.approvalThreshold = approvalThreshold;
             stage.vetoThreshold = vetoThreshold;
-
-            unchecked {
-                ++i;
-            }
         }
 
         emit StagesUpdated(_stages);
@@ -707,7 +694,7 @@ contract StagedProposalProcessor is
             stage = stages[proposal.stageConfigIndex][_stageId];
         }
 
-        for (uint256 i = 0; i < stage.bodies.length; i++) {
+        for (uint256 i = 0; i < stage.bodies.length; ++i) {
             Body storage body = stage.bodies[i];
 
             // If body proposal creation should be manual, skip it.
@@ -822,7 +809,7 @@ contract StagedProposalProcessor is
         uint16 currentStage = proposal.currentStage;
         Stage storage stage = stages[proposal.stageConfigIndex][currentStage];
 
-        for (uint256 i = 0; i < stage.bodies.length; ) {
+        for (uint256 i = 0; i < stage.bodies.length; ++i) {
             Body storage body = stage.bodies[i];
 
             uint256 bodyProposalId = bodyProposalIds[_proposalId][currentStage][body.addr];
@@ -846,10 +833,6 @@ contract StagedProposalProcessor is
                         body.resultType == ResultType.Approval ? ++approvals : ++vetoes;
                     }
                 }
-            }
-
-            unchecked {
-                ++i;
             }
         }
     }
