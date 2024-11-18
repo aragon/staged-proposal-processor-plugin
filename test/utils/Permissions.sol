@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.8;
+pragma solidity 0.8.28;
 
 // / @notice A special address encoding permissions that are valid for any address `who` or `where`.
 address constant ANY_ADDR = address(type(uint160).max);

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.8;
+pragma solidity 0.8.28;
 
 import {SPPRuleCondition} from "../../../../src/utils/SPPRuleCondition.sol";
 import {RuleConditionConfiguredTest} from "../../../RuleConditionConfiguredTest.t.sol";
