@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.28;
+pragma solidity ^0.8.18;
 
 contract Constants {
     bytes internal constant EMPTY_DATA = "";

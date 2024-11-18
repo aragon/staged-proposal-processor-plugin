@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.28;
+pragma solidity ^0.8.18;
 
 import {Errors} from "../../../../../src/libraries/Errors.sol";
 import {PluginA} from "../../../../utils/dummy-plugins/PluginA/PluginA.sol";

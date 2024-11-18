@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.28;
+pragma solidity ^0.8.18;
 
 import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
 import {

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.28;
+pragma solidity ^0.8.18;
 
 import {Errors} from "./libraries/Errors.sol";
 
@@ -109,26 +109,22 @@ contract StagedProposalProcessor is
     }
 
     /// @notice A mapping to track sub-proposal IDs for a given proposal, stage, and body.
-    /// @dev Maps `proposalId` => `stageId` => `body` => `subProposalId`.
     mapping(uint256 proposalId => mapping(uint16 stageId => mapping(address body => uint256 subProposalId)))
         public bodyProposalIds;
 
     /// @notice A mapping to store the result types reported by bodies for a given proposal and stage.
-    /// @dev Maps `proposalId` => `stageId` => `body` => `resultType`.
     mapping(uint256 proposalId => mapping(uint16 stageId => mapping(address body => ResultType resultType)))
         private bodyResults;
 
     /// @notice A mapping to store custom proposal parameters data for a given proposal, stage, and body index.
-    /// @dev Maps `proposalId` => `stageId` => `bodyIndex` => `custom proposal parameters`.
     mapping(uint256 proposalId => mapping(uint16 stageId => mapping(uint256 bodyIndex => bytes customParams)))
         private createProposalParams;
 
     /// @notice A mapping between proposal IDs and their associated proposal information.
-    mapping(uint256 => Proposal) private proposals;
+    mapping(uint256 proposalId => Proposal) private proposals;
 
     /// @notice A mapping between stage configuration indices and the corresponding stage configurations.
-    /// @dev Maps `configIndex` => array of `Stage` structs.
-    mapping(uint256 => Stage[]) private stages;
+    mapping(uint256 configIndex => Stage[]) private stages;
 
     /// @notice The index of the current stage configuration in the `stages` mapping.
     uint16 private currentConfigIndex;
