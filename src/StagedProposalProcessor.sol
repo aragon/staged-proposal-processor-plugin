@@ -33,27 +33,6 @@ contract StagedProposalProcessor is
 {
     using ERC165Checker for address;
 
-    /// @notice The ID of the permission required to call the `createProposal` function.
-    bytes32 public constant CREATE_PROPOSAL_PERMISSION_ID = keccak256("CREATE_PROPOSAL_PERMISSION");
-
-    /// @notice The ID of the permission required to call the `setTrustedForwarder` function.
-    bytes32 public constant SET_TRUSTED_FORWARDER_PERMISSION_ID =
-        keccak256("SET_TRUSTED_FORWARDER_PERMISSION");
-
-    /// @notice The ID of the permission required to call the `updateStages` function.
-    bytes32 public constant UPDATE_STAGES_PERMISSION_ID = keccak256("UPDATE_STAGES_PERMISSION");
-
-    /// @notice The ID of the permission required to execute the proposal if it's on the last stage.
-    bytes32 public constant EXECUTE_PROPOSAL_PERMISSION_ID =
-        keccak256("EXECUTE_PROPOSAL_PERMISSION");
-
-    /// @notice The ID of the permission required to cancel the proposal.
-    bytes32 public constant CANCEL_PROPOSAL_PERMISSION_ID = keccak256("CANCEL_PROPOSAL_PERMISSION");
-
-    /// @notice The ID of the permission required to advance the proposal.
-    bytes32 public constant ADVANCE_PROPOSAL_PERMISSION_ID =
-        keccak256("ADVANCE_PROPOSAL_PERMISSION");
-
     /// @notice Used to distinguish proposals where the SPP was not able to create a proposal on a sub-body.
     uint256 private constant PROPOSAL_WITHOUT_ID = type(uint256).max;
 
@@ -357,7 +336,7 @@ contract StagedProposalProcessor is
     }
 
     /// @inheritdoc IProposal
-    /// @dev Calls a public function that requires the `CREATE_PROPOSAL_PERMISSION_ID` permission.
+    /// @dev Calls a public function that requires the `CREATE_PERMISSION_ID` permission.
     function createProposal(
         bytes memory _metadata,
         Action[] memory _actions,
@@ -418,7 +397,7 @@ contract StagedProposalProcessor is
     ///      `_canProposalAdvance` function ensures that only records from addresses
     ///      in the stage configuration are used.
     ///      If `_tryAdvance` is true, the proposal will attempt to advance to the next stage if eligible.
-    ///      Requires the caller to have the `EXECUTE_PROPOSAL_PERMISSION_ID` permission to execute the final stage.
+    ///      Requires the caller to have the `EXECUTE_PERMISSION_ID` permission to execute the final stage.
     /// @param _proposalId The ID of the proposal.
     /// @param _stageId The ID of the stage being reported on. Must not exceed the current stage of the proposal.
     /// @param _resultType The result type being reported (`Approval` or `Veto`).
@@ -447,7 +426,7 @@ contract StagedProposalProcessor is
         // could contain other actions that should still succeed.
         if (
             _tryAdvance &&
-            hasAdvancePermission(_proposalId) &&
+            hasAdvancePermission() &&
             state(_proposalId) != ProposalState.Active &&
             _canProposalAdvance(_proposalId)
         ) {
@@ -463,11 +442,11 @@ contract StagedProposalProcessor is
     /// @notice Advances the specified proposal to the next stage if allowed.
     /// @dev This function checks whether the proposal exists and can advance based on its current state.
     ///      If the proposal is in the final stage, the caller must have the
-    ///      `EXECUTE_PROPOSAL_PERMISSION_ID` permission to execute it.
+    ///      `EXECUTE_PERMISSION_ID` permission to execute it.
     /// @param _proposalId The ID of the proposal.
     function advanceProposal(
         uint256 _proposalId
-    ) public virtual auth(ADVANCE_PROPOSAL_PERMISSION_ID) {
+    ) public virtual auth(Permissions.ADVANCE_PERMISSION_ID) {
         Proposal storage proposal = proposals[_proposalId];
 
         // Reverts if proposal is not Active or is non-existent.
@@ -488,11 +467,11 @@ contract StagedProposalProcessor is
 
     /// @notice Cancels the proposal.
     /// @dev The proposal can be canceled only if it's allowed in the stage configuration.
-    ///      the caller must have the `CANCEL_PROPOSAL_PERMISSION_ID` permission to cancel it.
+    ///      the caller must have the `CANCEL_PERMISSION_ID` permission to cancel it.
     /// @param _proposalId The id of the proposal.
     function cancel(
         uint256 _proposalId
-    ) public virtual auth(Permissions.CANCEL_PROPOSAL_PERMISSION_ID) {
+    ) public virtual auth(Permissions.CANCEL_PERMISSION_ID) {
         Proposal storage proposal = proposals[_proposalId];
 
         // Reverts if proposal is not Active or is non-existent.
@@ -512,7 +491,7 @@ contract StagedProposalProcessor is
 
     function edit(
         uint256 _proposalId
-    ) public virtual auth(Permissions.EDIT_PROPOSAL_PERMISSION_ID) {
+    ) public virtual auth(Permissions.EDIT_PERMISSION_ID) {
         Proposal storage proposal = proposals[_proposalId];
 
         // Reverts if proposal is not Active or is non-existent.
@@ -526,15 +505,15 @@ contract StagedProposalProcessor is
         Stage storage stage = stages[proposal.stageConfigIndex][currentStage];
 
         if (!stage.editable) {
-            revert Errors.ProposalCanNotBeEditted(currentStage);
+            revert Errors.ProposalCanNotBeEditted(_proposalId);
         }
 
         proposal.canceled = true;
     }
 
     /// @inheritdoc IProposal
-    /// @dev Requires the `EXECUTE_PROPOSAL_PERMISSION_ID` permission.
-    function execute(uint256 _proposalId) public virtual auth(Permissions.EXECUTE_PROPOSAL_PERMISSION_ID) {
+    /// @dev Requires the `EXECUTE_PERMISSION_ID` permission.
+    function execute(uint256 _proposalId) public virtual auth(Permissions.EXECUTE_PERMISSION_ID) {
         Proposal storage proposal = proposals[_proposalId];
 
         if (!canExecute(_proposalId)) {
@@ -611,25 +590,25 @@ contract StagedProposalProcessor is
     }
 
     /// @notice Checks whether the caller has the required permission to execute a proposal at the last stage.
-    /// @return Returns `true` if the caller has the `EXECUTE_PROPOSAL_PERMISSION_ID` permission, otherwise `false`.
+    /// @return Returns `true` if the caller has the `EXECUTE_PERMISSION_ID` permission, otherwise `false`.
     function hasExecutePermission() public view virtual returns (bool) {
         return
             dao().hasPermission(
                 address(this),
                 _msgSender(),
-                EXECUTE_PROPOSAL_PERMISSION_ID,
+                Permissions.EXECUTE_PERMISSION_ID,
                 msg.data
             );
     }
 
     /// @notice Checks whether the caller has the required permission to advance a proposal.
-    /// @return Returns `true` if the caller has the `ADVANCE_PROPOSAL_PERMISSION_ID` permission, otherwise `false`.
+    /// @return Returns `true` if the caller has the `ADVANCE_PERMISSION_ID` permission, otherwise `false`.
     function hasAdvancePermission() public view virtual returns (bool) {
         return
             dao().hasPermission(
                 address(this),
                 _msgSender(),
-                ADVANCE_PROPOSAL_PERMISSION_ID,
+                Permissions.ADVANCE_PERMISSION_ID,
                 msg.data
             );
     }

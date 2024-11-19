@@ -134,7 +134,7 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
             where: spp,
             who: ANY_ADDR,
             condition: PermissionLib.NO_CONDITION,
-            permissionId: Permissions.EXECUTE_PROPOSAL_PERMISSION_ID
+            permissionId: Permissions.EXECUTE_PERMISSION_ID
         });
 
         preparedSetupData.permissions = permissions;
@@ -221,7 +221,7 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
             where: _payload.plugin,
             who: ANY_ADDR,
             condition: PermissionLib.NO_CONDITION,
-            permissionId: Permissions.EXECUTE_PROPOSAL_PERMISSION_ID
+            permissionId: Permissions.EXECUTE_PERMISSION_ID
         });
     }
 }
