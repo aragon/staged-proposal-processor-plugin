@@ -51,6 +51,10 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
     bytes32 private constant EXECUTE_PROPOSAL_PERMISSION_ID =
         keccak256("EXECUTE_PROPOSAL_PERMISSION");
 
+    /// @notice The ID of the permission required to cancel the proposal.
+    bytes32 public constant CANCEL_PROPOSAL_PERMISSION_ID =
+        keccak256("CANCEL_PROPOSAL_PERMISSION");
+
     /// @notice A special address encoding permissions that are valid for any address `who` or `where`.
     address private constant ANY_ADDR = address(type(uint160).max);
 

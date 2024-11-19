@@ -20,6 +20,13 @@ library Errors {
     /// @notice Thrown if the thresholds are invalid.
     error StageThresholdsInvalid();
 
+    /// @notice Thrown if the proposal is not cancalable in the `stageId`.
+    error StageNotCancelable(uint16 stageId);
+
+    /// @notice Thrown if the proposal has already been cancelled.
+    /// @param proposalId The id of the proposal.
+    error ProposalAlreadyCancelled(uint256 proposalId);
+
     /// @notice Thrown if a body address is duplicated in the same stage.
     /// @param stageId The stage id that contains the duplicated body address.
     /// @param body The address that is duplicated in `stageId`.
