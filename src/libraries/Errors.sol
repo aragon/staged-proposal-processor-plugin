@@ -23,6 +23,12 @@ library Errors {
     /// @notice Thrown if the proposal is not cancalable in the `stageId`.
     error StageNotCancelable(uint16 stageId);
 
+    /// @notice Thrown if the proposal is not edittable.
+    /// @dev This can happen in 2 cases:
+    ///      either Proposal can not yet be advanced or,
+    ///      The stage has `editable:false` in the configuration.
+    error ProposalCanNotBeEditted();
+
     /// @notice Thrown if the proposal has already been cancelled.
     /// @param proposalId The id of the proposal.
     error ProposalAlreadyCancelled(uint256 proposalId);
@@ -66,7 +72,7 @@ library Errors {
     error InterfaceNotSupported();
 
     /// @notice Thrown when the proposal can not be advanced.
-    error ProposalCannotAdvance(uint256 proposalId);
+    error ProposalCanNotAdvance(uint256 proposalId);
 
     /// @notice Thrown if the proposal execution is forbidden.
     /// @param proposalId The ID of the proposal.

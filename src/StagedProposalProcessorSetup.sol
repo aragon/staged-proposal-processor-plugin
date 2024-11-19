@@ -3,6 +3,7 @@ pragma solidity ^0.8.18;
 
 import {SPPRuleCondition} from "./utils/SPPRuleCondition.sol";
 import {StagedProposalProcessor as SPP} from "./StagedProposalProcessor.sol";
+import {Permissions} from "./libraries/Permissions.sol";
 
 import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
 import {IPlugin} from "@aragon/osx-commons-contracts/src/plugin/IPlugin.sol";
@@ -22,38 +23,6 @@ import {
 /// @dev Release 1, Build 1
 contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
     using ProxyLib for address;
-
-    /// @notice The identifier of the `EXECUTE_PERMISSION` permission.
-    bytes32 private constant EXECUTE_PERMISSION_ID = keccak256("EXECUTE_PERMISSION");
-
-    /// @notice The ID of the permission required to call the `updateStages` function.
-    bytes32 private constant UPDATE_STAGES_PERMISSION_ID = keccak256("UPDATE_STAGES_PERMISSION");
-
-    /// @notice The ID of the permission required to call the `setTrustedForwarder` function.
-    bytes32 private constant SET_TRUSTED_FORWARDER_PERMISSION_ID =
-        keccak256("SET_TRUSTED_FORWARDER_PERMISSION");
-
-    /// @notice The ID of the permission required to call the `createProposal` function.
-    bytes32 private constant CREATE_PROPOSAL_PERMISSION_ID =
-        keccak256("CREATE_PROPOSAL_PERMISSION");
-
-    /// @notice The ID of the permission required to call the `updateRules` function.
-    bytes32 private constant UPDATE_RULES_PERMISSION_ID = keccak256("UPDATE_RULES_PERMISSION");
-
-    /// @notice The ID of the permission required to call the `setTargetConfig` function.
-    bytes32 private constant SET_TARGET_CONFIG_PERMISSION_ID =
-        keccak256("SET_TARGET_CONFIG_PERMISSION");
-
-    /// @notice The ID of the permission required to call the `updateMetadata` function.
-    bytes32 private constant SET_METADATA_PERMISSION_ID = keccak256("SET_METADATA_PERMISSION");
-
-    /// @notice The ID of the permission required to execute the proposal if it's on the last stage.
-    bytes32 private constant EXECUTE_PROPOSAL_PERMISSION_ID =
-        keccak256("EXECUTE_PROPOSAL_PERMISSION");
-
-    /// @notice The ID of the permission required to cancel the proposal.
-    bytes32 public constant CANCEL_PROPOSAL_PERMISSION_ID =
-        keccak256("CANCEL_PROPOSAL_PERMISSION");
 
     /// @notice A special address encoding permissions that are valid for any address `who` or `where`.
     address private constant ANY_ADDR = address(type(uint160).max);
@@ -109,7 +78,7 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
             where: spp,
             who: _dao,
             condition: PermissionLib.NO_CONDITION,
-            permissionId: UPDATE_STAGES_PERMISSION_ID
+            permissionId: Permissions.UPDATE_STAGES_PERMISSION_ID
         });
 
         permissions[1] = PermissionLib.MultiTargetPermission({
@@ -117,7 +86,7 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
             where: _dao,
             who: spp,
             condition: PermissionLib.NO_CONDITION,
-            permissionId: EXECUTE_PERMISSION_ID
+            permissionId: Permissions.EXECUTE_PERMISSION_ID
         });
 
         permissions[2] = PermissionLib.MultiTargetPermission({
@@ -125,7 +94,7 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
             where: spp,
             who: _dao,
             condition: PermissionLib.NO_CONDITION,
-            permissionId: SET_TRUSTED_FORWARDER_PERMISSION_ID
+            permissionId: Permissions.SET_TRUSTED_FORWARDER_PERMISSION_ID
         });
 
         permissions[3] = PermissionLib.MultiTargetPermission({
@@ -133,7 +102,7 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
             where: spp,
             who: _dao,
             condition: PermissionLib.NO_CONDITION,
-            permissionId: SET_TARGET_CONFIG_PERMISSION_ID
+            permissionId: Permissions.SET_TARGET_CONFIG_PERMISSION_ID
         });
 
         permissions[4] = PermissionLib.MultiTargetPermission({
@@ -141,7 +110,7 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
             where: spp,
             who: _dao,
             condition: PermissionLib.NO_CONDITION,
-            permissionId: SET_METADATA_PERMISSION_ID
+            permissionId: Permissions.SET_METADATA_PERMISSION_ID
         });
 
         permissions[5] = PermissionLib.MultiTargetPermission({
@@ -149,7 +118,7 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
             where: spp,
             who: ANY_ADDR,
             condition: sppCondition,
-            permissionId: CREATE_PROPOSAL_PERMISSION_ID
+            permissionId: Permissions.CREATE_PROPOSAL_PERMISSION_ID
         });
 
         permissions[6] = PermissionLib.MultiTargetPermission({
@@ -157,7 +126,7 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
             where: sppCondition,
             who: _dao,
             condition: PermissionLib.NO_CONDITION,
-            permissionId: UPDATE_RULES_PERMISSION_ID
+            permissionId: Permissions.UPDATE_RULES_PERMISSION_ID
         });
 
         permissions[7] = PermissionLib.MultiTargetPermission({
@@ -165,7 +134,7 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
             where: spp,
             who: ANY_ADDR,
             condition: PermissionLib.NO_CONDITION,
-            permissionId: EXECUTE_PROPOSAL_PERMISSION_ID
+            permissionId: Permissions.EXECUTE_PROPOSAL_PERMISSION_ID
         });
 
         preparedSetupData.permissions = permissions;
@@ -196,7 +165,7 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
             where: _payload.plugin,
             who: _dao,
             condition: PermissionLib.NO_CONDITION,
-            permissionId: UPDATE_STAGES_PERMISSION_ID
+            permissionId: Permissions.UPDATE_STAGES_PERMISSION_ID
         });
 
         permissions[1] = PermissionLib.MultiTargetPermission({
@@ -204,7 +173,7 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
             where: _dao,
             who: _payload.plugin,
             condition: PermissionLib.NO_CONDITION,
-            permissionId: EXECUTE_PERMISSION_ID
+            permissionId: Permissions.EXECUTE_PERMISSION_ID
         });
 
         permissions[2] = PermissionLib.MultiTargetPermission({
@@ -212,7 +181,7 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
             where: _payload.plugin,
             who: _dao,
             condition: PermissionLib.NO_CONDITION,
-            permissionId: SET_TRUSTED_FORWARDER_PERMISSION_ID
+            permissionId: Permissions.SET_TRUSTED_FORWARDER_PERMISSION_ID
         });
 
         permissions[3] = PermissionLib.MultiTargetPermission({
@@ -220,7 +189,7 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
             where: _payload.plugin,
             who: _dao,
             condition: PermissionLib.NO_CONDITION,
-            permissionId: SET_TARGET_CONFIG_PERMISSION_ID
+            permissionId: Permissions.SET_TARGET_CONFIG_PERMISSION_ID
         });
 
         permissions[4] = PermissionLib.MultiTargetPermission({
@@ -228,7 +197,7 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
             where: _payload.plugin,
             who: _dao,
             condition: PermissionLib.NO_CONDITION,
-            permissionId: SET_METADATA_PERMISSION_ID
+            permissionId: Permissions.SET_METADATA_PERMISSION_ID
         });
 
         permissions[5] = PermissionLib.MultiTargetPermission({
@@ -236,7 +205,7 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
             where: _payload.plugin,
             who: ANY_ADDR,
             condition: PermissionLib.NO_CONDITION,
-            permissionId: CREATE_PROPOSAL_PERMISSION_ID
+            permissionId: Permissions.CREATE_PROPOSAL_PERMISSION_ID
         });
 
         permissions[6] = PermissionLib.MultiTargetPermission({
@@ -244,7 +213,7 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
             where: _payload.currentHelpers[0], // sppRuleCondition
             who: _dao,
             condition: PermissionLib.NO_CONDITION,
-            permissionId: UPDATE_RULES_PERMISSION_ID
+            permissionId: Permissions.UPDATE_RULES_PERMISSION_ID
         });
 
         permissions[7] = PermissionLib.MultiTargetPermission({
@@ -252,7 +221,7 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
             where: _payload.plugin,
             who: ANY_ADDR,
             condition: PermissionLib.NO_CONDITION,
-            permissionId: EXECUTE_PROPOSAL_PERMISSION_ID
+            permissionId: Permissions.EXECUTE_PROPOSAL_PERMISSION_ID
         });
     }
 }

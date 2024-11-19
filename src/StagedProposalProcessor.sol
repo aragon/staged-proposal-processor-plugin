@@ -2,6 +2,7 @@
 pragma solidity ^0.8.18;
 
 import {Errors} from "./libraries/Errors.sol";
+import {Permissions} from "./libraries/Permissions.sol";
 
 import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
 import {
@@ -252,7 +253,9 @@ contract StagedProposalProcessor is
     /// @dev Requires the caller to have the `UPDATE_STAGES_PERMISSION_ID` permission.
     ///      Reverts if the provided `_stages` array is empty.
     /// @param _stages The new stage configuration as an array of `Stage` structs.
-    function updateStages(Stage[] calldata _stages) external auth(UPDATE_STAGES_PERMISSION_ID) {
+    function updateStages(
+        Stage[] calldata _stages
+    ) external auth(Permissions.UPDATE_STAGES_PERMISSION_ID) {
         if (_stages.length == 0) {
             revert Errors.StageCountZero();
         }
@@ -264,7 +267,7 @@ contract StagedProposalProcessor is
     /// @param _forwarder The new trusted forwarder address.
     function setTrustedForwarder(
         address _forwarder
-    ) public virtual auth(SET_TRUSTED_FORWARDER_PERMISSION_ID) {
+    ) public virtual auth(Permissions.SET_TRUSTED_FORWARDER_PERMISSION_ID) {
         _setTrustedForwarder(_forwarder);
     }
 
@@ -292,7 +295,7 @@ contract StagedProposalProcessor is
         uint128 _allowFailureMap,
         uint64 _startDate,
         bytes[][] memory _proposalParams
-    ) public virtual auth(CREATE_PROPOSAL_PERMISSION_ID) returns (uint256 proposalId) {
+    ) public virtual auth(Permissions.CREATE_PROPOSAL_PERMISSION_ID) returns (uint256 proposalId) {
         // If `currentConfigIndex` is 0, this means the plugin was installed
         // with empty configurations and still hasn't updated stages
         // in which case we should revert.
@@ -439,12 +442,13 @@ contract StagedProposalProcessor is
         _processProposalResult(_proposalId, _stageId, _resultType);
 
         // NOTE: The tx will fail if the `_proposalId` doesn't exist.
-        // In other cases, where proposal might be canceled or executed, 
+        // In other cases, where proposal might be canceled or executed,
         // we still allow recording the results as sub-body's proposals
         // could contain other actions that should still succeed.
         if (
             _tryAdvance &&
             hasAdvancePermission(_proposalId) &&
+            state(_proposalId) != ProposalState.Active &&
             _canProposalAdvance(_proposalId)
         ) {
             // If it's the last stage, only advance(i.e execute) if
@@ -465,13 +469,12 @@ contract StagedProposalProcessor is
         uint256 _proposalId
     ) public virtual auth(ADVANCE_PROPOSAL_PERMISSION_ID) {
         Proposal storage proposal = proposals[_proposalId];
-        
-        
+
         // Reverts if proposal is not Active or is non-existent.
         _validateStateBitmap(_proposalId, _encodeStateBitmap(ProposalState.Active));
 
         if (!_canProposalAdvance(_proposalId)) {
-            revert Errors.ProposalCannotAdvance(_proposalId);
+            revert Errors.ProposalCanNotAdvance(_proposalId);
         }
 
         // If it's last stage, make sure that caller
@@ -485,11 +488,14 @@ contract StagedProposalProcessor is
 
     /// @notice Cancels the proposal.
     /// @dev The proposal can be canceled only if it's allowed in the stage configuration.
-    ///      the caller must have the `EXECUTE_PROPOSAL_PERMISSION_ID` permission to cancel it.
+    ///      the caller must have the `CANCEL_PROPOSAL_PERMISSION_ID` permission to cancel it.
     /// @param _proposalId The id of the proposal.
-    function cancel(uint256 _proposalId) public virtual auth(CANCEL_PROPOSAL_PERMISSION_ID) {
+    function cancel(
+        uint256 _proposalId
+    ) public virtual auth(Permissions.CANCEL_PROPOSAL_PERMISSION_ID) {
         Proposal storage proposal = proposals[_proposalId];
 
+        // Reverts if proposal is not Active or is non-existent.
         _validateStateBitmap(_proposalId, _encodeStateBitmap(ProposalState.Active));
 
         uint16 currentStage = proposal.currentStage;
@@ -504,21 +510,23 @@ contract StagedProposalProcessor is
         emit ProposalCanceled(_proposalId, currentStage);
     }
 
-    function edit(uint256 _proposalId) public virtual auth(EDIT_PROPOSAL_PERMISSION_ID) {
+    function edit(
+        uint256 _proposalId
+    ) public virtual auth(Permissions.EDIT_PROPOSAL_PERMISSION_ID) {
         Proposal storage proposal = proposals[_proposalId];
 
         // Reverts if proposal is not Active or is non-existent.
         _validateStateBitmap(_proposalId, _encodeStateBitmap(ProposalState.Active));
 
         if (!_canProposalAdvance(_proposalId)) {
-            revert ProposalCanNotBeEditted(_proposalId);
+            revert Errors.ProposalCanNotBeEditted(_proposalId);
         }
 
         uint16 currentStage = proposal.currentStage;
         Stage storage stage = stages[proposal.stageConfigIndex][currentStage];
 
         if (!stage.editable) {
-            revert Errors.ProposalNotEditable(currentStage);
+            revert Errors.ProposalCanNotBeEditted(currentStage);
         }
 
         proposal.canceled = true;
@@ -526,7 +534,7 @@ contract StagedProposalProcessor is
 
     /// @inheritdoc IProposal
     /// @dev Requires the `EXECUTE_PROPOSAL_PERMISSION_ID` permission.
-    function execute(uint256 _proposalId) public virtual auth(EXECUTE_PROPOSAL_PERMISSION_ID) {
+    function execute(uint256 _proposalId) public virtual auth(Permissions.EXECUTE_PROPOSAL_PERMISSION_ID) {
         Proposal storage proposal = proposals[_proposalId];
 
         if (!canExecute(_proposalId)) {
@@ -828,10 +836,6 @@ contract StagedProposalProcessor is
         // Cheaper to do 2nd sload than to pass Proposal memory.
         Proposal storage proposal = proposals[_proposalId];
 
-        if(state(_proposalId) != ProposalState.Active) {
-            return false;
-        }
-
         uint16 currentStage = proposal.currentStage;
 
         Stage storage stage = stages[proposal.stageConfigIndex][currentStage];
@@ -947,7 +951,7 @@ contract StagedProposalProcessor is
     }
 
     function state(uint256 _proposalId) public view virtual returns (ProposalState) {
-        ProposalCore storage proposal = proposals[_proposalId];
+        Proposal storage proposal = proposals[_proposalId];
 
         if (proposal.executed) {
             return ProposalState.Executed;

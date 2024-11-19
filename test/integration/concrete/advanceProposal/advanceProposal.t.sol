@@ -548,7 +548,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         // check proposal can not advance
         assertFalse(sppPlugin.canProposalAdvance(proposalId), "canAdvanceProposal");
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.ProposalCannotAdvance.selector, proposalId));
+        vm.expectRevert(abi.encodeWithSelector(Errors.ProposalCanNotAdvance.selector, proposalId));
         sppPlugin.advanceProposal(proposalId);
     }
 
