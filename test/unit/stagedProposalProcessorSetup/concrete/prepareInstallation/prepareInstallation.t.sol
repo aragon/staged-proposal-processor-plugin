@@ -51,7 +51,7 @@ contract PrepareInstallation_SPPSetup_UnitTest is BaseTest {
         assertNotEq(address(0), deployedPlugin, "deployedPlugin");
 
         // check plugin stages.
-        assertEq(stages, SPP(deployedPlugin).getStages(), "stages");
+        assertEq(stages, SPP(deployedPlugin).getStages(sppPlugin.getCurrentConfigIndex()), "stages");
 
         // check plugin metadata
         assertEq(DUMMY_METADATA, SPP(deployedPlugin).getMetadata(), "metadata");
@@ -60,7 +60,7 @@ contract PrepareInstallation_SPPSetup_UnitTest is BaseTest {
         assertEq(address(0), SPP(deployedPlugin).getTrustedForwarder(), "trustedForwarder");
 
         // check plugin stages.
-        assertEq(stages, SPP(deployedPlugin).getStages(), "stages");
+        assertEq(stages, SPP(deployedPlugin).getStages(sppPlugin.getCurrentConfigIndex()), "stages");
 
         // check returned helpers
         assertEq(1, setupData.helpers.length, "helpersLength");

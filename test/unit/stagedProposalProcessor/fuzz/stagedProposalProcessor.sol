@@ -4,6 +4,7 @@ pragma solidity ^0.8.18;
 import {Stage, Body} from "../../../utils/Types.sol";
 import {BaseTest} from "../../../BaseTest.t.sol";
 import {StagedProposalProcessor as SPP} from "../../../../src/StagedProposalProcessor.sol";
+import {Permissions} from "../../../../src/libraries/Permissions.sol";
 
 import {DaoUnauthorized} from "@aragon/osx-commons-contracts/src/permission/auth/auth.sol";
 
@@ -43,7 +44,7 @@ contract SPP_Unit_FuzzTest is BaseTest {
                 address(dao),
                 address(sppPlugin),
                 _randomAddress,
-                sppPlugin.UPDATE_STAGES_PERMISSION_ID()
+                Permissions.UPDATE_STAGES_PERMISSION_ID
             )
         );
         sppPlugin.updateStages(stages);

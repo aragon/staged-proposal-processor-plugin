@@ -90,7 +90,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
 
     modifier whenSomeSubProposalNeedExtraParams() {
         // configure in the plugin that extra params are needed.
-        PluginA(sppPlugin.getStages()[1].bodies[0].addr).setNeedExtraParams(true);
+        PluginA(sppPlugin.getStages(sppPlugin.getCurrentConfigIndex())[1].bodies[0].addr).setNeedExtraParams(true);
 
         _;
     }
@@ -130,7 +130,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         sppPlugin.advanceProposal(proposalId);
 
         SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
-        SPP.Stage[] memory stages = sppPlugin.getStages();
+        SPP.Stage[] memory stages = sppPlugin.getStages(sppPlugin.getCurrentConfigIndex());
 
         // check proposal advanced
         assertEq(proposal.currentStage, initialStage + 1, "currentStage");
@@ -190,7 +190,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         // check proposal advanced
         assertEq(proposal.currentStage, initialStage + 1, "currentStage");
 
-        SPP.Stage[] memory stages = sppPlugin.getStages();
+        SPP.Stage[] memory stages = sppPlugin.getStages(sppPlugin.getCurrentConfigIndex());
 
         // check sub proposal created
         assertEq(
@@ -260,7 +260,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         // check proposal advanced
         assertEq(proposal.currentStage, initialStage + 1, "currentStage");
 
-        SPP.Stage[] memory stages = sppPlugin.getStages();
+        SPP.Stage[] memory stages = sppPlugin.getStages(sppPlugin.getCurrentConfigIndex());
 
         // check sub proposal created
         assertEq(
@@ -324,7 +324,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         // check proposal advanced
         assertEq(proposal.currentStage, initialStage + 1, "currentStage");
 
-        SPP.Stage[] memory stages = sppPlugin.getStages();
+        SPP.Stage[] memory stages = sppPlugin.getStages(sppPlugin.getCurrentConfigIndex());
 
         // check sub proposal was not created
         assertEq(
@@ -368,7 +368,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         sppPlugin.advanceProposal(proposalId);
 
         SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
-        SPP.Stage[] memory stages = sppPlugin.getStages();
+        SPP.Stage[] memory stages = sppPlugin.getStages(sppPlugin.getCurrentConfigIndex());
 
         // check proposal advanced
         assertEq(proposal.currentStage, initialStage + 1, "currentStage");
@@ -416,7 +416,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         sppPlugin.advanceProposal(proposalId);
 
         SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
-        SPP.Stage[] memory stages = sppPlugin.getStages();
+        SPP.Stage[] memory stages = sppPlugin.getStages(sppPlugin.getCurrentConfigIndex());
 
         // check proposal advanced
         assertEq(proposal.currentStage, initialStage + 1, "currentStage");

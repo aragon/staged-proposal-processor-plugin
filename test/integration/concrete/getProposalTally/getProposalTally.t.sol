@@ -24,7 +24,10 @@ contract GetProposalTally_SPP_IntegrationTest is BaseTest {
         // execute proposals to report the results
         _executeStageProposals(0);
 
-        (uint256 votes, uint256 vetos) = sppPlugin.getProposalTally(proposalId);
+        (uint256 votes, uint256 vetos) = sppPlugin.getProposalTally(
+            proposalId,
+            sppPlugin.getProposal(proposalId).currentStage
+        );
 
         // there should be 2 vetos and no vote
         assertEq(vetos, 2, "vetos");
@@ -62,7 +65,10 @@ contract GetProposalTally_SPP_IntegrationTest is BaseTest {
             _proposalParams: defaultCreationParams
         });
 
-        (uint256 votes, uint256 vetos) = sppPlugin.getProposalTally(proposalId);
+        (uint256 votes, uint256 vetos) = sppPlugin.getProposalTally(
+            proposalId,
+            sppPlugin.getProposal(proposalId).currentStage
+        );
 
         // there should be no votes and 2 vetos but second sub proposal veto should not be counted because it is manual
         assertEq(vetos, 1, "vetos");
@@ -82,7 +88,8 @@ contract GetProposalTally_SPP_IntegrationTest is BaseTest {
         // it should not count unreported results.
 
         // make a body revet when creating proposal so the proposal id is not valid
-        address secondBodyAddr = sppPlugin.getStages()[0].bodies[1].addr;
+        address secondBodyAddr = sppPlugin
+        .getStages(sppPlugin.getCurrentConfigIndex())[0].bodies[1].addr;
         PluginA(secondBodyAddr).setRevertOnCreateProposal(true);
 
         // create proposal
@@ -99,12 +106,15 @@ contract GetProposalTally_SPP_IntegrationTest is BaseTest {
 
         // check sub proposal id is not valid
         assertEq(
-            sppPlugin.bodyProposalIds(proposalId, proposal.currentStage, secondBodyAddr),
+            sppPlugin.getBodyProposalId(proposalId, proposal.currentStage, secondBodyAddr),
             type(uint256).max,
             "invalid subProposalId"
         );
 
-        (uint256 votes, uint256 vetos) = sppPlugin.getProposalTally(proposalId);
+        (uint256 votes, uint256 vetos) = sppPlugin.getProposalTally(
+            proposalId,
+            sppPlugin.getProposal(proposalId).currentStage
+        );
 
         // there should be no votes and 1 vetos because one of the sub proposals id not valid
         assertEq(vetos, 1, "vetos");
@@ -124,7 +134,10 @@ contract GetProposalTally_SPP_IntegrationTest is BaseTest {
     {
         // it should count unreported results.
 
-        (uint256 votes, uint256 vetos) = sppPlugin.getProposalTally(proposalId);
+        (uint256 votes, uint256 vetos) = sppPlugin.getProposalTally(
+            proposalId,
+            sppPlugin.getProposal(proposalId).currentStage
+        );
 
         // there should be 2 vetos and no vote
         assertEq(vetos, 2, "vetos");
@@ -141,10 +154,14 @@ contract GetProposalTally_SPP_IntegrationTest is BaseTest {
         // it should count unreported results.
 
         // set the can execute on sub body to false
-        address secondBodyAddr = sppPlugin.getStages()[0].bodies[1].addr;
+        address secondBodyAddr = sppPlugin
+        .getStages(sppPlugin.getCurrentConfigIndex())[0].bodies[1].addr;
         PluginA(secondBodyAddr).setCanExecuteResult(false);
 
-        (uint256 votes, uint256 vetos) = sppPlugin.getProposalTally(proposalId);
+        (uint256 votes, uint256 vetos) = sppPlugin.getProposalTally(
+            proposalId,
+            sppPlugin.getProposal(proposalId).currentStage
+        );
 
         // there should be 1 vetos and no vote, because second body can not execute
         assertEq(vetos, 1, "vetos");
@@ -158,6 +175,6 @@ contract GetProposalTally_SPP_IntegrationTest is BaseTest {
             abi.encodeWithSelector(Errors.NonexistentProposal.selector, NON_EXISTENT_PROPOSAL_ID)
         );
 
-        sppPlugin.getProposalTally(NON_EXISTENT_PROPOSAL_ID);
+        sppPlugin.getProposalTally(NON_EXISTENT_PROPOSAL_ID, 0);
     }
 }
