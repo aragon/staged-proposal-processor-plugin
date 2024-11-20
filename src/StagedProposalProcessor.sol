@@ -20,7 +20,6 @@ import {
 } from "@aragon/osx-commons-contracts/src/plugin/extensions/proposal/ProposalUpgradeable.sol";
 
 import {ERC165Checker} from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
-import {console} from "forge-std/console.sol";
 
 /// @title StagedProposalProcessor
 /// @author Aragon X - 2024
@@ -339,7 +338,7 @@ contract StagedProposalProcessor is
             revert Errors.StageCountZero();
         }
 
-        proposalId = _createProposalId(keccak256(abi.encode(_actions, _metadata)));
+        proposalId = _createProposalId(getSalt(_metadata));
 
         Proposal storage proposal = proposals[proposalId];
 
@@ -580,7 +579,7 @@ contract StagedProposalProcessor is
 
     /// @notice Edits the proposal.
     /// @dev The proposal can be editable only if it's allowed in the stage configuration.
-    ///      The caller must have the `EDIT_PERMISSION_ID` permission to cancel it 
+    ///      The caller must have the `EDIT_PERMISSION_ID` permission to cancel it
     ///      and stage must be advanceable.
     /// @param _proposalId The id of the proposal.
     /// @param _metadata The metadata of the proposal.
@@ -608,11 +607,7 @@ contract StagedProposalProcessor is
             proposal.actions.push(_actions[i]);
         }
 
-        emit ProposalEdited(
-            _proposalId,
-            _metadata,
-            _actions
-        );
+        emit ProposalEdited(_proposalId, _metadata, _actions);
     }
 
     /// @inheritdoc IProposal
@@ -678,7 +673,7 @@ contract StagedProposalProcessor is
     }
 
     /// @notice Checks whether the caller has the required permission to execute a proposal at the last stage.
-    /// @param _account The address on which the `EXECUTE_PERMISSION_ID` is checked. 
+    /// @param _account The address on which the `EXECUTE_PERMISSION_ID` is checked.
     /// @return Returns `true` if the caller has the `EXECUTE_PERMISSION_ID` permission, otherwise `false`.
     function hasExecutePermission(address _account) public view virtual returns (bool) {
         return
@@ -691,7 +686,7 @@ contract StagedProposalProcessor is
     }
 
     /// @notice Checks whether the caller has the required permission to advance a proposal.
-    /// @param _account The address on which the `ADVANCE_PERMISSION_ID` is checked. 
+    /// @param _account The address on which the `ADVANCE_PERMISSION_ID` is checked.
     /// @return Returns `true` if the caller has the `ADVANCE_PERMISSION_ID` permission, otherwise `false`.
     function hasAdvancePermission(address _account) public view virtual returns (bool) {
         return
@@ -985,6 +980,27 @@ contract StagedProposalProcessor is
         }
     }
 
+    /// @notice Grabs a nonce from the `_metadata` if it contains `#nonce` suffix.
+    /// @dev This is used to generate unique proposal ids.
+    /// @param _metadata The metadata of the proposal.
+    /// @return Returns the salt as nonce encoded with `_msgSender()` if found, otherwise only `_msgSender()`.
+    function getSalt(bytes memory _metadata) internal view virtual returns (bytes32) {
+        // `#nonce=` is 7 in length + extra 32 bytes for the actual value of nonce.
+        if (_metadata.length < 39) {
+            return keccak256(abi.encode(_msgSender()));
+        }
+
+        bytes10 nonceMarker = bytes10(_unsafeReadBytesOffset(_metadata, _metadata.length - 39));
+        if (nonceMarker != bytes10("#nonce=")) {
+            return keccak256(abi.encode(_msgSender()));
+        }
+
+        // Read starting from offset after `#nonce=`.
+        bytes32 nonce = bytes32(_unsafeReadBytesOffset(_metadata, _metadata.length - 32));
+        
+        return keccak256(abi.encode(_msgSender(), nonce));
+    }
+
     /// @notice Encodes a `ProposalState` into a `bytes32` representation where each bit enabled
     ///         corresponds the underlying position in the `ProposalState` enum.
     /// @param _proposalState The state of the proposal.
@@ -1046,6 +1062,20 @@ contract StagedProposalProcessor is
             revert Errors.UnexpectedProposalState(_proposalId, uint8(currentState), _allowedStates);
         }
         return currentState;
+    }
+
+    /// @dev Reads a bytes32 from a bytes array without bounds checking.
+    ///      Making this function internal would mean it could be used
+    ///      with memory unsafe offset, and marking the assembly block as such
+    ///      would prevent some optimizations.
+    function _unsafeReadBytesOffset(
+        bytes memory buffer,
+        uint256 offset
+    ) private pure returns (bytes32 value) {
+        // This is not memory safe in the general case, but all calls to this private function are within bounds.
+        assembly ("memory-safe") {
+            value := mload(add(buffer, add(0x20, offset)))
+        }
     }
 
     /// @dev This empty reserved space is put in place to allow future versions to add new
