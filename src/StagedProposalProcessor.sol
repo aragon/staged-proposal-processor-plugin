@@ -20,6 +20,7 @@ import {
 } from "@aragon/osx-commons-contracts/src/plugin/extensions/proposal/ProposalUpgradeable.sol";
 
 import {ERC165Checker} from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
+import {console} from "forge-std/console.sol";
 
 /// @title StagedProposalProcessor
 /// @author Aragon X - 2024
@@ -49,7 +50,9 @@ contract StagedProposalProcessor is
     enum ProposalState {
         Active,
         Canceled,
-        Executed
+        Executed,
+        Advanceable,
+        Expired
     }
 
     /// @notice A container for Body-related information.
@@ -139,6 +142,12 @@ contract StagedProposalProcessor is
     /// @param proposalId the proposal id.
     /// @param stageId The stage id in which the proposal was cancelled.
     event ProposalCanceled(uint256 indexed proposalId, uint256 indexed stageId);
+
+    /// @notice Emitted when the proposal gets editted.
+    /// @param proposalId the proposal id.
+    /// @param metadata The new metadata that replaces old metadata.
+    /// @param actions The new actions that replaces old actions.
+    event ProposalEdited(uint256 indexed proposalId, uint256 indexed stageId);
 
     /// @notice Emitted when a body reports results by calling `reportProposalResult`.
     /// @param proposalId The proposal id.
@@ -254,22 +263,22 @@ contract StagedProposalProcessor is
 
         _processProposalResult(_proposalId, _stageId, _resultType);
 
-        // NOTE: The tx will fail if the `_proposalId` doesn't exist.
-        // In other cases, where proposal might be canceled or executed,
-        // we still allow recording the results as sub-body's proposals
-        // could contain other actions that should still succeed.
-        if (
-            _tryAdvance &&
-            hasAdvancePermission() &&
-            state(_proposalId) != ProposalState.Active &&
-            _canProposalAdvance(_proposalId)
-        ) {
-            // If it's the last stage, only advance(i.e execute) if
-            // caller has permission. Note that we don't revert in
-            // this case to still allow the records being reported.
-            if (!isAtLastStage(proposal) || hasExecutePermission()) {
-                _advanceProposal(_proposalId);
-            }
+        if (!_tryAdvance) {
+            return;
+        }
+
+        address sender = _msgSender();
+
+        // If the last stage, caller must have `EXECUTE_PERMISSION_ID`, otherwise `ADVANCE_PERMISSION_ID`.
+        bool hasPermission = isAtLastStage(proposal)
+            ? hasExecutePermission(sender)
+            : hasAdvancePermission(sender);
+
+        // It's important to not revert and silentely succeed even if proposal
+        // can not advance due to permission or state, because as sub-body's
+        // proposals could contain other actions that should still succeed.
+        if (hasPermission && state(_proposalId) == ProposalState.Advanceable) {
+            _advanceProposal(_proposalId);
         }
     }
 
@@ -471,6 +480,9 @@ contract StagedProposalProcessor is
         return createProposalParams[_proposalId][_stageId][_index];
     }
 
+    /// @notice Current state of a proposal.
+    /// @param _proposalId The proposal id.
+    /// @return The current state of the proposal.
     function state(uint256 _proposalId) public view virtual returns (ProposalState) {
         Proposal storage proposal = proposals[_proposalId];
 
@@ -486,6 +498,33 @@ contract StagedProposalProcessor is
             revert Errors.NonexistentProposal(_proposalId);
         }
 
+        Stage storage stage = stages[proposal.stageConfigIndex][proposal.currentStage];
+
+        if (block.timestamp > proposal.lastStageTransition + stage.maxAdvance) {
+            return ProposalState.Expired;
+        }
+
+        if (proposal.lastStageTransition + stage.minAdvance > block.timestamp) {
+            return ProposalState.Active;
+        }
+
+        if (stage.vetoThreshold > 0) {
+            if (proposal.lastStageTransition + stage.voteDuration > block.timestamp) {
+                return ProposalState.Active;
+            }
+        }
+
+        bool thresholdMet = _thresholdsMet(
+            _proposalId,
+            proposal.currentStage,
+            stage.approvalThreshold,
+            stage.vetoThreshold
+        );
+
+        if (thresholdMet) {
+            return ProposalState.Advanceable;
+        }
+
         return ProposalState.Active;
     }
 
@@ -494,23 +533,20 @@ contract StagedProposalProcessor is
     ///      If the proposal is in the final stage, the caller must have the
     ///      `EXECUTE_PERMISSION_ID` permission to execute it.
     /// @param _proposalId The ID of the proposal.
-    function advanceProposal(
-        uint256 _proposalId
-    ) public virtual {
+    function advanceProposal(uint256 _proposalId) public virtual {
         Proposal storage proposal = proposals[_proposalId];
 
-        // Reverts if proposal is not Active or is non-existent.
-        _validateStateBitmap(_proposalId, _encodeStateBitmap(ProposalState.Active));
+        // Reverts if proposal is not Advanceable or is non-existent.
+        _validateStateBitmap(_proposalId, _encodeStateBitmap(ProposalState.Advanceable));
 
-        if (!_canProposalAdvance(_proposalId)) {
-            revert Errors.ProposalCanNotAdvance(_proposalId);
-        }
+        address sender = _msgSender();
 
-        // If it's last stage, make sure that caller
-        // has permission to execute, otherwise revert.
-        if (isAtLastStage(proposal) && !hasExecutePermission()) {
-            revert Errors.ProposalExecutionForbidden(_proposalId);
-        } else if(!hasAdvancePermission()) {
+        // If the last stage, caller must have `EXECUTE_PERMISSION_ID`, otherwise `ADVANCE_PERMISSION_ID`.
+        bool hasPermission = isAtLastStage(proposal)
+            ? hasExecutePermission(sender)
+            : hasAdvancePermission(sender);
+
+        if (!hasPermission) {
             revert Errors.ProposalExecutionForbidden(_proposalId);
         }
 
@@ -519,19 +555,22 @@ contract StagedProposalProcessor is
 
     /// @notice Cancels the proposal.
     /// @dev The proposal can be canceled only if it's allowed in the stage configuration.
-    ///      the caller must have the `CANCEL_PERMISSION_ID` permission to cancel it.
+    ///      The caller must have the `CANCEL_PERMISSION_ID` permission to cancel it.
     /// @param _proposalId The id of the proposal.
     function cancel(uint256 _proposalId) public virtual auth(Permissions.CANCEL_PERMISSION_ID) {
         Proposal storage proposal = proposals[_proposalId];
 
-        // Reverts if proposal is not Active or is non-existent.
-        _validateStateBitmap(_proposalId, _encodeStateBitmap(ProposalState.Active));
+        // Reverts if proposal is not Active, Advanceable or doesn't exist.
+        _validateStateBitmap(
+            _proposalId,
+            _encodeStateBitmap(ProposalState.Active) | _encodeStateBitmap(ProposalState.Advanceable)
+        );
 
         uint16 currentStage = proposal.currentStage;
         Stage storage stage = stages[proposal.stageConfigIndex][currentStage];
 
         if (!stage.cancelable) {
-            revert Errors.ProposalNotCancelable(currentStage);
+            revert Errors.ProposalCanNotBeCancelled(currentStage);
         }
 
         proposal.canceled = true;
@@ -539,15 +578,22 @@ contract StagedProposalProcessor is
         emit ProposalCanceled(_proposalId, currentStage);
     }
 
-    function edit(uint256 _proposalId) public virtual auth(Permissions.EDIT_PERMISSION_ID) {
+    /// @notice Edits the proposal.
+    /// @dev The proposal can be editable only if it's allowed in the stage configuration.
+    ///      The caller must have the `EDIT_PERMISSION_ID` permission to cancel it 
+    ///      and stage must be advanceable.
+    /// @param _proposalId The id of the proposal.
+    /// @param _metadata The metadata of the proposal.
+    /// @param _actions The actions that will be executed after the proposal passes.
+    function edit(
+        uint256 _proposalId,
+        bytes calldata _metadata,
+        Action[] calldata _actions
+    ) public virtual auth(Permissions.EDIT_PERMISSION_ID) {
         Proposal storage proposal = proposals[_proposalId];
 
-        // Reverts if proposal is not Active or is non-existent.
-        _validateStateBitmap(_proposalId, _encodeStateBitmap(ProposalState.Active));
-
-        if (!_canProposalAdvance(_proposalId)) {
-            revert Errors.ProposalCanNotBeEditted(_proposalId);
-        }
+        // Reverts if proposal is not Advanceable or is non-existent.
+        _validateStateBitmap(_proposalId, _encodeStateBitmap(ProposalState.Advanceable));
 
         uint16 currentStage = proposal.currentStage;
         Stage storage stage = stages[proposal.stageConfigIndex][currentStage];
@@ -556,7 +602,17 @@ contract StagedProposalProcessor is
             revert Errors.ProposalCanNotBeEditted(_proposalId);
         }
 
-        proposal.canceled = true;
+        delete proposal.actions;
+
+        for (uint256 i = 0; i < _actions.length; ++i) {
+            proposal.actions.push(_actions[i]);
+        }
+
+        emit ProposalEdited(
+            _proposalId,
+            _metadata,
+            _actions
+        );
     }
 
     /// @inheritdoc IProposal
@@ -578,21 +634,17 @@ contract StagedProposalProcessor is
     function canProposalAdvance(uint256 _proposalId) public view virtual returns (bool) {
         Proposal storage proposal = proposals[_proposalId];
 
-        // Reverts if proposal is not Active or is non-existent.
-        _validateStateBitmap(_proposalId, _encodeStateBitmap(ProposalState.Active));
-
-        return _canProposalAdvance(_proposalId);
+        // `state` reverts if proposal is non existent.
+        return state(_proposalId) == ProposalState.Advanceable;
     }
 
     /// @inheritdoc IProposal
     function canExecute(uint256 _proposalId) public view virtual returns (bool) {
         Proposal storage proposal = proposals[_proposalId];
 
-        // Reverts if proposal is not Active or is non-existent.
-        _validateStateBitmap(_proposalId, _encodeStateBitmap(ProposalState.Active));
-
-        // Proposal must be on the last stage and advanceable.
-        return isAtLastStage(proposal) && _canProposalAdvance(_proposalId);
+        // 1. `state` reverts if proposal is non existent.
+        // 2. Proposal must be on the last stage and advanceable.
+        return isAtLastStage(proposal) && state(_proposalId) == ProposalState.Advanceable;
     }
 
     /// @notice Calculates and retrieves the number of approvals and vetoes for a proposal.
@@ -617,55 +669,35 @@ contract StagedProposalProcessor is
     function hasSucceeded(uint256 _proposalId) public view virtual override returns (bool) {
         Proposal storage proposal = proposals[_proposalId];
 
-        if (!_proposalExists(proposal)) {
-            revert Errors.NonexistentProposal(_proposalId);
-        }
-
-        // If it hasn't reached the last stage, return early.
-        if (!isAtLastStage(proposal)) {
-            return false;
-        }
-
-        // Get the last stage configuration and count if it has succeeded.
-        Stage[] storage stages_ = stages[proposal.stageConfigIndex];
-        uint256 lastStageId = stages_.length - 1;
-
-        Stage storage stage = stages_[lastStageId];
-
-        if (stage.vetoThreshold > 0) {
-            if (proposal.lastStageTransition + stage.voteDuration > block.timestamp) {
-                return false;
-            }
-        }
-
+        // 1. `state` reverts if proposal is non existent.
+        // 2.  Proposal must be on the last stage and either advanceable or executed.
         return
-            _thresholdsMet(
-                _proposalId,
-                uint16(lastStageId),
-                stage.approvalThreshold,
-                stage.vetoThreshold
-            );
+            isAtLastStage(proposal) &&
+            (state(_proposalId) == ProposalState.Advanceable ||
+                state(_proposalId) == ProposalState.Executed);
     }
 
     /// @notice Checks whether the caller has the required permission to execute a proposal at the last stage.
+    /// @param _account The address on which the `EXECUTE_PERMISSION_ID` is checked. 
     /// @return Returns `true` if the caller has the `EXECUTE_PERMISSION_ID` permission, otherwise `false`.
-    function hasExecutePermission() public view virtual returns (bool) {
+    function hasExecutePermission(address _account) public view virtual returns (bool) {
         return
             dao().hasPermission(
                 address(this),
-                _msgSender(),
+                _account,
                 Permissions.EXECUTE_PERMISSION_ID,
                 msg.data
             );
     }
 
     /// @notice Checks whether the caller has the required permission to advance a proposal.
+    /// @param _account The address on which the `ADVANCE_PERMISSION_ID` is checked. 
     /// @return Returns `true` if the caller has the `ADVANCE_PERMISSION_ID` permission, otherwise `false`.
-    function hasAdvancePermission() public view virtual returns (bool) {
+    function hasAdvancePermission(address _account) public view virtual returns (bool) {
         return
             dao().hasPermission(
                 address(this),
-                _msgSender(),
+                _account,
                 Permissions.ADVANCE_PERMISSION_ID,
                 msg.data
             );
@@ -851,36 +883,6 @@ contract StagedProposalProcessor is
         }
     }
 
-    /// @notice Internal function that determines whether the specified proposal can be advanced to the next stage.
-    /// @dev Note It's a caller's responsibility to check if proposal exists and has status = ProposalStatus.Active.
-    /// @param _proposalId The ID of the proposal.
-    /// @return Returns `true` if the proposal can be advanced to the next stage, otherwise `false`.
-    function _canProposalAdvance(uint256 _proposalId) internal view virtual returns (bool) {
-        // Cheaper to do 2nd sload than to pass Proposal memory.
-        Proposal storage proposal = proposals[_proposalId];
-        
-        uint16 currentStage = proposal.currentStage;
-
-        Stage storage stage = stages[proposal.stageConfigIndex][currentStage];
-
-        if (proposal.lastStageTransition + stage.maxAdvance < block.timestamp) {
-            return false;
-        }
-
-        if (proposal.lastStageTransition + stage.minAdvance > block.timestamp) {
-            return false;
-        }
-
-        if (stage.vetoThreshold > 0) {
-            if (proposal.lastStageTransition + stage.voteDuration > block.timestamp) {
-                return false;
-            }
-        }
-
-        return
-            _thresholdsMet(_proposalId, currentStage, stage.approvalThreshold, stage.vetoThreshold);
-    }
-
     /// @notice Internal function to calculate and retrieve the number of approvals and
     ///         vetoes for a proposal in the `_stageId`.
     /// @dev Assumes that bodies are not duplicated in the same stage. See `_updateStages` function.
@@ -904,7 +906,7 @@ contract StagedProposalProcessor is
 
             uint256 bodyProposalId = getBodyProposalId(_proposalId, _stageId, body.addr);
             ResultType resultType = getBodyResult(_proposalId, _stageId, body.addr);
-            
+
             if (resultType != ResultType.None) {
                 // result was already reported
                 resultType == ResultType.Approval ? ++approvals : ++vetoes;

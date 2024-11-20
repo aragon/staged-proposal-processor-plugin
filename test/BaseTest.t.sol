@@ -331,7 +331,7 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
         }
     }
 
-    function _getSetupPermissions() internal view returns (bytes32[] memory permissionList) {
+    function _getSetupPermissions() internal pure returns (bytes32[] memory permissionList) {
         permissionList = new bytes32[](8);
 
         permissionList[0] = Permissions.UPDATE_STAGES_PERMISSION_ID;
