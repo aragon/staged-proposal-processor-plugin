@@ -332,15 +332,17 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
     }
 
     function _getSetupPermissions() internal pure returns (bytes32[] memory permissionList) {
-        permissionList = new bytes32[](8);
+        permissionList = new bytes32[](10);
 
         permissionList[0] = Permissions.UPDATE_STAGES_PERMISSION_ID;
         permissionList[1] = Permissions.EXECUTE_PERMISSION_ID;
         permissionList[2] = Permissions.SET_TRUSTED_FORWARDER_PERMISSION_ID;
         permissionList[3] = Permissions.SET_TARGET_CONFIG_PERMISSION_ID;
         permissionList[4] = Permissions.SET_METADATA_PERMISSION_ID;
-        permissionList[5] = Permissions.UPDATE_RULES_PERMISSION_ID;
-        permissionList[6] = Permissions.CREATE_PROPOSAL_PERMISSION_ID;
-        permissionList[7] = Permissions.EXECUTE_PERMISSION_ID;
+        permissionList[5] = Permissions.CREATE_PROPOSAL_PERMISSION_ID;
+        permissionList[6] = Permissions.CANCEL_PERMISSION_ID;
+        permissionList[7] = Permissions.ADVANCE_PERMISSION_ID;
+        permissionList[8] = Permissions.EXECUTE_PERMISSION_ID;
+        permissionList[9] = Permissions.UPDATE_RULES_PERMISSION_ID;
     }
 }
