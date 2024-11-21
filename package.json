@@ -22,6 +22,7 @@
     "prettier:write": "prettier --write --plugin=prettier-plugin-solidity  \"**/*.{js,json,md,sol,ts,yml}\"",
     "test": "forge test -vvv",
     "test:coverage": "forge coverage",
+    "docs": "script/prepare-docs.sh && node ./script/prepare-docs.js",
     "test:coverage:report": "forge coverage --report lcov && genhtml lcov.info --branch-coverage --output-dir coverage",
     "deploy": "dotenv forge script Deploy --chain $CHAIN --rpc-url $NETWORK_RPC_URL --etherscan-api-key $ETHERSCAN_API_KEY --verifier $VERIFIER --verify --broadcast",
     "new-version": "dotenv forge script NewVersion --chain $CHAIN --rpc-url $NETWORK_RPC_URL --etherscan-api-key $ETHERSCAN_API_KEY --verifier $VERIFIER --verify --broadcast",
