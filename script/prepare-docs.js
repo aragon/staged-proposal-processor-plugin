@@ -1,20 +1,20 @@
 const docgen = require('solidity-docgen/dist/main');
 
-const {readdir} = require('node:fs/promises')
-const {join} = require('node:path')
+const { readdir } = require('node:fs/promises')
+const { join } = require('node:path')
 const path = require('path');
 const fs = require("fs-extra");
 const solc = require("solc");
 const { execSync } = require('child_process');
-const {version, repository} = require('../package.json');
+const { version, repository } = require('../package.json');
 
 const ROOT_DIR = path.resolve(__dirname, '..')
 
 const walk = async (dirPath) => Promise.all(
-  await readdir(dirPath, { withFileTypes: true }).then((entries) => entries.map((entry) => {
-    const childPath = join(dirPath, entry.name)
-    return entry.isDirectory() ? walk(childPath) : childPath
-  })),
+    await readdir(dirPath, { withFileTypes: true }).then((entries) => entries.map((entry) => {
+        const childPath = join(dirPath, entry.name)
+        return entry.isDirectory() ? walk(childPath) : childPath
+    })),
 )
 
 let includePaths = ['node_modules']
@@ -23,13 +23,13 @@ function resolveImports(filePath) {
     for (const includePath of includePaths) {
         const fullPath = path.resolve(ROOT_DIR, path.join(includePath, filePath));
         if (fs.existsSync(fullPath)) {
-        return { contents: fs.readFileSync(fullPath, 'utf8') };
+            return { contents: fs.readFileSync(fullPath, 'utf8') };
         }
     }
     return { error: `File not found: ${filePath}` };
 }
 
-const compile1 = async(filePaths) => {
+const compile1 = async (filePaths) => {
     const compilerInput = {
         language: "Solidity",
         sources: filePaths.reduce((input, fileName) => {
@@ -64,7 +64,7 @@ async function main() {
         return path.extname(item).toLowerCase() == '.sol'
     })
 
-    const {input, output} = await compile1(solFiles)
+    const { input, output } = await compile1(solFiles)
 
     const templatesPath = 'docs/templates'
     const apiPath = 'docs/modules/api'
@@ -74,8 +74,8 @@ async function main() {
     // overwrite the functions.
     helpers.version = () => version;
     helpers.githubURI = () => repository.url;
-    
-    const config =  {
+
+    const config = {
         outputDir: `${apiPath}/pages`,
         sourcesDir: path.resolve(ROOT_DIR, "src"),
         templates: templatesPath,
@@ -83,13 +83,11 @@ async function main() {
         pageExtension: '.adoc',
         collapseNewlines: true,
         pages: (_, file, config) => {
-            return 'SPP' + config.pageExtension;
+            return 'StagedProposalProcessor' + config.pageExtension;
         },
     };
 
-
-
-    await docgen.main([{ input: input,  output: await output }], config);
+    await docgen.main([{ input: input, output: await output }], config);
 
     const navOutput = execSync(`node script/gen-nav.js ${apiPath}/pages`, { encoding: 'utf8' });
 
@@ -97,7 +95,7 @@ async function main() {
     const targetFilePath = `${apiPath}/nav.adoc`;
     fs.writeFileSync(targetFilePath, navOutput, 'utf8');
 
-    fs.rm(templatesPath, { recursive: true, force: true }, () => {})
-} 
+    fs.rm(templatesPath, { recursive: true, force: true }, () => { })
+}
 
 main()
