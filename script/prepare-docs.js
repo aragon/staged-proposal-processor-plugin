@@ -5,6 +5,7 @@ const {join} = require('node:path')
 const path = require('path');
 const fs = require("fs-extra");
 const solc = require("solc");
+const { execSync } = require('child_process');
 
 const walk = async (dirPath) => Promise.all(
   await readdir(dirPath, { withFileTypes: true }).then((entries) => entries.map((entry) => {
@@ -75,6 +76,12 @@ async function main() {
     };
 
     await docgen.main([{ input: input,  output: await output }], config);
+
+    const navOutput = execSync('node script/gen-nav.js docs/modules/api/pages', { encoding: 'utf8' });
+
+    // Write the output to the target file
+    const targetFilePath = 'docs/modules/api/nav.adoc';
+    fs.writeFileSync(targetFilePath, navOutput, 'utf8');
 } 
 
 main()
