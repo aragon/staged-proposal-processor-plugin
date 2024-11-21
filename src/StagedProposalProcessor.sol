@@ -103,6 +103,7 @@ contract StagedProposalProcessor is
         uint16 stageConfigIndex;
         bool executed;
         bool canceled;
+        address creator;
         Action[] actions;
         TargetConfig targetConfig;
     }
@@ -141,13 +142,26 @@ contract StagedProposalProcessor is
     /// @notice Emitted when the proposal gets cancelled.
     /// @param proposalId the proposal id.
     /// @param stageId The stage id in which the proposal was cancelled.
-    event ProposalCanceled(uint256 indexed proposalId, uint256 indexed stageId);
+    /// @param sender The sender that canceled the proposal.
+    event ProposalCanceled(
+        uint256 indexed proposalId,
+        uint256 indexed stageId,
+        address indexed sender
+    );
 
     /// @notice Emitted when the proposal gets editted.
     /// @param proposalId the proposal id.
+    /// @param stageId The stage id in which the proposal was editted.
+    /// @param sender The sender that editted the proposal.
     /// @param metadata The new metadata that replaces old metadata.
     /// @param actions The new actions that replaces old actions.
-    event ProposalEdited(uint256 indexed proposalId, uint256 indexed stageId);
+    event ProposalEdited(
+        uint256 indexed proposalId,
+        uint256 indexed stageId,
+        address indexed sender,
+        bytes metadata,
+        Action[] actions
+    );
 
     /// @notice Emitted when a body reports results by calling `reportProposalResult`.
     /// @param proposalId The proposal id.
@@ -339,7 +353,7 @@ contract StagedProposalProcessor is
             revert Errors.StageCountZero();
         }
 
-        proposalId = _createProposalId(keccak256(abi.encode(_actions, _metadata)));
+        proposalId = _createProposalId(keccak256(abi.encode(_actions, _metadata, _msgSender())));
 
         Proposal storage proposal = proposals[proposalId];
 
@@ -349,6 +363,7 @@ contract StagedProposalProcessor is
 
         proposal.allowFailureMap = _allowFailureMap;
         proposal.targetConfig = getTargetConfig();
+        proposal.creator = _msgSender();
 
         // store stage configuration per proposal to avoid
         // changing it while proposal is still open
@@ -575,12 +590,12 @@ contract StagedProposalProcessor is
 
         proposal.canceled = true;
 
-        emit ProposalCanceled(_proposalId, currentStage);
+        emit ProposalCanceled(_proposalId, currentStage, _msgSender());
     }
 
     /// @notice Edits the proposal.
     /// @dev The proposal can be editable only if it's allowed in the stage configuration.
-    ///      The caller must have the `EDIT_PERMISSION_ID` permission to cancel it 
+    ///      The caller must have the `EDIT_PERMISSION_ID` permission to cancel it
     ///      and stage must be advanceable.
     /// @param _proposalId The id of the proposal.
     /// @param _metadata The metadata of the proposal.
@@ -608,11 +623,7 @@ contract StagedProposalProcessor is
             proposal.actions.push(_actions[i]);
         }
 
-        emit ProposalEdited(
-            _proposalId,
-            _metadata,
-            _actions
-        );
+        emit ProposalEdited(_proposalId, currentStage, _msgSender(), _metadata, _actions);
     }
 
     /// @inheritdoc IProposal
@@ -678,7 +689,7 @@ contract StagedProposalProcessor is
     }
 
     /// @notice Checks whether the caller has the required permission to execute a proposal at the last stage.
-    /// @param _account The address on which the `EXECUTE_PERMISSION_ID` is checked. 
+    /// @param _account The address on which the `EXECUTE_PERMISSION_ID` is checked.
     /// @return Returns `true` if the caller has the `EXECUTE_PERMISSION_ID` permission, otherwise `false`.
     function hasExecutePermission(address _account) public view virtual returns (bool) {
         return
@@ -691,7 +702,7 @@ contract StagedProposalProcessor is
     }
 
     /// @notice Checks whether the caller has the required permission to advance a proposal.
-    /// @param _account The address on which the `ADVANCE_PERMISSION_ID` is checked. 
+    /// @param _account The address on which the `ADVANCE_PERMISSION_ID` is checked.
     /// @return Returns `true` if the caller has the `ADVANCE_PERMISSION_ID` permission, otherwise `false`.
     function hasAdvancePermission(address _account) public view virtual returns (bool) {
         return
