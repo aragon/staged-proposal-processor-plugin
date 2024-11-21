@@ -1,6 +1,6 @@
 = StagedProposalProcessor
 
-DANGER: The contracts are currently being audited, DO NOT USE IN PRODUCTION.
+IMPORTANT: The contracts are currently being audited, DO NOT USE IN PRODUCTION.
 
 {{StagedProposalProcessor}}
 

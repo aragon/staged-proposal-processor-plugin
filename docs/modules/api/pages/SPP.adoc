@@ -56,7 +56,7 @@
 :xref-SPPRuleCondition-UPDATE_RULES_PERMISSION_ID-bytes32: xref:SPP.adoc#SPPRuleCondition-UPDATE_RULES_PERMISSION_ID-bytes32
 = StagedProposalProcessor
 
-DANGER: The contracts are currently being audited, DO NOT USE IN PRODUCTION.
+IMPORTANT: The contracts are currently being audited, DO NOT USE IN PRODUCTION.
 
 :ResultType: pass:normal[xref:#StagedProposalProcessor-ResultType[`++ResultType++`]]
 :ProposalState: pass:normal[xref:#StagedProposalProcessor-ProposalState[`++ProposalState++`]]
