@@ -1,0 +1,3 @@
+= This is StagedProposalProcessor docs.
+
+DANGER: The contracts are currently being audited, DO NOT USE IN PRODUCTION.

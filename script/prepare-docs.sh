@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-rm -rf ./docs
+rm -rf ./docs/templates
 
 PACKAGE_NAME="@aragon/osx-commons-configs"
 PACKAGE_PATH=$(node -p "require.resolve('$PACKAGE_NAME')")
