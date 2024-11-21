@@ -276,6 +276,10 @@ contract StagedProposalProcessor is
     ) external virtual {
         Proposal storage proposal = proposals[_proposalId];
 
+        if (!_proposalExists(proposal)) {
+            revert Errors.NonexistentProposal(_proposalId);
+        }
+
         uint16 currentStage = proposal.currentStage;
 
         // Ensure that result can not be submitted
@@ -297,7 +301,7 @@ contract StagedProposalProcessor is
             ? hasExecutePermission(sender)
             : hasAdvancePermission(sender);
 
-        // It's important to not revert and silentely succeed even if proposal
+        // It's important to not revert and silently succeed even if proposal
         // can not advance due to permission or state, because as sub-body's
         // proposals could contain other actions that should still succeed.
         if (hasPermission && state(_proposalId) == ProposalState.Advanceable) {
