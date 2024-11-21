@@ -20,7 +20,6 @@ import {
 } from "@aragon/osx-commons-contracts/src/plugin/extensions/proposal/ProposalUpgradeable.sol";
 
 import {ERC165Checker} from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
-import {console} from "forge-std/console.sol";
 
 /// @title StagedProposalProcessor
 /// @author Aragon X - 2024
@@ -48,7 +47,11 @@ contract StagedProposalProcessor is
     }
 
     /// @notice The states of the proposal.
-    /// TODO: add 
+    /// @param Active Whether the proposal is not advanceable.
+    /// @param Canceled Whether the proposal is canceled.
+    /// @param Executed Whether the proposal is executed.
+    /// @param Advanceable Whether the proposal can be advanced to the next stage.
+    /// @param Expired Whether the proposal's stage maxAdvance time has passed.
     enum ProposalState {
         Active,
         Canceled,
@@ -79,6 +82,8 @@ contract StagedProposalProcessor is
     /// @param approvalThreshold The number of bodies that are required to pass to advance the proposal.
     /// @param vetoThreshold If this number of bodies veto, the proposal can never advance
     ///     even if `approvalThreshold` is satisfied.
+    /// @param cancelable If the proposal can be cancelled in the stage.
+    /// @param editable If the proposal can be edited in the stage.
     struct Stage {
         Body[] bodies;
         uint64 maxAdvance;
@@ -153,10 +158,10 @@ contract StagedProposalProcessor is
         address indexed sender
     );
 
-    /// @notice Emitted when the proposal gets editted.
+    /// @notice Emitted when the proposal gets edited.
     /// @param proposalId the proposal id.
-    /// @param stageId The stage id in which the proposal was editted.
-    /// @param sender The sender that editted the proposal.
+    /// @param stageId The stage id in which the proposal was edited.
+    /// @param sender The sender that edited the proposal.
     /// @param metadata The new metadata that replaces old metadata.
     /// @param actions The new actions that replaces old actions.
     event ProposalEdited(
@@ -459,7 +464,7 @@ contract StagedProposalProcessor is
     /// @param _proposalId The ID of the proposal.
     /// @param _stageId The ID of the stage.
     /// @param _body The address of the sub-body.
-    /// @return Returns TODO: what resultType the body reported the result with.
+    /// @return Returns what resultType the body reported the result with.
     ///     Returns `None (0)` if no result has been provided yet.
     function getBodyProposalId(
         uint256 _proposalId,
@@ -506,16 +511,16 @@ contract StagedProposalProcessor is
     function state(uint256 _proposalId) public view virtual returns (ProposalState) {
         Proposal storage proposal = proposals[_proposalId];
 
+        if (!_proposalExists(proposal)) {
+            revert Errors.NonexistentProposal(_proposalId);
+        }
+
         if (proposal.executed) {
             return ProposalState.Executed;
         }
 
         if (proposal.canceled) {
             return ProposalState.Canceled;
-        }
-
-        if (!_proposalExists(proposal)) {
-            revert Errors.NonexistentProposal(_proposalId);
         }
 
         Stage storage stage = stages[proposal.stageConfigIndex][proposal.currentStage];
@@ -619,7 +624,7 @@ contract StagedProposalProcessor is
         Stage storage stage = stages[proposal.stageConfigIndex][currentStage];
 
         if (!stage.editable) {
-            revert Errors.ProposalCanNotBeEditted(_proposalId);
+            revert Errors.ProposalCanNotBeEdited(_proposalId);
         }
 
         delete proposal.actions;
@@ -634,8 +639,6 @@ contract StagedProposalProcessor is
     /// @inheritdoc IProposal
     /// @dev Requires the `EXECUTE_PERMISSION_ID` permission.
     function execute(uint256 _proposalId) public virtual auth(Permissions.EXECUTE_PERMISSION_ID) {
-        Proposal storage proposal = proposals[_proposalId];
-
         if (!canExecute(_proposalId)) {
             revert Errors.ProposalExecutionForbidden(_proposalId);
         }
@@ -648,8 +651,6 @@ contract StagedProposalProcessor is
     /// @param _proposalId The unique identifier of the proposal to check.
     /// @return Returns `true` if the proposal can be advanced to the next stage, otherwise `false`.
     function canProposalAdvance(uint256 _proposalId) public view virtual returns (bool) {
-        Proposal storage proposal = proposals[_proposalId];
-
         // `state` reverts if proposal is non existent.
         return state(_proposalId) == ProposalState.Advanceable;
     }
@@ -659,11 +660,11 @@ contract StagedProposalProcessor is
         Proposal storage proposal = proposals[_proposalId];
 
         // 1. `state` reverts if proposal is non existent.
-        // 2. Proposal must be on the last stage and advanceable.
+        // 2. Proposal must be on the last stage and be advanceable.
         return isAtLastStage(proposal) && state(_proposalId) == ProposalState.Advanceable;
     }
 
-    /// @notice Calculates and retrieves the number of approvals and vetoes for a proposal.
+    /// @notice Calculates and retrieves the number of approvals and vetoes for a proposal on the stage.
     /// @param _proposalId The proposal ID.
     /// @param _stageId The stage index.
     /// @return approvals The total number of approvals for the proposal.
