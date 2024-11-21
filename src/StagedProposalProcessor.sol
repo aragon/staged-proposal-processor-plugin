@@ -47,6 +47,8 @@ contract StagedProposalProcessor is
         Veto
     }
 
+    /// @notice The states of the proposal.
+    /// TODO: add 
     enum ProposalState {
         Active,
         Canceled,
