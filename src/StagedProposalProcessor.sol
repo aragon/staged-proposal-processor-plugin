@@ -94,6 +94,8 @@ contract StagedProposalProcessor is
     /// @param currentStage Which stage the proposal is at.
     /// @param stageConfigIndex The stage configuration that this proposal uses.
     /// @param executed Whether the proposal is executed or not.
+    /// @param canceled Whether the proposal is canceled or not.
+    /// @param creator The creator of the proposal.
     /// @param actions The actions to be executed when the proposal passes.
     /// @param targetConfig The target to which this contract will pass actions with an operation type.
     struct Proposal {
