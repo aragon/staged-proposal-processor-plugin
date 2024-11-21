@@ -475,8 +475,9 @@ contract StagedProposalProcessor is
         return currentConfigIndex;
     }
 
-    /// @notice Retrieves the currently applied stages for the active configuration.
-    /// @return The array of `Stage` structs representing the current stage configuration.
+    /// @notice Retrieves the stages stored on the `_index` in the `stages` configuration.
+    /// @param _index The index from which to get the stages configuration.
+    /// @return The array of `Stage` structs.
     function getStages(uint256 _index) public view virtual returns (Stage[] memory) {
         if (_index > getCurrentConfigIndex() || _index == 0) {
             revert Errors.StageCountZero();
