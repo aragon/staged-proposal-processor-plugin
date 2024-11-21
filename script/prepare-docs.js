@@ -63,10 +63,13 @@ async function main() {
 
     const {input, output} = await compile1(solFiles)
 
+    const templatesPath = 'docs/templates'
+    const apiPath = 'docs/modules/api'
+    
     const config =  {
-        outputDir: 'docs/modules/api/pages',
+        outputDir: `${apiPath}/pages`,
         sourcesDir: path.resolve(__dirname, "../src"),
-        templates: 'docs/templates',
+        templates: templatesPath,
         exclude: ['mocks', 'test'],
         pageExtension: '.adoc',
         collapseNewlines: true,
@@ -77,11 +80,13 @@ async function main() {
 
     await docgen.main([{ input: input,  output: await output }], config);
 
-    const navOutput = execSync('node script/gen-nav.js docs/modules/api/pages', { encoding: 'utf8' });
+    const navOutput = execSync(`node script/gen-nav.js ${apiPath}/pages`, { encoding: 'utf8' });
 
     // Write the output to the target file
-    const targetFilePath = 'docs/modules/api/nav.adoc';
+    const targetFilePath = `${apiPath}/nav.adoc`;
     fs.writeFileSync(targetFilePath, navOutput, 'utf8');
+
+    fs.rm(templatesPath, { recursive: true, force: true }, () => {})
 } 
 
 main()
