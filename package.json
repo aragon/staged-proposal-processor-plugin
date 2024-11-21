@@ -1,5 +1,6 @@
 {
   "license": "AGPL-3.0-or-later",
+  "version": "1.0.0",
   "keywords": [
     "blockchain",
     "ethereum",
@@ -12,6 +13,10 @@
     "dao",
     "daobox"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aragon/staged-proposal-processor-plugin"
+  },
   "private": true,
   "scripts": {
     "clean": "rm -rf cache out",

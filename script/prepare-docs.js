@@ -6,6 +6,9 @@ const path = require('path');
 const fs = require("fs-extra");
 const solc = require("solc");
 const { execSync } = require('child_process');
+const {version, repository} = require('../package.json');
+
+const ROOT_DIR = path.resolve(__dirname, '..')
 
 const walk = async (dirPath) => Promise.all(
   await readdir(dirPath, { withFileTypes: true }).then((entries) => entries.map((entry) => {
@@ -18,7 +21,7 @@ let includePaths = ['node_modules']
 
 function resolveImports(filePath) {
     for (const includePath of includePaths) {
-        const fullPath = path.resolve(__dirname, '..', path.join(includePath, filePath));
+        const fullPath = path.resolve(ROOT_DIR, path.join(includePath, filePath));
         if (fs.existsSync(fullPath)) {
         return { contents: fs.readFileSync(fullPath, 'utf8') };
         }
@@ -54,7 +57,7 @@ const compile1 = async(filePaths) => {
 }
 
 async function main() {
-    const contractPath = path.resolve(__dirname, "../src");
+    const contractPath = path.resolve(ROOT_DIR, "src");
     const allFiles = await walk(contractPath);
 
     const solFiles = allFiles.flat(Number.POSITIVE_INFINITY).filter(item => {
@@ -65,10 +68,16 @@ async function main() {
 
     const templatesPath = 'docs/templates'
     const apiPath = 'docs/modules/api'
+
+    const helpers = path.resolve(ROOT_DIR, 'docs/templates/helpers')
+
+    // overwrite the functions.
+    helpers.version = () => version;
+    helpers.githubURI = () => repository.url;
     
     const config =  {
         outputDir: `${apiPath}/pages`,
-        sourcesDir: path.resolve(__dirname, "../src"),
+        sourcesDir: path.resolve(ROOT_DIR, "src"),
         templates: templatesPath,
         exclude: ['mocks', 'test'],
         pageExtension: '.adoc',
@@ -77,6 +86,8 @@ async function main() {
             return 'SPP' + config.pageExtension;
         },
     };
+
+
 
     await docgen.main([{ input: input,  output: await output }], config);
 
