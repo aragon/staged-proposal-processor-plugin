@@ -17,15 +17,15 @@ let includePaths = ['node_modules']
 
 function resolveImports(filePath) {
     for (const includePath of includePaths) {
-      const fullPath = path.resolve(__dirname, '..', path.join(includePath, filePath));
-      if (fs.existsSync(fullPath)) {
+        const fullPath = path.resolve(__dirname, '..', path.join(includePath, filePath));
+        if (fs.existsSync(fullPath)) {
         return { contents: fs.readFileSync(fullPath, 'utf8') };
-      }
+        }
     }
     return { error: `File not found: ${filePath}` };
-  }
+}
 
-const compile = async(filePaths) => {
+const compile1 = async(filePaths) => {
     const compilerInput = {
         language: "Solidity",
         sources: filePaths.reduce((input, fileName) => {
@@ -44,11 +44,12 @@ const compile = async(filePaths) => {
         },
     };
 
-    const compiled = JSON.parse(solc.compile(JSON.stringify(compilerInput), {
-        import: resolveImports,
-    }));
-    // console.log(compiled.contracts['/Users/giorgilagidze/Desktop/work/multibody/staged-proposal-processor-plugin/src/StagedProposalProcessor.sol'])
-    return compiled;
+    return {
+        output: JSON.parse(solc.compile(JSON.stringify(compilerInput), {
+            import: resolveImports,
+        })),
+        input: compilerInput
+    }
 }
 
 async function main() {
@@ -59,7 +60,7 @@ async function main() {
         return path.extname(item).toLowerCase() == '.sol'
     })
 
-    const compiled = compile(solFiles)
+    const {input, output} = await compile1(solFiles)
 
     const config =  {
         outputDir: 'docs/modules/api/pages',
@@ -73,18 +74,7 @@ async function main() {
         },
     };
 
-    await docgen.main([{ output: await compiled }], config);
+    await docgen.main([{ input: input,  output: await output }], config);
 } 
 
 main()
-
-
-
-
-
-
-  
-
-
-
-
