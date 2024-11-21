@@ -74,7 +74,6 @@ contract SPPRuleCondition is DaoAuthorizableUpgradeable, RuledCondition {
 
                 address condition = address(uint160(rule.value));
 
-                // TODO: test
                 condition.functionStaticCall(data);
             }
         }

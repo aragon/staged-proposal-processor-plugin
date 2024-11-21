@@ -49,7 +49,6 @@ contract GasExpensivePlugin is IProposal, IERC165 {
     }
 
     function hasSucceeded(uint256) public pure returns (bool) {
-        // TODO: for now
         return true;
     }
 
