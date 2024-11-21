@@ -202,8 +202,10 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
 
     modifier whenSomeSubProposalNeedExtraParams() {
         // configure in the body that extra params are needed.
-        PluginA(sppPlugin.getStages(sppPlugin.getCurrentConfigIndex())[0].bodies[1].addr).setNeedExtraParams(true);
-        PluginA(sppPlugin.getStages(sppPlugin.getCurrentConfigIndex())[0].bodies[0].addr).setNeedExtraParams(true);
+        PluginA(sppPlugin.getStages(sppPlugin.getCurrentConfigIndex())[0].bodies[1].addr)
+            .setNeedExtraParams(true);
+        PluginA(sppPlugin.getStages(sppPlugin.getCurrentConfigIndex())[0].bodies[0].addr)
+            .setNeedExtraParams(true);
 
         _;
     }
@@ -246,7 +248,8 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
                 targetConfig: IPlugin.TargetConfig({
                     target: address(dao),
                     operation: IPlugin.Operation.Call
-                })
+                }),
+                creator: msg.sender
             }),
             "proposal"
         );
@@ -348,7 +351,8 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
                 targetConfig: IPlugin.TargetConfig({
                     target: address(dao),
                     operation: IPlugin.Operation.Call
-                })
+                }),
+                creator: msg.sender
             }),
             "proposal"
         );
@@ -474,7 +478,8 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
                 targetConfig: IPlugin.TargetConfig({
                     target: address(dao),
                     operation: IPlugin.Operation.Call
-                })
+                }),
+                creator: msg.sender
             }),
             "proposal"
         );
@@ -594,7 +599,8 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
                 targetConfig: IPlugin.TargetConfig({
                     target: address(dao),
                     operation: IPlugin.Operation.Call
-                })
+                }),
+                creator: msg.sender
             }),
             "proposal"
         );
