@@ -22,7 +22,9 @@ abstract contract Fuzzers is StdUtils {
                 voteDuration: _stages[i].voteDuration,
                 approvalThreshold: uint16(bound(_stages[i].approvalThreshold, 0, _stages.length)),
                 vetoThreshold: uint16(bound(_stages[i].vetoThreshold, 0, _stages.length)),
-                bodies: fuzzBodies
+                bodies: fuzzBodies,
+                cancelable: false,
+                editable: false
             });
         }
     }

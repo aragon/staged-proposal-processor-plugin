@@ -20,6 +20,26 @@ library Errors {
     /// @notice Thrown if the thresholds are invalid.
     error StageThresholdsInvalid();
 
+    /// @notice Thrown if the proposal is not cancalable in the `stageId`.
+    error ProposalCanNotBeCancelled(uint16 stageId);
+
+    /// @notice Thrown if the proposal is not edittable.
+    /// @dev This can happen in 2 cases:
+    ///      either Proposal can not yet be advanced or,
+    ///      The stage has `editable:false` in the configuration.
+    /// @param proposalId The id of the proposal.
+    error ProposalCanNotBeEditted(uint256 proposalId);
+
+    /// @notice Thrown if the proposal has already been cancelled.
+    /// @param proposalId The id of the proposal.
+    error ProposalAlreadyCancelled(uint256 proposalId);
+
+    /// @notice Thrown if the proposal's state doesn't match the allowed state.
+    /// @param proposalId The id of the proposal.
+    /// @param currentState The current state of the proposal.
+    /// @param allowedStates The allowed state that must match the `currentState`, otherwise the error is thrown.
+    error UnexpectedProposalState(uint256 proposalId, uint8 currentState, bytes32 allowedStates);
+
     /// @notice Thrown if a body address is duplicated in the same stage.
     /// @param stageId The stage id that contains the duplicated body address.
     /// @param body The address that is duplicated in `stageId`.
@@ -57,9 +77,6 @@ library Errors {
 
     /// @notice Thrown when a body doesn't support IProposal interface.
     error InterfaceNotSupported();
-
-    /// @notice Thrown when the proposal can not be advanced.
-    error ProposalCannotAdvance(uint256 proposalId);
 
     /// @notice Thrown if the proposal execution is forbidden.
     /// @param proposalId The ID of the proposal.

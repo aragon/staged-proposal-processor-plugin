@@ -3,6 +3,7 @@ pragma solidity ^0.8.18;
 
 import {SPPRuleCondition} from "./utils/SPPRuleCondition.sol";
 import {StagedProposalProcessor as SPP} from "./StagedProposalProcessor.sol";
+import {Permissions} from "./libraries/Permissions.sol";
 
 import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
 import {IPlugin} from "@aragon/osx-commons-contracts/src/plugin/IPlugin.sol";
@@ -22,34 +23,6 @@ import {
 /// @dev Release 1, Build 1
 contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
     using ProxyLib for address;
-
-    /// @notice The identifier of the `EXECUTE_PERMISSION` permission.
-    bytes32 private constant EXECUTE_PERMISSION_ID = keccak256("EXECUTE_PERMISSION");
-
-    /// @notice The ID of the permission required to call the `updateStages` function.
-    bytes32 private constant UPDATE_STAGES_PERMISSION_ID = keccak256("UPDATE_STAGES_PERMISSION");
-
-    /// @notice The ID of the permission required to call the `setTrustedForwarder` function.
-    bytes32 private constant SET_TRUSTED_FORWARDER_PERMISSION_ID =
-        keccak256("SET_TRUSTED_FORWARDER_PERMISSION");
-
-    /// @notice The ID of the permission required to call the `createProposal` function.
-    bytes32 private constant CREATE_PROPOSAL_PERMISSION_ID =
-        keccak256("CREATE_PROPOSAL_PERMISSION");
-
-    /// @notice The ID of the permission required to call the `updateRules` function.
-    bytes32 private constant UPDATE_RULES_PERMISSION_ID = keccak256("UPDATE_RULES_PERMISSION");
-
-    /// @notice The ID of the permission required to call the `setTargetConfig` function.
-    bytes32 private constant SET_TARGET_CONFIG_PERMISSION_ID =
-        keccak256("SET_TARGET_CONFIG_PERMISSION");
-
-    /// @notice The ID of the permission required to call the `updateMetadata` function.
-    bytes32 private constant SET_METADATA_PERMISSION_ID = keccak256("SET_METADATA_PERMISSION");
-
-    /// @notice The ID of the permission required to execute the proposal if it's on the last stage.
-    bytes32 private constant EXECUTE_PROPOSAL_PERMISSION_ID =
-        keccak256("EXECUTE_PROPOSAL_PERMISSION");
 
     /// @notice A special address encoding permissions that are valid for any address `who` or `where`.
     address private constant ANY_ADDR = address(type(uint160).max);
@@ -97,74 +70,13 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
         bytes memory initData = abi.encodeCall(SPPRuleCondition.initialize, (_dao, rules));
         address sppCondition = CONDITION_IMPLEMENTATION.deployMinimalProxy(initData);
 
-        PermissionLib.MultiTargetPermission[]
-            memory permissions = new PermissionLib.MultiTargetPermission[](8);
+        preparedSetupData.permissions = getPermissions(
+            _dao,
+            spp,
+            sppCondition,
+            PermissionLib.Operation.Grant
+        );
 
-        permissions[0] = PermissionLib.MultiTargetPermission({
-            operation: PermissionLib.Operation.Grant,
-            where: spp,
-            who: _dao,
-            condition: PermissionLib.NO_CONDITION,
-            permissionId: UPDATE_STAGES_PERMISSION_ID
-        });
-
-        permissions[1] = PermissionLib.MultiTargetPermission({
-            operation: PermissionLib.Operation.Grant,
-            where: _dao,
-            who: spp,
-            condition: PermissionLib.NO_CONDITION,
-            permissionId: EXECUTE_PERMISSION_ID
-        });
-
-        permissions[2] = PermissionLib.MultiTargetPermission({
-            operation: PermissionLib.Operation.Grant,
-            where: spp,
-            who: _dao,
-            condition: PermissionLib.NO_CONDITION,
-            permissionId: SET_TRUSTED_FORWARDER_PERMISSION_ID
-        });
-
-        permissions[3] = PermissionLib.MultiTargetPermission({
-            operation: PermissionLib.Operation.Grant,
-            where: spp,
-            who: _dao,
-            condition: PermissionLib.NO_CONDITION,
-            permissionId: SET_TARGET_CONFIG_PERMISSION_ID
-        });
-
-        permissions[4] = PermissionLib.MultiTargetPermission({
-            operation: PermissionLib.Operation.Grant,
-            where: spp,
-            who: _dao,
-            condition: PermissionLib.NO_CONDITION,
-            permissionId: SET_METADATA_PERMISSION_ID
-        });
-
-        permissions[5] = PermissionLib.MultiTargetPermission({
-            operation: PermissionLib.Operation.GrantWithCondition,
-            where: spp,
-            who: ANY_ADDR,
-            condition: sppCondition,
-            permissionId: CREATE_PROPOSAL_PERMISSION_ID
-        });
-
-        permissions[6] = PermissionLib.MultiTargetPermission({
-            operation: PermissionLib.Operation.Grant,
-            where: sppCondition,
-            who: _dao,
-            condition: PermissionLib.NO_CONDITION,
-            permissionId: UPDATE_RULES_PERMISSION_ID
-        });
-
-        permissions[7] = PermissionLib.MultiTargetPermission({
-            operation: PermissionLib.Operation.Grant,
-            where: spp,
-            who: ANY_ADDR,
-            condition: PermissionLib.NO_CONDITION,
-            permissionId: EXECUTE_PROPOSAL_PERMISSION_ID
-        });
-
-        preparedSetupData.permissions = permissions;
         preparedSetupData.helpers = new address[](1);
         preparedSetupData.helpers[0] = sppCondition;
     }
@@ -185,70 +97,106 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
         address _dao,
         SetupPayload calldata _payload
     ) external pure returns (PermissionLib.MultiTargetPermission[] memory permissions) {
-        permissions = new PermissionLib.MultiTargetPermission[](8);
+        permissions = getPermissions(
+            _dao,
+            _payload.plugin,
+            _payload.currentHelpers[0],
+            PermissionLib.Operation.Revoke
+        );
+    }
 
+    function getPermissions(
+        address _dao,
+        address _spp,
+        address _ruledCondition,
+        PermissionLib.Operation _op
+    ) private pure returns (PermissionLib.MultiTargetPermission[] memory permissions) {
+        permissions = new PermissionLib.MultiTargetPermission[](10);
+
+        // Permissions on SPP
         permissions[0] = PermissionLib.MultiTargetPermission({
-            operation: PermissionLib.Operation.Revoke,
-            where: _payload.plugin,
+            operation: _op,
+            where: _spp,
             who: _dao,
             condition: PermissionLib.NO_CONDITION,
-            permissionId: UPDATE_STAGES_PERMISSION_ID
+            permissionId: Permissions.UPDATE_STAGES_PERMISSION_ID
         });
 
         permissions[1] = PermissionLib.MultiTargetPermission({
-            operation: PermissionLib.Operation.Revoke,
-            where: _dao,
-            who: _payload.plugin,
+            operation: _op,
+            where: _spp,
+            who: ANY_ADDR,
             condition: PermissionLib.NO_CONDITION,
-            permissionId: EXECUTE_PERMISSION_ID
+            permissionId: Permissions.EXECUTE_PERMISSION_ID
         });
 
         permissions[2] = PermissionLib.MultiTargetPermission({
-            operation: PermissionLib.Operation.Revoke,
-            where: _payload.plugin,
+            operation: _op,
+            where: _spp,
             who: _dao,
             condition: PermissionLib.NO_CONDITION,
-            permissionId: SET_TRUSTED_FORWARDER_PERMISSION_ID
+            permissionId: Permissions.SET_TRUSTED_FORWARDER_PERMISSION_ID
         });
 
         permissions[3] = PermissionLib.MultiTargetPermission({
-            operation: PermissionLib.Operation.Revoke,
-            where: _payload.plugin,
+            operation: _op,
+            where: _spp,
             who: _dao,
             condition: PermissionLib.NO_CONDITION,
-            permissionId: SET_TARGET_CONFIG_PERMISSION_ID
+            permissionId: Permissions.SET_TARGET_CONFIG_PERMISSION_ID
         });
 
         permissions[4] = PermissionLib.MultiTargetPermission({
-            operation: PermissionLib.Operation.Revoke,
-            where: _payload.plugin,
+            operation: _op,
+            where: _spp,
             who: _dao,
             condition: PermissionLib.NO_CONDITION,
-            permissionId: SET_METADATA_PERMISSION_ID
+            permissionId: Permissions.SET_METADATA_PERMISSION_ID
         });
 
-        permissions[5] = PermissionLib.MultiTargetPermission({
-            operation: PermissionLib.Operation.Revoke,
-            where: _payload.plugin,
+         permissions[5] = PermissionLib.MultiTargetPermission({
+            operation: _op == PermissionLib.Operation.Grant
+                ? PermissionLib.Operation.GrantWithCondition
+                : _op,
+            where: _spp,
             who: ANY_ADDR,
-            condition: PermissionLib.NO_CONDITION,
-            permissionId: CREATE_PROPOSAL_PERMISSION_ID
+            condition: _ruledCondition,
+            permissionId: Permissions.CREATE_PROPOSAL_PERMISSION_ID
         });
 
         permissions[6] = PermissionLib.MultiTargetPermission({
-            operation: PermissionLib.Operation.Revoke,
-            where: _payload.currentHelpers[0], // sppRuleCondition
-            who: _dao,
+            operation: _op,
+            where: _spp,
+            who: ANY_ADDR,
             condition: PermissionLib.NO_CONDITION,
-            permissionId: UPDATE_RULES_PERMISSION_ID
+            permissionId: Permissions.CANCEL_PERMISSION_ID
         });
 
         permissions[7] = PermissionLib.MultiTargetPermission({
-            operation: PermissionLib.Operation.Grant,
-            where: _payload.plugin,
+            operation: _op,
+            where: _spp,
             who: ANY_ADDR,
             condition: PermissionLib.NO_CONDITION,
-            permissionId: EXECUTE_PROPOSAL_PERMISSION_ID
+            permissionId: Permissions.ADVANCE_PERMISSION_ID
         });
+
+        /// Permissions on the dao by SPP.
+        permissions[8] = PermissionLib.MultiTargetPermission({
+            operation: _op,
+            where: _dao,
+            who: _spp,
+            condition: PermissionLib.NO_CONDITION,
+            permissionId: Permissions.EXECUTE_PERMISSION_ID
+        });
+
+        /// Permissions on the ruledCondition
+        permissions[9] = PermissionLib.MultiTargetPermission({
+            operation: _op,
+            where: _ruledCondition,
+            who: _dao,
+            condition: PermissionLib.NO_CONDITION,
+            permissionId: Permissions.UPDATE_RULES_PERMISSION_ID
+        });
+
     }
 }
