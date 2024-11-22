@@ -215,7 +215,7 @@ contract Edit_SPP_IntegrationTest is BaseTest {
         sppPlugin.edit(proposalId, newMetadata, _newFancyActions());
     }
 
-    function _newFancyActions() internal view returns (Action[] memory actions) {
+    function _newFancyActions() internal pure returns (Action[] memory actions) {
         actions = new Action[](2);
         actions[0] = Action({to: address(1), value: 1, data: abi.encode(0x1234)});
         actions[1] = Action({to: address(2), value: 2, data: abi.encode(0x5678)});
