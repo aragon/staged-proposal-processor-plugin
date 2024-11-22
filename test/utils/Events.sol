@@ -40,4 +40,6 @@ contract Events {
         bytes metadata,
         Action[] actions
     );
+
+    event TrustedForwarderUpdated(address indexed forwarder);
 }
