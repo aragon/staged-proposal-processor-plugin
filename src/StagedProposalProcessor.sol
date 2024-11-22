@@ -20,9 +20,6 @@ import {
 } from "@aragon/osx-commons-contracts/src/plugin/extensions/proposal/ProposalUpgradeable.sol";
 
 import {ERC165Checker} from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
-import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
-
-import {console} from "forge-std/console.sol";
 
 /// @title StagedProposalProcessor
 /// @author Aragon X - 2024
