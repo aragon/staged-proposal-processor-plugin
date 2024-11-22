@@ -546,7 +546,7 @@ contract StagedProposalProcessor is
 
         // 1. `state` reverts if proposal is non existent.
         // 2. Proposal must be on the last stage and be advanceable.
-        return _isAtLastStage(proposal) && state(_proposalId) == ProposalState.Advanceable;
+        return state(_proposalId) == ProposalState.Advanceable && _isAtLastStage(proposal);
     }
 
     /// @notice Current state of a proposal.
