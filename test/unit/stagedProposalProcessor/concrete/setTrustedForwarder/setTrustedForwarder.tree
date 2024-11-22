@@ -1,0 +1,6 @@
+SetTrustedForwarder_SPP_UnitTest
+├── when caller is not allowed
+│   └── it should revert.
+└── when caller is allowed
+    ├── it should set the trusted forwarder.
+    └── it should emit TrustedForwarderUpdated event.
