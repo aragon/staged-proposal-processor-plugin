@@ -31,7 +31,6 @@ contract Cancel_SPP_IntegrationTest is BaseTest {
         // turn on cancellable flag and create a new proposal
         cancellable = true;
         proposalId = _configureStagesAndCreateDummyProposal("dummy metadata 1");
-
         _;
     }
 
@@ -70,7 +69,7 @@ contract Cancel_SPP_IntegrationTest is BaseTest {
     {
         // it should revert.
 
-        _moveToLastStage();
+        _moveToLastStage(proposalId);
         sppPlugin.execute(proposalId);
 
         vm.expectRevert(
@@ -93,7 +92,7 @@ contract Cancel_SPP_IntegrationTest is BaseTest {
     {
         // it should revert.
 
-        _moveToLastStage();
+        _moveToLastStage(proposalId);
 
         // move timestamp to expire proposal
         vm.warp(sppPlugin.getProposal(proposalId).lastStageTransition + MAX_ADVANCE + 1);
@@ -142,6 +141,7 @@ contract Cancel_SPP_IntegrationTest is BaseTest {
         vm.expectRevert(
             abi.encodeWithSelector(
                 Errors.ProposalCanNotBeCancelled.selector,
+                proposalId,
                 sppPlugin.getProposal(proposalId).currentStage
             )
         );
@@ -173,23 +173,5 @@ contract Cancel_SPP_IntegrationTest is BaseTest {
             abi.encodeWithSelector(Errors.NonexistentProposal.selector, NON_EXISTENT_PROPOSAL_ID)
         );
         sppPlugin.cancel(NON_EXISTENT_PROPOSAL_ID);
-    }
-
-    function _moveToLastStage() internal {
-        uint256 initialStage;
-
-        // move proposal to last stage to be executable
-        // execute proposals on first stage
-        _executeStageProposals(initialStage);
-
-        // advance to last stage
-        vm.warp(VOTE_DURATION + START_DATE);
-        sppPlugin.advanceProposal(proposalId);
-
-        // execute proposals on first stage
-        _executeStageProposals(initialStage + 1);
-
-        // advance last stage
-        vm.warp(sppPlugin.getProposal(proposalId).lastStageTransition + VOTE_DURATION + START_DATE);
     }
 }

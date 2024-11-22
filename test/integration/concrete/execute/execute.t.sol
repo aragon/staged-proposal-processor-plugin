@@ -29,7 +29,7 @@ contract Execute_SPP_IntegrationTest is BaseTest {
         // it should emit event.
         // it should execute proposal.
 
-        _moveToLastStage();
+        _moveToLastStage(proposalId);
 
         // check event emitted
         vm.expectEmit({emitter: address(sppPlugin)});
@@ -82,23 +82,5 @@ contract Execute_SPP_IntegrationTest is BaseTest {
             abi.encodeWithSelector(Errors.NonexistentProposal.selector, NON_EXISTENT_PROPOSAL_ID)
         );
         sppPlugin.execute(NON_EXISTENT_PROPOSAL_ID);
-    }
-
-    function _moveToLastStage() internal {
-        uint256 initialStage;
-
-        // move proposal to last stage to be executable
-        // execute proposals on first stage
-        _executeStageProposals(initialStage);
-
-        // advance to last stage
-        vm.warp(VOTE_DURATION + START_DATE);
-        sppPlugin.advanceProposal(proposalId);
-
-        // execute proposals on first stage
-        _executeStageProposals(initialStage + 1);
-
-        // advance last stage
-        vm.warp(sppPlugin.getProposal(proposalId).lastStageTransition + VOTE_DURATION + START_DATE);
     }
 }
