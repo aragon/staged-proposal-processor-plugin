@@ -297,7 +297,7 @@ contract StagedProposalProcessor is
         address sender = _msgSender();
 
         // If the last stage, caller must have `EXECUTE_PERMISSION_ID`, otherwise `ADVANCE_PERMISSION_ID`.
-        bool hasPermission = isAtLastStage(proposal)
+        bool hasPermission = _isAtLastStage(proposal)
             ? hasExecutePermission(sender)
             : hasAdvancePermission(sender);
 
@@ -436,12 +436,13 @@ contract StagedProposalProcessor is
         address sender = _msgSender();
 
         // If the last stage, caller must have `EXECUTE_PERMISSION_ID`, otherwise `ADVANCE_PERMISSION_ID`.
-        bool hasPermission = isAtLastStage(proposal)
-            ? hasExecutePermission(sender)
-            : hasAdvancePermission(sender);
-
-        if (!hasPermission) {
-            revert Errors.ProposalExecutionForbidden(_proposalId);
+        bool hasPermission;
+        if (_isAtLastStage(proposal)) {
+            hasPermission = hasExecutePermission(sender);
+            if (!hasPermission) revert Errors.ProposalExecutionForbidden(_proposalId);
+        } else {
+            hasPermission = hasAdvancePermission(sender);
+            if (!hasPermission) revert Errors.ProposalAdvanceForbidden(_proposalId);
         }
 
         _advanceProposal(_proposalId);
@@ -545,7 +546,7 @@ contract StagedProposalProcessor is
 
         // 1. `state` reverts if proposal is non existent.
         // 2. Proposal must be on the last stage and be advanceable.
-        return isAtLastStage(proposal) && state(_proposalId) == ProposalState.Advanceable;
+        return _isAtLastStage(proposal) && state(_proposalId) == ProposalState.Advanceable;
     }
 
     /// @notice Current state of a proposal.
@@ -693,7 +694,7 @@ contract StagedProposalProcessor is
         // 1. `state` reverts if proposal is non existent.
         // 2.  Proposal must be on the last stage and either advanceable or executed.
         return
-            isAtLastStage(proposal) &&
+            _isAtLastStage(proposal) &&
             (state(_proposalId) == ProposalState.Advanceable ||
                 state(_proposalId) == ProposalState.Executed);
     }
@@ -1042,7 +1043,7 @@ contract StagedProposalProcessor is
     /// @notice Checks if proposal is at the last stage or not.
     /// @param _proposal The proposal struct.
     /// @return Returns `true` if proposal is at the last stage, otherwise false.
-    function isAtLastStage(Proposal storage _proposal) private view returns (bool) {
+    function _isAtLastStage(Proposal storage _proposal) private view returns (bool) {
         return _proposal.currentStage == stages[_proposal.stageConfigIndex].length - 1;
     }
 
