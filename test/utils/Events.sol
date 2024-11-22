@@ -32,4 +32,12 @@ contract Events {
         uint256 indexed stageId,
         address indexed sender
     );
+
+    event ProposalEdited(
+        uint256 indexed proposalId,
+        uint256 indexed stageId,
+        address indexed sender,
+        bytes metadata,
+        Action[] actions
+    );
 }
