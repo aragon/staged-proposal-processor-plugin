@@ -249,7 +249,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
                     target: address(dao),
                     operation: IPlugin.Operation.Call
                 }),
-                creator: msg.sender
+                creator: users.manager
             }),
             "proposal"
         );
@@ -352,7 +352,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
                     target: address(dao),
                     operation: IPlugin.Operation.Call
                 }),
-                creator: msg.sender
+                creator: users.manager
             }),
             "proposal"
         );
@@ -479,7 +479,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
                     target: address(dao),
                     operation: IPlugin.Operation.Call
                 }),
-                creator: msg.sender
+                creator: users.manager
             }),
             "proposal"
         );
@@ -600,7 +600,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
                     target: address(dao),
                     operation: IPlugin.Operation.Call
                 }),
-                creator: msg.sender
+                creator: users.manager
             }),
             "proposal"
         );
