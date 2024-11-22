@@ -2,10 +2,10 @@
 pragma solidity ^0.8.18;
 
 import {Errors} from "../../../../../src/libraries/Errors.sol";
+import {Permissions} from "../../../../../src/libraries/Permissions.sol";
 import {PluginA} from "../../../../utils/dummy-plugins/PluginA/PluginA.sol";
 import {StagedConfiguredSharedTest} from "../../../../StagedConfiguredSharedTest.t.sol";
 import {StagedProposalProcessor as SPP} from "../../../../../src/StagedProposalProcessor.sol";
-import {Permissions} from "../../../../../src/libraries/Permissions.sol";
 
 import {DAO} from "@aragon/osx/core/dao/DAO.sol";
 import {IPlugin} from "@aragon/osx-commons-contracts/src/plugin/IPlugin.sol";
@@ -736,9 +736,8 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         // it should emit ProposalResultReported event.
 
         // get current stage (should be 1)
-        uint256 currentStage = sppPlugin.getProposal(proposalId).currentStage;
-
-        stageId = 0;
+        uint16 currentStage = sppPlugin.getProposal(proposalId).currentStage;
+        stageId = currentStage - 1;
 
         // check event was emitted
         vm.expectEmit({emitter: address(sppPlugin)});
