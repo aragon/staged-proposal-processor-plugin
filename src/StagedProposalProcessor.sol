@@ -372,12 +372,13 @@ contract StagedProposalProcessor is
         // changing it while proposal is still open
         proposal.stageConfigIndex = index;
 
-        // If the start date is in the past, revert.
-        if (_startDate < uint64(block.timestamp)) {
+        if(_startDate == 0) {
+            _startDate = uint64(block.timestamp);
+        } else if (_startDate < uint64(block.timestamp)) {
             revert Errors.StartDateInvalid(_startDate);
         }
 
-        proposal.lastStageTransition = _startDate == 0 ? uint64(block.timestamp) : _startDate;
+        proposal.lastStageTransition = _startDate;
 
         for (uint256 i = 0; i < _actions.length; ++i) {
             proposal.actions.push(_actions[i]);
