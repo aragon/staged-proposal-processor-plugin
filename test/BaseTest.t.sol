@@ -37,6 +37,8 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
     uint64 internal maxAdvance = MAX_ADVANCE;
     uint64 internal minAdvance = MIN_ADVANCE;
     uint64 internal voteDuration = VOTE_DURATION;
+    bool internal cancellable;
+    bool internal editable;
 
     uint16 internal approvalThreshold = 1;
     uint16 internal vetoThreshold = 1;
@@ -119,7 +121,7 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
 
         // grant permissions
         PermissionLib.MultiTargetPermission[]
-            memory permissions = new PermissionLib.MultiTargetPermission[](6);
+            memory permissions = new PermissionLib.MultiTargetPermission[](8);
 
         // grant update stage permission on SPP plugin to the DAO
         permissions[0] = PermissionLib.MultiTargetPermission({
@@ -173,6 +175,24 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
             who: users.manager,
             condition: PermissionLib.NO_CONDITION,
             permissionId: Permissions.ADVANCE_PERMISSION_ID
+        });
+
+        // grant cancel permission on the spp to the manager
+        permissions[6] = PermissionLib.MultiTargetPermission({
+            operation: PermissionLib.Operation.Grant,
+            where: address(sppPlugin),
+            who: users.manager,
+            condition: PermissionLib.NO_CONDITION,
+            permissionId: Permissions.CANCEL_PERMISSION_ID
+        });
+
+        // grant edit permission on the spp to the manager
+        permissions[7] = PermissionLib.MultiTargetPermission({
+            operation: PermissionLib.Operation.Grant,
+            where: address(sppPlugin),
+            who: users.manager,
+            condition: PermissionLib.NO_CONDITION,
+            permissionId: Permissions.EDIT_PERMISSION_ID
         });
 
         DAO(payable(address(dao))).applyMultiTargetPermissions(permissions);
@@ -268,6 +288,7 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
     function _createStageStruct(
         SPP.Body[] memory _bodies
     ) internal view virtual returns (SPP.Stage memory stage) {
+        // console.log("cancellable", cancellable);
         stage = SPP.Stage({
             bodies: _bodies,
             maxAdvance: maxAdvance,
@@ -275,8 +296,8 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
             voteDuration: voteDuration,
             approvalThreshold: approvalThreshold,
             vetoThreshold: vetoThreshold,
-            cancelable: false,
-            editable: false
+            cancelable: cancellable,
+            editable: editable
         });
     }
 
