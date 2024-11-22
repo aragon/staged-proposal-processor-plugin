@@ -35,7 +35,7 @@ contract GetProposal_SPP_UnitTest is StagedConfiguredSharedTest {
             canceled: false,
             actions: _createDummyActions(),
             targetConfig: defaultTargetConfig,
-            creator: msg.sender
+            creator: users.manager
         });
 
         // check proposal is correct
