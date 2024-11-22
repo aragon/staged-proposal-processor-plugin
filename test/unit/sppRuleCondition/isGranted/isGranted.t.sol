@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.18;
 
-import {
-    UPDATE_RULES_PERMISSION_ID,
-    CREATE_PROPOSAL_PERMISSION_ID
-} from "../../../utils/Permissions.sol";
+import {Permissions} from "../../../../src/libraries/Permissions.sol";
 import {SPPRuleCondition} from "../../../../src/utils/SPPRuleCondition.sol";
 import {RuleConditionConfiguredTest} from "../../../RuleConditionConfiguredTest.t.sol";
 import {PluginACondition} from "../../../utils/dummy-plugins/PluginA/PluginACondition.sol";
@@ -21,7 +18,7 @@ contract IsGranted_SPPRuleCondition_UnitTest is RuleConditionConfiguredTest {
             ruleCondition.isGranted(
                 address(sppPlugin),
                 users.unauthorized,
-                CREATE_PROPOSAL_PERMISSION_ID,
+                Permissions.CREATE_PROPOSAL_PERMISSION_ID,
                 new bytes(0)
             )
         );
@@ -33,7 +30,7 @@ contract IsGranted_SPPRuleCondition_UnitTest is RuleConditionConfiguredTest {
             id: CONDITION_RULE_ID,
             op: uint8(RuledCondition.Op.EQ),
             value: uint160(address(pluginACondition)), // condition address
-            permissionId: CREATE_PROPOSAL_PERMISSION_ID
+            permissionId: Permissions.CREATE_PROPOSAL_PERMISSION_ID
         });
 
         ruleCondition.updateRules(rules);
@@ -50,7 +47,7 @@ contract IsGranted_SPPRuleCondition_UnitTest is RuleConditionConfiguredTest {
             ruleCondition.isGranted(
                 address(sppPlugin),
                 users.alice,
-                CREATE_PROPOSAL_PERMISSION_ID,
+                Permissions.CREATE_PROPOSAL_PERMISSION_ID,
                 new bytes(0)
             )
         );
@@ -63,7 +60,7 @@ contract IsGranted_SPPRuleCondition_UnitTest is RuleConditionConfiguredTest {
             ruleCondition.isGranted(
                 address(sppPlugin),
                 users.unauthorized, // it is not set as member on plugin A
-                CREATE_PROPOSAL_PERMISSION_ID,
+                Permissions.CREATE_PROPOSAL_PERMISSION_ID,
                 new bytes(0)
             )
         );

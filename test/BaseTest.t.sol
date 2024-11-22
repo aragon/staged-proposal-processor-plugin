@@ -3,24 +3,13 @@ pragma solidity ^0.8.18;
 
 import {Test} from "forge-std/Test.sol";
 
-import {
-    UPDATE_STAGES_PERMISSION_ID,
-    SET_TRUSTED_FORWARDER_PERMISSION_ID,
-    SET_TARGET_CONFIG_PERMISSION_ID,
-    SET_METADATA_PERMISSION_ID,
-    UPDATE_RULES_PERMISSION_ID,
-    CREATE_PROPOSAL_PERMISSION_ID,
-    EXECUTE_PROPOSAL_PERMISSION_ID
-} from "./utils/Permissions.sol";
-
-import {Permissions} from "../src/libraries/Permissions.sol";
-
 import {Users} from "./utils/Types.sol";
 import {Events} from "./utils/Events.sol";
 import {Target} from "./utils/Target.sol";
 import {Fuzzers} from "./utils/Fuzzers.sol";
 import {Constants} from "./utils/Constants.sol";
 import {Assertions} from "./utils/Assertions.sol";
+import {Permissions} from "../src/libraries/Permissions.sol";
 import {PluginA} from "./utils/dummy-plugins/PluginA/PluginA.sol";
 import {TrustedForwarder} from "../src/utils/TrustedForwarder.sol";
 import {StagedProposalProcessor as SPP} from "../src/StagedProposalProcessor.sol";

@@ -5,8 +5,8 @@ import {BaseTest} from "../../../../BaseTest.t.sol";
 import {
     StagedProposalProcessorSetup as SPPSetup
 } from "../../../../../src/StagedProposalProcessorSetup.sol";
+import {Permissions} from "../../../../../src/libraries/Permissions.sol";
 import {SPPRuleCondition} from "../../../../../src/utils/SPPRuleCondition.sol";
-import {CREATE_PROPOSAL_PERMISSION_ID} from "../../../../utils/Permissions.sol";
 import {StagedProposalProcessor as SPP} from "../../../../../src/StagedProposalProcessor.sol";
 
 import {PermissionLib} from "@aragon/osx-commons-contracts/src/permission/PermissionLib.sol";
@@ -80,7 +80,7 @@ contract PrepareInstallation_SPPSetup_UnitTest is BaseTest {
             bytes32 permissionId = setupData.permissions[i].permissionId;
             assertEq(
                 uint256(setupData.permissions[i].operation),
-                permissionId == CREATE_PROPOSAL_PERMISSION_ID
+                permissionId == Permissions.CREATE_PROPOSAL_PERMISSION_ID
                     ? uint256(PermissionLib.Operation.GrantWithCondition)
                     : uint256(PermissionLib.Operation.Grant),
                 "operation"
@@ -131,7 +131,7 @@ contract PrepareInstallation_SPPSetup_UnitTest is BaseTest {
             id: 1,
             op: 1,
             value: 1,
-            permissionId: CREATE_PROPOSAL_PERMISSION_ID
+            permissionId: Permissions.CREATE_PROPOSAL_PERMISSION_ID
         });
         bytes memory data = abi.encode(
             DUMMY_METADATA,
@@ -163,7 +163,7 @@ contract PrepareInstallation_SPPSetup_UnitTest is BaseTest {
         PermissionLib.MultiTargetPermission[] memory permissions
     ) private returns (PermissionLib.MultiTargetPermission memory permission) {
         for (uint256 i = 0; i < permissions.length; i++) {
-            if (permissions[i].permissionId == CREATE_PROPOSAL_PERMISSION_ID) {
+            if (permissions[i].permissionId == Permissions.CREATE_PROPOSAL_PERMISSION_ID) {
                 permission = permissions[i];
             }
         }

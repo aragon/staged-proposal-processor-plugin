@@ -7,7 +7,7 @@ import {PluginB} from "./utils/dummy-plugins/PluginB/PluginB.sol";
 import {SPPRuleCondition} from "../src/utils/SPPRuleCondition.sol";
 import {PluginACondition} from "./utils/dummy-plugins/PluginA/PluginACondition.sol";
 import {PluginBCondition} from "./utils/dummy-plugins/PluginB/PluginBCondition.sol";
-import {UPDATE_RULES_PERMISSION_ID, CREATE_PROPOSAL_PERMISSION_ID} from "./utils/Permissions.sol";
+import {Permissions} from "../src/libraries/Permissions.sol";
 
 import {DAO} from "@aragon/osx/core/dao/DAO.sol";
 import {
@@ -35,7 +35,7 @@ abstract contract RuleConditionConfiguredTest is BaseTest {
         DAO(payable(address(dao))).grant({
             _where: address(ruleCondition),
             _who: users.manager,
-            _permissionId: UPDATE_RULES_PERMISSION_ID
+            _permissionId: Permissions.UPDATE_RULES_PERMISSION_ID
         });
 
         // deploy dummy plugins conditions
@@ -49,7 +49,7 @@ abstract contract RuleConditionConfiguredTest is BaseTest {
                 id: 1,
                 op: 1,
                 value: 55,
-                permissionId: CREATE_PROPOSAL_PERMISSION_ID
+                permissionId: Permissions.CREATE_PROPOSAL_PERMISSION_ID
             });
     }
 }
