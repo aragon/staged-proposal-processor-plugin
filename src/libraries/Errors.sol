@@ -17,6 +17,9 @@ library Errors {
     /// @notice Thrown if stage durations are invalid.
     error StageDurationsInvalid();
 
+    /// @notice Thrown if `_proposalParams`'s length exceeds `type(uint16).max`.
+    error Uint16MaxSizeExceeded();
+
     /// @notice Thrown if the thresholds are invalid.
     error StageThresholdsInvalid();
 
