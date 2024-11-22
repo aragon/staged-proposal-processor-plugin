@@ -3,8 +3,8 @@ pragma solidity ^0.8.18;
 
 import {BaseTest} from "../../../BaseTest.t.sol";
 import {Errors} from "../../../../src/libraries/Errors.sol";
+import {Permissions} from "../../../../src/libraries/Permissions.sol";
 import {PluginA} from "../../../utils/dummy-plugins/PluginA/PluginA.sol";
-import {EXECUTE_PROPOSAL_PERMISSION_ID} from "../../../utils/Permissions.sol";
 import {StagedProposalProcessor as SPP} from "../../../../src/StagedProposalProcessor.sol";
 
 import {DAO} from "@aragon/osx/core/dao/DAO.sol";
@@ -68,7 +68,7 @@ contract Execute_SPP_IntegrationTest is BaseTest {
                 address(dao),
                 address(sppPlugin),
                 users.unauthorized,
-                EXECUTE_PROPOSAL_PERMISSION_ID
+                Permissions.EXECUTE_PERMISSION_ID
             )
         );
 
