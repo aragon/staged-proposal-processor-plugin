@@ -20,6 +20,8 @@ import {
 } from "@aragon/osx-commons-contracts/src/plugin/extensions/proposal/ProposalUpgradeable.sol";
 
 import {ERC165Checker} from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+
 import {console} from "forge-std/console.sol";
 
 /// @title StagedProposalProcessor
@@ -48,7 +50,7 @@ contract StagedProposalProcessor is
     }
 
     /// @notice The states of the proposal.
-    /// TODO: add 
+    /// TODO: add
     enum ProposalState {
         Active,
         Canceled,
@@ -384,12 +386,17 @@ contract StagedProposalProcessor is
             proposal.actions.push(_actions[i]);
         }
 
+        if(_proposalParams.length > type(uint16).max) {
+            revert Errors.Uint16MaxSizeExceeded();
+        }
+
         // To reduce the gas costs significantly, don't store the very
         // first stage's params in storage as they only get used in this
         // current tx and will not be needed later on for advancing.
         for (uint256 i = 1; i < _proposalParams.length; ++i) {
-            for (uint256 j = 0; j < _proposalParams[i].length; ++j)
+            for (uint256 j = 0; j < _proposalParams[i].length; ++j) {
                 createProposalParams[proposalId][uint16(i)][j] = _proposalParams[i][j];
+            }
         }
 
         _createBodyProposals(
@@ -789,7 +796,7 @@ contract StagedProposalProcessor is
             proposal.targetConfig.target,
             bytes32(_proposalId),
             proposal.actions,
-            uint128(proposal.allowFailureMap),
+            uint256(proposal.allowFailureMap),
             proposal.targetConfig.operation
         );
 
