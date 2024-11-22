@@ -70,7 +70,7 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
         bytes memory initData = abi.encodeCall(SPPRuleCondition.initialize, (_dao, rules));
         address sppCondition = CONDITION_IMPLEMENTATION.deployMinimalProxy(initData);
 
-        preparedSetupData.permissions = getPermissions(
+        preparedSetupData.permissions = _getPermissions(
             _dao,
             spp,
             sppCondition,
@@ -97,7 +97,7 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
         address _dao,
         SetupPayload calldata _payload
     ) external pure returns (PermissionLib.MultiTargetPermission[] memory permissions) {
-        permissions = getPermissions(
+        permissions = _getPermissions(
             _dao,
             _payload.plugin,
             _payload.currentHelpers[0],
@@ -105,7 +105,7 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
         );
     }
 
-    function getPermissions(
+    function _getPermissions(
         address _dao,
         address _spp,
         address _ruledCondition,
@@ -154,7 +154,7 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
             permissionId: Permissions.SET_METADATA_PERMISSION_ID
         });
 
-         permissions[5] = PermissionLib.MultiTargetPermission({
+        permissions[5] = PermissionLib.MultiTargetPermission({
             operation: _op == PermissionLib.Operation.Grant
                 ? PermissionLib.Operation.GrantWithCondition
                 : _op,
@@ -197,6 +197,5 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
             condition: PermissionLib.NO_CONDITION,
             permissionId: Permissions.UPDATE_RULES_PERMISSION_ID
         });
-
     }
 }
