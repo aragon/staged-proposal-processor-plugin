@@ -731,6 +731,7 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         external
         whenProposalExists
         whenStageIdIsValid
+        whenProposalIsAtLastStage
     {
         // it should record the result.
         // it should emit ProposalResultReported event.
@@ -752,10 +753,8 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         });
 
         // check result was recorded
-        SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
-
         assertEq(
-            sppPlugin.getBodyResult(proposalId, proposal.currentStage, users.manager),
+            sppPlugin.getBodyResult(proposalId, stageId, users.manager),
             SPP.ResultType.Approval,
             "resultType"
         );
