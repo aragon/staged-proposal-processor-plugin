@@ -1,0 +1,9 @@
+IProposal_CreateProposal_SPP_IntegrationTest
+├── when caller is not allowed
+│   └── it should revert.
+└── when caller is allowed
+    ├── when data can be decoded
+    │   ├── it should call the createProposal function.
+    │   └── it should create the proposal.
+    └── when data can not be decoded
+        └── it should revert.
