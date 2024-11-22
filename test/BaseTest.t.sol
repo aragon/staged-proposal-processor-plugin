@@ -345,4 +345,8 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
         permissionList[8] = Permissions.EXECUTE_PERMISSION_ID;
         permissionList[9] = Permissions.UPDATE_RULES_PERMISSION_ID;
     }
+
+    function _encodeStateBitmap(SPP.ProposalState _proposalState) internal pure returns (bytes32) {
+        return bytes32(1 << uint8(_proposalState));
+    }
 }
