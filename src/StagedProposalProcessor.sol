@@ -465,7 +465,7 @@ contract StagedProposalProcessor is
         Stage storage stage = stages[proposal.stageConfigIndex][currentStage];
 
         if (!stage.cancelable) {
-            revert Errors.ProposalCanNotBeCancelled(currentStage);
+            revert Errors.ProposalCanNotBeCancelled(_proposalId, currentStage);
         }
 
         proposal.canceled = true;
@@ -494,7 +494,7 @@ contract StagedProposalProcessor is
         Stage storage stage = stages[proposal.stageConfigIndex][currentStage];
 
         if (!stage.editable) {
-            revert Errors.ProposalCanNotBeEdited(_proposalId);
+            revert Errors.ProposalCanNotBeEdited(_proposalId, currentStage);
         }
 
         delete proposal.actions;

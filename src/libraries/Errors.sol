@@ -21,14 +21,14 @@ library Errors {
     error StageThresholdsInvalid();
 
     /// @notice Thrown if the proposal is not cancelable in the `stageId`.
-    error ProposalCanNotBeCancelled(uint16 stageId);
+    error ProposalCanNotBeCancelled(uint256 proposalId, uint16 stageId);
 
     /// @notice Thrown if the proposal is not editable.
     /// @dev This can happen in 2 cases:
     ///      either Proposal can not yet be advanced or,
     ///      The stage has `editable:false` in the configuration.
     /// @param proposalId The id of the proposal.
-    error ProposalCanNotBeEdited(uint256 proposalId);
+    error ProposalCanNotBeEdited(uint256 proposalId, uint16 stageId);
 
     /// @notice Thrown if the proposal has already been cancelled.
     /// @param proposalId The id of the proposal.
