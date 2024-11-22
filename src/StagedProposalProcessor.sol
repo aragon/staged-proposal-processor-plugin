@@ -781,6 +781,8 @@ contract StagedProposalProcessor is
             stage.voteDuration = voteDuration;
             stage.approvalThreshold = approvalThreshold;
             stage.vetoThreshold = vetoThreshold;
+            stage.cancelable = _stages[i].cancelable;
+            stage.editable = _stages[i].editable;
         }
 
         emit StagesUpdated(_stages);
