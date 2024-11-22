@@ -691,12 +691,13 @@ contract StagedProposalProcessor is
     function hasSucceeded(uint256 _proposalId) public view virtual override returns (bool) {
         Proposal storage proposal = proposals[_proposalId];
 
-        // 1. `state` reverts if proposal is non existent.
-        // 2.  Proposal must be on the last stage and either advanceable or executed.
+        // `state` reverts if proposal is non existent.
+        ProposalState currentState = state(_proposalId);
+
+        // Proposal must be on the last stage and either advanceable or executed.
         return
             _isAtLastStage(proposal) &&
-            (state(_proposalId) == ProposalState.Advanceable ||
-                state(_proposalId) == ProposalState.Executed);
+            (currentState == ProposalState.Advanceable || currentState == ProposalState.Executed);
     }
 
     /// @notice Checks whether the caller has the required permission to execute a proposal at the last stage.
