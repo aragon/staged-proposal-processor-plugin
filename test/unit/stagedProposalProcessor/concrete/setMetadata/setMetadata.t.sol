@@ -6,7 +6,7 @@ import {Permissions} from "../../../../../src/libraries/Permissions.sol";
 
 import {DaoUnauthorized} from "@aragon/osx-commons-contracts/src/permission/auth/auth.sol";
 
-contract UpdateMetadata_SPP_UnitTest is BaseTest {
+contract SetMetadata_SPP_UnitTest is BaseTest {
     function test_RevertWhen_CallerIsNotAllowed() external {
         // it should revert
 
