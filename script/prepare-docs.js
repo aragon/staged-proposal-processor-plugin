@@ -29,7 +29,7 @@ function resolveImports(filePath) {
     return { error: `File not found: ${filePath}` };
 }
 
-const compile1 = async (filePaths) => {
+const compile = async (filePaths) => {
     const compilerInput = {
         language: "Solidity",
         sources: filePaths.reduce((input, fileName) => {
@@ -64,15 +64,15 @@ async function main() {
         return path.extname(item).toLowerCase() == '.sol'
     })
 
-    const { input, output } = await compile1(solFiles)
+    const { input, output } = await compile(solFiles)
 
     const templatesPath = 'docs/templates'
     const apiPath = 'docs/modules/api'
 
-    const helpers = path.resolve(ROOT_DIR, 'docs/templates/helpers')
+    const helpers = require(path.resolve(ROOT_DIR, 'docs/templates/helpers'))
 
     // overwrite the functions.
-    helpers.version = () => version;
+    helpers.version = () => `${version}`;
     helpers.githubURI = () => repository.url;
 
     const config = {

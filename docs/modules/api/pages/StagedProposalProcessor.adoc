@@ -108,9 +108,13 @@ IMPORTANT: The contracts are currently being audited, DO NOT USE IN PRODUCTION.
 :_encodeStateBitmap: pass:normal[xref:#StagedProposalProcessor-_encodeStateBitmap-enum-StagedProposalProcessor-ProposalState-[`++_encodeStateBitmap++`]]
 :_thresholdsMet: pass:normal[xref:#StagedProposalProcessor-_thresholdsMet-uint256-uint16-uint256-uint256-[`++_thresholdsMet++`]]
 
+gio123123123123
+
 [.contract]
 [[StagedProposalProcessor]]
-=== `++StagedProposalProcessor++` link:/blob/v1.0//Users/giorgilagidze/Desktop/work/multibody/staged-proposal-processor-plugin/src/StagedProposalProcessor.sol[{github-icon},role=heading-link]
+=== `++StagedProposalProcessor++` link:https://github.com/aragon/staged-proposal-processor-plugin/blob/1.0.0-alpha.1//Users/giorgilagidze/Desktop/work/multibody/staged-proposal-processor-plugin/src/StagedProposalProcessor.sol[{github-icon},role=heading-link]
+
+gio29219391
 
 [.contract-index]
 .Functions
@@ -674,9 +678,13 @@ Emitted when the trusted forwarder is updated.
 :prepareUpdate: pass:normal[xref:#StagedProposalProcessorSetup-prepareUpdate-address-uint16-struct-IPluginSetup-SetupPayload-[`++prepareUpdate++`]]
 :prepareUninstallation: pass:normal[xref:#StagedProposalProcessorSetup-prepareUninstallation-address-struct-IPluginSetup-SetupPayload-[`++prepareUninstallation++`]]
 
+gio123123123123
+
 [.contract]
 [[StagedProposalProcessorSetup]]
-=== `++StagedProposalProcessorSetup++` link:/blob/v1.0//Users/giorgilagidze/Desktop/work/multibody/staged-proposal-processor-plugin/src/StagedProposalProcessorSetup.sol[{github-icon},role=heading-link]
+=== `++StagedProposalProcessorSetup++` link:https://github.com/aragon/staged-proposal-processor-plugin/blob/1.0.0-alpha.1//Users/giorgilagidze/Desktop/work/multibody/staged-proposal-processor-plugin/src/StagedProposalProcessorSetup.sol[{github-icon},role=heading-link]
+
+gio29219391
 
 Release 1, Build 1
 
@@ -779,9 +787,13 @@ The address of the condition implementation contract.
 :_updateRules: pass:normal[xref:#SPPRuleCondition-_updateRules-struct-RuledCondition-Rule---[`++_updateRules++`]]
 :updateRules: pass:normal[xref:#SPPRuleCondition-updateRules-struct-RuledCondition-Rule---[`++updateRules++`]]
 
+gio123123123123
+
 [.contract]
 [[SPPRuleCondition]]
-=== `++SPPRuleCondition++` link:/blob/v1.0//Users/giorgilagidze/Desktop/work/multibody/staged-proposal-processor-plugin/src/utils/SPPRuleCondition.sol[{github-icon},role=heading-link]
+=== `++SPPRuleCondition++` link:https://github.com/aragon/staged-proposal-processor-plugin/blob/1.0.0-alpha.1//Users/giorgilagidze/Desktop/work/multibody/staged-proposal-processor-plugin/src/utils/SPPRuleCondition.sol[{github-icon},role=heading-link]
+
+gio29219391
 
 This contract must be deployed either with clonable or `new` keyword.
 
