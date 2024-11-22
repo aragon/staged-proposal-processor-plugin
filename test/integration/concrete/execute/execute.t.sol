@@ -78,8 +78,10 @@ contract Execute_SPP_IntegrationTest is BaseTest {
     function test_RevertWhen_ProposalDoesNotExist() external {
         // it should revert.
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.NonexistentProposal.selector, proposalId));
-        sppPlugin.execute(proposalId);
+        vm.expectRevert(
+            abi.encodeWithSelector(Errors.NonexistentProposal.selector, NON_EXISTENT_PROPOSAL_ID)
+        );
+        sppPlugin.execute(NON_EXISTENT_PROPOSAL_ID);
     }
 
     function _moveToLastStage() internal {
