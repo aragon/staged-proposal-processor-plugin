@@ -49,7 +49,7 @@ CreateProposal_SPP_IntegrationTest
 │       │   └── it should not be able to advance until minAdvance.
 │       ├── given startDate is in the past
 │       │   ├── it should revert.
-│       └── given startDate in in the future
+│       └── given startDate is in the future
 │           ├── it should use startDate for last stage transition.
 │           └── it should use startDate for first stage sub proposal startDate.
 └── when stages are not configured

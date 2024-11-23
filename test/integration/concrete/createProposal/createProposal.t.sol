@@ -802,7 +802,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         });
     }
 
-    function test_GivenStartDateInInTheFuture()
+    function test_GivenStartDateIsInTheFuture()
         external
         whenStagesAreConfigured
         whenProposalDoesNotExist
