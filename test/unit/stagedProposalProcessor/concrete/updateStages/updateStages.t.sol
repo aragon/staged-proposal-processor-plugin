@@ -5,6 +5,7 @@ import {BaseTest} from "../../../../BaseTest.t.sol";
 import {Errors} from "../../../../../src/libraries/Errors.sol";
 import {PluginB} from "../../../../utils/dummy-plugins/PluginB/PluginB.sol";
 import {StagedProposalProcessor as SPP} from "../../../../../src/StagedProposalProcessor.sol";
+import {Permissions} from "../../../../../src/libraries/Permissions.sol";
 
 import {DaoUnauthorized} from "@aragon/osx-commons-contracts/src/permission/auth/auth.sol";
 
@@ -26,7 +27,7 @@ contract UpdateStages_SPP_UnitTest is BaseTest {
                 address(dao),
                 address(sppPlugin),
                 users.unauthorized,
-                sppPlugin.UPDATE_STAGES_PERMISSION_ID()
+                Permissions.UPDATE_STAGES_PERMISSION_ID
             )
         );
         sppPlugin.updateStages(stages);
@@ -62,7 +63,7 @@ contract UpdateStages_SPP_UnitTest is BaseTest {
         emit StagesUpdated(stages);
         sppPlugin.updateStages(stages);
 
-        SPP.Stage[] memory newStages = sppPlugin.getStages();
+        SPP.Stage[] memory newStages = sppPlugin.getStages(sppPlugin.getCurrentConfigIndex());
         assertEq(sppPlugin.getCurrentConfigIndex(), _newConfigIndex, "configIndex");
         assertEq(newStages.length, stages.length, "stages length");
         assertEq(newStages, stages, "stages");
@@ -215,7 +216,7 @@ contract UpdateStages_SPP_UnitTest is BaseTest {
         emit StagesUpdated(stages);
         sppPlugin.updateStages(stages);
 
-        SPP.Stage[] memory newStages = sppPlugin.getStages();
+        SPP.Stage[] memory newStages = sppPlugin.getStages(sppPlugin.getCurrentConfigIndex());
         assertEq(sppPlugin.getCurrentConfigIndex(), _newConfigIndex, "configIndex");
         assertEq(newStages.length, stages.length, "stages length");
         assertEq(newStages, stages, "stages");
@@ -244,7 +245,7 @@ contract UpdateStages_SPP_UnitTest is BaseTest {
         emit StagesUpdated(stages);
         sppPlugin.updateStages(stages);
 
-        SPP.Stage[] memory newStages = sppPlugin.getStages();
+        SPP.Stage[] memory newStages = sppPlugin.getStages(sppPlugin.getCurrentConfigIndex());
         assertEq(sppPlugin.getCurrentConfigIndex(), _newConfigIndex, "configIndex");
         assertEq(newStages.length, stages.length, "stages length");
         assertEq(newStages, stages, "stages");
@@ -284,7 +285,7 @@ contract UpdateStages_SPP_UnitTest is BaseTest {
         emit StagesUpdated(stages);
         sppPlugin.updateStages(stages);
 
-        SPP.Stage[] memory newStages = sppPlugin.getStages();
+        SPP.Stage[] memory newStages = sppPlugin.getStages(sppPlugin.getCurrentConfigIndex());
         assertEq(sppPlugin.getCurrentConfigIndex(), _newConfigIndex, "configIndex");
         assertEq(newStages.length, stages.length, "stages length");
         assertEq(newStages, stages, "stages");

@@ -160,8 +160,10 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         uint256 lastStageTransition = sppPlugin.getProposal(proposalId).lastStageTransition;
 
         // make bodies not executable so the votes are not counted
-        PluginA(sppPlugin.getStages()[0].bodies[1].addr).setCanExecuteResult(false);
-        PluginA(sppPlugin.getStages()[0].bodies[0].addr).setCanExecuteResult(false);
+        PluginA(sppPlugin.getStages(sppPlugin.getCurrentConfigIndex())[0].bodies[1].addr)
+            .setCanExecuteResult(false);
+        PluginA(sppPlugin.getStages(sppPlugin.getCurrentConfigIndex())[0].bodies[0].addr)
+            .setCanExecuteResult(false);
 
         // reach stage duration
         vm.warp(lastStageTransition + voteDuration + START_DATE);
@@ -206,8 +208,10 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         uint256 lastStageTransition = sppPlugin.getProposal(proposalId).lastStageTransition;
 
         // make bodies not executable so the votes are not counted
-        PluginA(sppPlugin.getStages()[0].bodies[1].addr).setCanExecuteResult(false);
-        PluginA(sppPlugin.getStages()[0].bodies[0].addr).setCanExecuteResult(false);
+        PluginA(sppPlugin.getStages(sppPlugin.getCurrentConfigIndex())[0].bodies[1].addr)
+            .setCanExecuteResult(false);
+        PluginA(sppPlugin.getStages(sppPlugin.getCurrentConfigIndex())[0].bodies[0].addr)
+            .setCanExecuteResult(false);
 
         // reach min advance duration but not stage duration
         vm.warp(lastStageTransition + voteDuration + START_DATE);
@@ -299,8 +303,10 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         uint256 lastStageTransition = sppPlugin.getProposal(proposalId).lastStageTransition;
 
         // make bodies not executable so the votes are not counted
-        PluginA(sppPlugin.getStages()[0].bodies[1].addr).setCanExecuteResult(false);
-        PluginA(sppPlugin.getStages()[0].bodies[0].addr).setCanExecuteResult(false);
+        PluginA(sppPlugin.getStages(sppPlugin.getCurrentConfigIndex())[0].bodies[1].addr)
+            .setCanExecuteResult(false);
+        PluginA(sppPlugin.getStages(sppPlugin.getCurrentConfigIndex())[0].bodies[0].addr)
+            .setCanExecuteResult(false);
 
         // reach min advance and stage duration
         vm.warp(lastStageTransition + minAdvance + START_DATE);
@@ -343,8 +349,10 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
         uint256 lastStageTransition = sppPlugin.getProposal(proposalId).lastStageTransition;
 
         // make bodies not executable so the votes are not counted
-        PluginA(sppPlugin.getStages()[0].bodies[1].addr).setCanExecuteResult(false);
-        PluginA(sppPlugin.getStages()[0].bodies[0].addr).setCanExecuteResult(false);
+        PluginA(sppPlugin.getStages(sppPlugin.getCurrentConfigIndex())[0].bodies[1].addr)
+            .setCanExecuteResult(false);
+        PluginA(sppPlugin.getStages(sppPlugin.getCurrentConfigIndex())[0].bodies[0].addr)
+            .setCanExecuteResult(false);
 
         // reach min advance and stage duration
         vm.warp(lastStageTransition + minAdvance + START_DATE);

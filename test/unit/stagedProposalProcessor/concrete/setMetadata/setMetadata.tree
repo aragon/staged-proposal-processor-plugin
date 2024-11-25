@@ -1,4 +1,4 @@
-UpdateMetadata_SPP_UnitTest
+SetMetadata_SPP_UnitTest
 ├── when caller is not allowed
 │   └── it should revert.
 └── when caller is allowed

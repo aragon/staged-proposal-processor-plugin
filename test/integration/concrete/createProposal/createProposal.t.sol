@@ -6,6 +6,7 @@ import {Errors} from "../../../../src/libraries/Errors.sol";
 import {PluginA} from "../../../utils/dummy-plugins/PluginA/PluginA.sol";
 import {PluginC} from "../../../utils/dummy-plugins/PluginC/PluginC.sol";
 import {StagedProposalProcessor as SPP} from "../../../../src/StagedProposalProcessor.sol";
+import {Permissions} from "../../../../src/libraries/Permissions.sol";
 
 import {IPlugin} from "@aragon/osx-commons-contracts/src/plugin/IPlugin.sol";
 import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
@@ -23,7 +24,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
                 address(dao),
                 address(sppPlugin),
                 users.unauthorized,
-                sppPlugin.CREATE_PROPOSAL_PERMISSION_ID()
+                Permissions.CREATE_PROPOSAL_PERMISSION_ID
             )
         );
         sppPlugin.createProposal({
@@ -111,7 +112,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         });
 
         // check sub proposal was not created and the id is max uint256
-        uint256 subProposalId = sppPlugin.bodyProposalIds(proposalId, 0, _bodies[0].addr);
+        uint256 subProposalId = sppPlugin.getBodyProposalId(proposalId, 0, _bodies[0].addr);
 
         assertEq(subProposalId, type(uint256).max, "subProposalId");
     }
@@ -168,7 +169,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         assertFalse(proposal.executed, "executed");
 
         // check sub proposals on stage zero
-        SPP.Stage[] memory stages = sppPlugin.getStages();
+        SPP.Stage[] memory stages = sppPlugin.getStages(sppPlugin.getCurrentConfigIndex());
         SPP.Body memory _currentPlugin;
         uint256 _currentPluginProposalsCount;
         for (uint256 i; i < stages[0].bodies.length; i++) {
@@ -182,7 +183,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
                 assertEq(_currentPluginProposalsCount, 1, "proposalsCount");
 
                 // check sub proposal id was stored
-                uint256 subProposalId = sppPlugin.bodyProposalIds(
+                uint256 subProposalId = sppPlugin.getBodyProposalId(
                     proposalId,
                     0,
                     _currentPlugin.addr
@@ -201,8 +202,10 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
 
     modifier whenSomeSubProposalNeedExtraParams() {
         // configure in the body that extra params are needed.
-        PluginA(sppPlugin.getStages()[0].bodies[1].addr).setNeedExtraParams(true);
-        PluginA(sppPlugin.getStages()[0].bodies[0].addr).setNeedExtraParams(true);
+        PluginA(sppPlugin.getStages(sppPlugin.getCurrentConfigIndex())[0].bodies[1].addr)
+            .setNeedExtraParams(true);
+        PluginA(sppPlugin.getStages(sppPlugin.getCurrentConfigIndex())[0].bodies[0].addr)
+            .setNeedExtraParams(true);
 
         _;
     }
@@ -241,16 +244,18 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
                 stageConfigIndex: 1,
                 currentStage: 0,
                 executed: false,
+                canceled: false,
                 targetConfig: IPlugin.TargetConfig({
                     target: address(dao),
                     operation: IPlugin.Operation.Call
-                })
+                }),
+                creator: users.manager
             }),
             "proposal"
         );
 
         // check sub proposals on stage zero, they should not be created
-        SPP.Stage[] memory stages = sppPlugin.getStages();
+        SPP.Stage[] memory stages = sppPlugin.getStages(sppPlugin.getCurrentConfigIndex());
         SPP.Body memory _currentPlugin;
         uint256 _currentPluginProposalsCount;
         for (uint256 i; i < stages[0].bodies.length; i++) {
@@ -261,7 +266,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
             assertEq(_currentPluginProposalsCount, 0, "proposalsCount");
 
             // check sub proposal invalid id was stored
-            uint256 subProposalId = sppPlugin.bodyProposalIds(proposalId, 0, _currentPlugin.addr);
+            uint256 subProposalId = sppPlugin.getBodyProposalId(proposalId, 0, _currentPlugin.addr);
 
             assertEq(subProposalId, type(uint256).max, "subProposalId");
         }
@@ -342,16 +347,18 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
                 stageConfigIndex: 1,
                 currentStage: 0,
                 executed: false,
+                canceled: false,
                 targetConfig: IPlugin.TargetConfig({
                     target: address(dao),
                     operation: IPlugin.Operation.Call
-                })
+                }),
+                creator: users.manager
             }),
             "proposal"
         );
 
         // check sub proposals on stage zero
-        SPP.Stage[] memory stages = sppPlugin.getStages();
+        SPP.Stage[] memory stages = sppPlugin.getStages(sppPlugin.getCurrentConfigIndex());
         SPP.Body memory _currentPlugin;
         uint256 _currentPluginProposalsCount;
         for (uint256 i; i < stages[0].bodies.length; i++) {
@@ -365,7 +372,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
                 assertEq(_currentPluginProposalsCount, 1, "proposalsCount");
 
                 // check sub proposal id was stored
-                uint256 subProposalId = sppPlugin.bodyProposalIds(
+                uint256 subProposalId = sppPlugin.getBodyProposalId(
                     proposalId,
                     0,
                     _currentPlugin.addr
@@ -467,16 +474,18 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
                 stageConfigIndex: 1,
                 currentStage: 0,
                 executed: false,
+                canceled: false,
                 targetConfig: IPlugin.TargetConfig({
                     target: address(dao),
                     operation: IPlugin.Operation.Call
-                })
+                }),
+                creator: users.manager
             }),
             "proposal"
         );
 
         // check sub proposals on stage zero
-        SPP.Stage[] memory stages = sppPlugin.getStages();
+        SPP.Stage[] memory stages = sppPlugin.getStages(sppPlugin.getCurrentConfigIndex());
         SPP.Body memory _currentPlugin;
         uint256 _currentPluginProposalsCount;
         for (uint256 i; i < stages[0].bodies.length; i++) {
@@ -490,7 +499,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
                 assertEq(_currentPluginProposalsCount, 1, "proposalsCount");
 
                 // check sub proposal id was stored
-                uint256 subProposalId = sppPlugin.bodyProposalIds(
+                uint256 subProposalId = sppPlugin.getBodyProposalId(
                     proposalId,
                     0,
                     _currentPlugin.addr
@@ -586,16 +595,18 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
                 stageConfigIndex: 1,
                 currentStage: 0,
                 executed: false,
+                canceled: false,
                 targetConfig: IPlugin.TargetConfig({
                     target: address(dao),
                     operation: IPlugin.Operation.Call
-                })
+                }),
+                creator: users.manager
             }),
             "proposal"
         );
 
         // check sub proposals on stage zero, first one should be created second one not
-        SPP.Stage[] memory stages = sppPlugin.getStages();
+        SPP.Stage[] memory stages = sppPlugin.getStages(sppPlugin.getCurrentConfigIndex());
 
         // stage zero first sub proposal should be created, the extra params were provided
         address _stageZeroFirstPlugin = stages[0].bodies[0].addr;
@@ -606,7 +617,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
 
         // check sub proposal invalid id was stored
         assertEq(
-            sppPlugin.bodyProposalIds(proposalId, 0, _stageZeroFirstPlugin),
+            sppPlugin.getBodyProposalId(proposalId, 0, _stageZeroFirstPlugin),
             _currentPluginProposalsCount - 1,
             "subProposalId"
         );
@@ -619,7 +630,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
 
         // check sub proposal invalid id was stored
         assertEq(
-            sppPlugin.bodyProposalIds(proposalId, 0, _stageZeroSecondPlugin),
+            sppPlugin.getBodyProposalId(proposalId, 0, _stageZeroSecondPlugin),
             type(uint256).max,
             "subProposalId"
         );
@@ -791,13 +802,13 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         });
     }
 
-    function test_GivenStartDateInInTheFuture()
+    function test_GivenStartDateIsInTheFuture()
         external
         whenStagesAreConfigured
         whenProposalDoesNotExist
     {
-        // it should use block.timestamp for first stage sub proposal startDate.
-        // it should use block.timestamp for last stage transition.
+        // it should use startDate for last stage transition.
+        // it should use startDate for first stage sub proposal startDate.
 
         uint64 _expectedStartDate = START_DATE;
 
@@ -826,6 +837,46 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
             _allowFailureMap: 0,
             _metadata: DUMMY_METADATA,
             _startDate: START_DATE,
+            _proposalParams: defaultCreationParams
+        });
+
+        SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
+
+        // check proposal last stage transition
+        assertEq(proposal.lastStageTransition, _expectedStartDate, "lastStageTransition");
+    }
+
+    function test_GivenStartDateIsZero() external whenStagesAreConfigured whenProposalDoesNotExist {
+        // it should use block.timestamp for last stage transition.
+        // it should use block.timestamp for first stage sub proposal startDate.
+        uint64 _expectedStartDate = uint64(block.timestamp);
+        uint64 _startDate = 0;
+
+        // configure stages
+        SPP.Stage[] memory stages = _createDummyStages(2, false, false, false);
+        sppPlugin.updateStages(stages);
+
+        // create proposal
+        Action[] memory actions = _createDummyActions();
+
+        // check proposal start date
+        SPP.Body memory _currentPlugin;
+        for (uint256 i; i < stages[0].bodies.length; i++) {
+            _currentPlugin = stages[0].bodies[i];
+
+            vm.expectEmit({emitter: _currentPlugin.addr});
+            emit ProposalCreated({
+                proposalId: 0,
+                startDate: _expectedStartDate,
+                endDate: _expectedStartDate + stages[0].voteDuration
+            });
+        }
+
+        uint256 proposalId = sppPlugin.createProposal({
+            _actions: actions,
+            _allowFailureMap: 0,
+            _metadata: DUMMY_METADATA,
+            _startDate: _startDate,
             _proposalParams: defaultCreationParams
         });
 

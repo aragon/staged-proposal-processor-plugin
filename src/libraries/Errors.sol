@@ -17,8 +17,31 @@ library Errors {
     /// @notice Thrown if stage durations are invalid.
     error StageDurationsInvalid();
 
+    /// @notice Thrown if `_proposalParams`'s length exceeds `type(uint16).max`.
+    error Uint16MaxSizeExceeded();
+
     /// @notice Thrown if the thresholds are invalid.
     error StageThresholdsInvalid();
+
+    /// @notice Thrown if the proposal is not cancelable in the `stageId`.
+    error ProposalCanNotBeCancelled(uint256 proposalId, uint16 stageId);
+
+    /// @notice Thrown if the proposal is not editable.
+    /// @dev This can happen in 2 cases:
+    ///      either Proposal can not yet be advanced or,
+    ///      The stage has `editable:false` in the configuration.
+    /// @param proposalId The id of the proposal.
+    error ProposalCanNotBeEdited(uint256 proposalId, uint16 stageId);
+
+    /// @notice Thrown if the proposal has already been cancelled.
+    /// @param proposalId The id of the proposal.
+    error ProposalAlreadyCancelled(uint256 proposalId);
+
+    /// @notice Thrown if the proposal's state doesn't match the allowed state.
+    /// @param proposalId The id of the proposal.
+    /// @param currentState The current state of the proposal.
+    /// @param allowedStates The allowed state that must match the `currentState`, otherwise the error is thrown.
+    error UnexpectedProposalState(uint256 proposalId, uint8 currentState, bytes32 allowedStates);
 
     /// @notice Thrown if a body address is duplicated in the same stage.
     /// @param stageId The stage id that contains the duplicated body address.
@@ -31,12 +54,6 @@ library Errors {
 
     /// @notice Thrown if first stage's params don't match the count of the current first stage's bodies' count.
     error InvalidCustomParamsForFirstStage();
-
-    /// ! @notice not used so far
-    error CallerNotABody();
-
-    /// ! @notice not used so far
-    error ProposalCannotExecute(uint256);
 
     /// @notice Thrown when the stages length is zero.
     error StageCountZero();
@@ -58,10 +75,11 @@ library Errors {
     /// @notice Thrown when a body doesn't support IProposal interface.
     error InterfaceNotSupported();
 
-    /// @notice Thrown when the proposal can not be advanced.
-    error ProposalCannotAdvance(uint256 proposalId);
-
     /// @notice Thrown if the proposal execution is forbidden.
     /// @param proposalId The ID of the proposal.
     error ProposalExecutionForbidden(uint256 proposalId);
+
+    /// @notice Thrown if the proposal advance is forbidden.
+    /// @param proposalId The ID of the proposal.
+    error ProposalAdvanceForbidden(uint256 proposalId);
 }
