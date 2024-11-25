@@ -35,9 +35,9 @@
 :xref-StagedProposalProcessor-_msgSender--: xref:StagedProposalProcessor.adoc#StagedProposalProcessor-_msgSender--
 :xref-StagedProposalProcessor-_thresholdsMet-uint256-uint16-uint256-uint256-: xref:StagedProposalProcessor.adoc#StagedProposalProcessor-_thresholdsMet-uint256-uint16-uint256-uint256-
 :xref-StagedProposalProcessor-_encodeStateBitmap-enum-StagedProposalProcessor-ProposalState-: xref:StagedProposalProcessor.adoc#StagedProposalProcessor-_encodeStateBitmap-enum-StagedProposalProcessor-ProposalState-
-:xref-StagedProposalProcessor-ProposalAdvanced-uint256-uint256-: xref:StagedProposalProcessor.adoc#StagedProposalProcessor-ProposalAdvanced-uint256-uint256-
-:xref-StagedProposalProcessor-ProposalCanceled-uint256-uint256-address-: xref:StagedProposalProcessor.adoc#StagedProposalProcessor-ProposalCanceled-uint256-uint256-address-
-:xref-StagedProposalProcessor-ProposalEdited-uint256-uint256-address-bytes-struct-Action---: xref:StagedProposalProcessor.adoc#StagedProposalProcessor-ProposalEdited-uint256-uint256-address-bytes-struct-Action---
+:xref-StagedProposalProcessor-ProposalAdvanced-uint256-uint16-: xref:StagedProposalProcessor.adoc#StagedProposalProcessor-ProposalAdvanced-uint256-uint16-
+:xref-StagedProposalProcessor-ProposalCanceled-uint256-uint16-address-: xref:StagedProposalProcessor.adoc#StagedProposalProcessor-ProposalCanceled-uint256-uint16-address-
+:xref-StagedProposalProcessor-ProposalEdited-uint256-uint16-address-bytes-struct-Action---: xref:StagedProposalProcessor.adoc#StagedProposalProcessor-ProposalEdited-uint256-uint16-address-bytes-struct-Action---
 :xref-StagedProposalProcessor-ProposalResultReported-uint256-uint16-address-: xref:StagedProposalProcessor.adoc#StagedProposalProcessor-ProposalResultReported-uint256-uint16-address-
 :xref-StagedProposalProcessor-SubProposalCreated-uint256-uint16-address-uint256-: xref:StagedProposalProcessor.adoc#StagedProposalProcessor-SubProposalCreated-uint256-uint16-address-uint256-
 :xref-StagedProposalProcessor-SubProposalNotCreated-uint256-uint16-address-bytes-: xref:StagedProposalProcessor.adoc#StagedProposalProcessor-SubProposalNotCreated-uint256-uint16-address-bytes-
@@ -63,9 +63,9 @@ IMPORTANT: The contracts are currently being audited, DO NOT USE IN PRODUCTION.
 :Body: pass:normal[xref:#StagedProposalProcessor-Body[`++Body++`]]
 :Stage: pass:normal[xref:#StagedProposalProcessor-Stage[`++Stage++`]]
 :Proposal: pass:normal[xref:#StagedProposalProcessor-Proposal[`++Proposal++`]]
-:ProposalAdvanced: pass:normal[xref:#StagedProposalProcessor-ProposalAdvanced-uint256-uint256-[`++ProposalAdvanced++`]]
-:ProposalCanceled: pass:normal[xref:#StagedProposalProcessor-ProposalCanceled-uint256-uint256-address-[`++ProposalCanceled++`]]
-:ProposalEdited: pass:normal[xref:#StagedProposalProcessor-ProposalEdited-uint256-uint256-address-bytes-struct-Action---[`++ProposalEdited++`]]
+:ProposalAdvanced: pass:normal[xref:#StagedProposalProcessor-ProposalAdvanced-uint256-uint16-[`++ProposalAdvanced++`]]
+:ProposalCanceled: pass:normal[xref:#StagedProposalProcessor-ProposalCanceled-uint256-uint16-address-[`++ProposalCanceled++`]]
+:ProposalEdited: pass:normal[xref:#StagedProposalProcessor-ProposalEdited-uint256-uint16-address-bytes-struct-Action---[`++ProposalEdited++`]]
 :ProposalResultReported: pass:normal[xref:#StagedProposalProcessor-ProposalResultReported-uint256-uint16-address-[`++ProposalResultReported++`]]
 :SubProposalCreated: pass:normal[xref:#StagedProposalProcessor-SubProposalCreated-uint256-uint16-address-uint256-[`++SubProposalCreated++`]]
 :SubProposalNotCreated: pass:normal[xref:#StagedProposalProcessor-SubProposalNotCreated-uint256-uint16-address-bytes-[`++SubProposalNotCreated++`]]
@@ -226,9 +226,9 @@ IMPORTANT: The contracts are currently being audited, DO NOT USE IN PRODUCTION.
 [.contract-index]
 .Events
 --
-* {xref-StagedProposalProcessor-ProposalAdvanced-uint256-uint256-}[`++ProposalAdvanced(proposalId, stageId)++`]
-* {xref-StagedProposalProcessor-ProposalCanceled-uint256-uint256-address-}[`++ProposalCanceled(proposalId, stageId, sender)++`]
-* {xref-StagedProposalProcessor-ProposalEdited-uint256-uint256-address-bytes-struct-Action---}[`++ProposalEdited(proposalId, stageId, sender, metadata, actions)++`]
+* {xref-StagedProposalProcessor-ProposalAdvanced-uint256-uint16-}[`++ProposalAdvanced(proposalId, stageId)++`]
+* {xref-StagedProposalProcessor-ProposalCanceled-uint256-uint16-address-}[`++ProposalCanceled(proposalId, stageId, sender)++`]
+* {xref-StagedProposalProcessor-ProposalEdited-uint256-uint16-address-bytes-struct-Action---}[`++ProposalEdited(proposalId, stageId, sender, metadata, actions)++`]
 * {xref-StagedProposalProcessor-ProposalResultReported-uint256-uint16-address-}[`++ProposalResultReported(proposalId, stageId, body)++`]
 * {xref-StagedProposalProcessor-SubProposalCreated-uint256-uint16-address-uint256-}[`++SubProposalCreated(proposalId, stageId, body, bodyProposalId)++`]
 * {xref-StagedProposalProcessor-SubProposalNotCreated-uint256-uint16-address-bytes-}[`++SubProposalNotCreated(proposalId, stageId, body, reason)++`]
@@ -621,20 +621,20 @@ Encodes a &#x60;ProposalState&#x60; into a &#x60;bytes32&#x60; representation wh
         corresponds the underlying position in the &#x60;ProposalState&#x60; enum.
 
 [.contract-item]
-[[StagedProposalProcessor-ProposalAdvanced-uint256-uint256-]]
-==== `[.contract-item-name]#++ProposalAdvanced++#++(uint256 indexed proposalId, uint256 indexed stageId)++` [.item-kind]#event#
+[[StagedProposalProcessor-ProposalAdvanced-uint256-uint16-]]
+==== `[.contract-item-name]#++ProposalAdvanced++#++(uint256 indexed proposalId, uint16 indexed stageId)++` [.item-kind]#event#
 
 Emitted when the proposal is advanced to the next stage.
 
 [.contract-item]
-[[StagedProposalProcessor-ProposalCanceled-uint256-uint256-address-]]
-==== `[.contract-item-name]#++ProposalCanceled++#++(uint256 indexed proposalId, uint256 indexed stageId, address indexed sender)++` [.item-kind]#event#
+[[StagedProposalProcessor-ProposalCanceled-uint256-uint16-address-]]
+==== `[.contract-item-name]#++ProposalCanceled++#++(uint256 indexed proposalId, uint16 indexed stageId, address indexed sender)++` [.item-kind]#event#
 
 Emitted when the proposal gets cancelled.
 
 [.contract-item]
-[[StagedProposalProcessor-ProposalEdited-uint256-uint256-address-bytes-struct-Action---]]
-==== `[.contract-item-name]#++ProposalEdited++#++(uint256 indexed proposalId, uint256 indexed stageId, address indexed sender, bytes metadata, struct Action[] actions)++` [.item-kind]#event#
+[[StagedProposalProcessor-ProposalEdited-uint256-uint16-address-bytes-struct-Action---]]
+==== `[.contract-item-name]#++ProposalEdited++#++(uint256 indexed proposalId, uint16 indexed stageId, address indexed sender, bytes metadata, struct Action[] actions)++` [.item-kind]#event#
 
 Emitted when the proposal gets edited.
 
@@ -911,4 +911,96 @@ Updates the rules that will be used as a check upon proposal creation on &#x60;S
 ==== `[.contract-item-name]#++UPDATE_RULES_PERMISSION_ID++#++() → bytes32++` [.item-kind]#public#
 
 The ID of the permission required to call the &#x60;updateRules&#x60; function.
+
+:CREATE_PROPOSAL_PERMISSION_ID: pass:normal[xref:#Permissions-CREATE_PROPOSAL_PERMISSION_ID-bytes32[`++CREATE_PROPOSAL_PERMISSION_ID++`]]
+:SET_TRUSTED_FORWARDER_PERMISSION_ID: pass:normal[xref:#Permissions-SET_TRUSTED_FORWARDER_PERMISSION_ID-bytes32[`++SET_TRUSTED_FORWARDER_PERMISSION_ID++`]]
+:UPDATE_STAGES_PERMISSION_ID: pass:normal[xref:#Permissions-UPDATE_STAGES_PERMISSION_ID-bytes32[`++UPDATE_STAGES_PERMISSION_ID++`]]
+:EXECUTE_PROPOSAL_PERMISSION_ID: pass:normal[xref:#Permissions-EXECUTE_PROPOSAL_PERMISSION_ID-bytes32[`++EXECUTE_PROPOSAL_PERMISSION_ID++`]]
+:EXECUTE_PERMISSION_ID: pass:normal[xref:#Permissions-EXECUTE_PERMISSION_ID-bytes32[`++EXECUTE_PERMISSION_ID++`]]
+:CANCEL_PERMISSION_ID: pass:normal[xref:#Permissions-CANCEL_PERMISSION_ID-bytes32[`++CANCEL_PERMISSION_ID++`]]
+:ADVANCE_PERMISSION_ID: pass:normal[xref:#Permissions-ADVANCE_PERMISSION_ID-bytes32[`++ADVANCE_PERMISSION_ID++`]]
+:EDIT_PERMISSION_ID: pass:normal[xref:#Permissions-EDIT_PERMISSION_ID-bytes32[`++EDIT_PERMISSION_ID++`]]
+:UPDATE_RULES_PERMISSION_ID: pass:normal[xref:#Permissions-UPDATE_RULES_PERMISSION_ID-bytes32[`++UPDATE_RULES_PERMISSION_ID++`]]
+:SET_TARGET_CONFIG_PERMISSION_ID: pass:normal[xref:#Permissions-SET_TARGET_CONFIG_PERMISSION_ID-bytes32[`++SET_TARGET_CONFIG_PERMISSION_ID++`]]
+:SET_METADATA_PERMISSION_ID: pass:normal[xref:#Permissions-SET_METADATA_PERMISSION_ID-bytes32[`++SET_METADATA_PERMISSION_ID++`]]
+
+[.contract]
+[[Permissions]]
+=== `++Permissions++` link:https://github.com/aragon/staged-proposal-processor-plugin/blob/1.0.0-alpha.1//Users/giorgilagidze/Desktop/work/multibody/staged-proposal-processor-plugin/src/libraries/Permissions.sol[{github-icon},role=heading-link]
+
+[.contract-index]
+.Internal Variables
+--
+
+--
+
+[.contract-item]
+[[Permissions-CREATE_PROPOSAL_PERMISSION_ID-bytes32]]
+==== `bytes32 [.contract-item-name]#++CREATE_PROPOSAL_PERMISSION_ID++#` [.item-kind]#internal constant#
+
+The ID of the permission required to call the &#x60;createProposal&#x60; function.
+
+[.contract-item]
+[[Permissions-SET_TRUSTED_FORWARDER_PERMISSION_ID-bytes32]]
+==== `bytes32 [.contract-item-name]#++SET_TRUSTED_FORWARDER_PERMISSION_ID++#` [.item-kind]#internal constant#
+
+The ID of the permission required to call the &#x60;setTrustedForwarder&#x60; function.
+
+[.contract-item]
+[[Permissions-UPDATE_STAGES_PERMISSION_ID-bytes32]]
+==== `bytes32 [.contract-item-name]#++UPDATE_STAGES_PERMISSION_ID++#` [.item-kind]#internal constant#
+
+The ID of the permission required to call the &#x60;updateStages&#x60; function.
+
+[.contract-item]
+[[Permissions-EXECUTE_PROPOSAL_PERMISSION_ID-bytes32]]
+==== `bytes32 [.contract-item-name]#++EXECUTE_PROPOSAL_PERMISSION_ID++#` [.item-kind]#internal constant#
+
+The ID of the permission required to execute the proposal if it&#x27;s on the last stage.
+
+It is important to use a different identifier than keccak256(&quot;EXECUTE_PERMISSION&quot;) to ensure
+     that it can still be granted with ANY_ADDR. Refer to the DAO.sol function -
+     &#x60;isPermissionRestrictedForAnyAddr&#x60; for more details.
+
+[.contract-item]
+[[Permissions-EXECUTE_PERMISSION_ID-bytes32]]
+==== `bytes32 [.contract-item-name]#++EXECUTE_PERMISSION_ID++#` [.item-kind]#internal constant#
+
+The ID of the permission required to execute the proposal on the dao.
+
+[.contract-item]
+[[Permissions-CANCEL_PERMISSION_ID-bytes32]]
+==== `bytes32 [.contract-item-name]#++CANCEL_PERMISSION_ID++#` [.item-kind]#internal constant#
+
+The ID of the permission required to cancel the proposal.
+
+[.contract-item]
+[[Permissions-ADVANCE_PERMISSION_ID-bytes32]]
+==== `bytes32 [.contract-item-name]#++ADVANCE_PERMISSION_ID++#` [.item-kind]#internal constant#
+
+The ID of the permission required to advance the proposal.
+
+[.contract-item]
+[[Permissions-EDIT_PERMISSION_ID-bytes32]]
+==== `bytes32 [.contract-item-name]#++EDIT_PERMISSION_ID++#` [.item-kind]#internal constant#
+
+The ID of the permission required to edit the proposal.
+
+[.contract-item]
+[[Permissions-UPDATE_RULES_PERMISSION_ID-bytes32]]
+==== `bytes32 [.contract-item-name]#++UPDATE_RULES_PERMISSION_ID++#` [.item-kind]#internal constant#
+
+The ID of the permission required to call the &#x60;updateRules&#x60; function.
+
+[.contract-item]
+[[Permissions-SET_TARGET_CONFIG_PERMISSION_ID-bytes32]]
+==== `bytes32 [.contract-item-name]#++SET_TARGET_CONFIG_PERMISSION_ID++#` [.item-kind]#internal constant#
+
+The ID of the permission required to call the &#x60;setTargetConfig&#x60; function.
+
+[.contract-item]
+[[Permissions-SET_METADATA_PERMISSION_ID-bytes32]]
+==== `bytes32 [.contract-item-name]#++SET_METADATA_PERMISSION_ID++#` [.item-kind]#internal constant#
+
+The ID of the permission required to call the &#x60;updateMetadata&#x60; function.
 
