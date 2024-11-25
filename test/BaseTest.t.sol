@@ -363,7 +363,7 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
         permissionList = new bytes32[](10);
 
         permissionList[0] = Permissions.UPDATE_STAGES_PERMISSION_ID;
-        permissionList[1] = Permissions.EXECUTE_PERMISSION_ID;
+        permissionList[1] = Permissions.EXECUTE_PROPOSAL_PERMISSION_ID;
         permissionList[2] = Permissions.SET_TRUSTED_FORWARDER_PERMISSION_ID;
         permissionList[3] = Permissions.SET_TARGET_CONFIG_PERMISSION_ID;
         permissionList[4] = Permissions.SET_METADATA_PERMISSION_ID;
