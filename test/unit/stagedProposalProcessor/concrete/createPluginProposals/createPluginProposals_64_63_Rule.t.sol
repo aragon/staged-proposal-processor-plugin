@@ -43,7 +43,9 @@ contract CreatePluginProposals_64_63_Rule is BaseTest {
             _proposalId: proposalId,
             _stageId: 1,
             _startDate: uint64(block.timestamp),
-            _createProposalParams: new bytes[](sppPlugin.getStages(sppPlugin.getCurrentConfigIndex())[0].bodies.length)
+            _createProposalParams: new bytes[](
+                sppPlugin.getStages(sppPlugin.getCurrentConfigIndex())[0].bodies.length
+            )
         });
         uint256 gasAfter = gasleft();
 

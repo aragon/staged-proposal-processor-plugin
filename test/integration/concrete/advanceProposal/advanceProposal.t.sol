@@ -3,13 +3,16 @@ pragma solidity ^0.8.18;
 
 import {BaseTest} from "../../../BaseTest.t.sol";
 import {Errors} from "../../../../src/libraries/Errors.sol";
+import {Permissions} from "../../../../src/libraries/Permissions.sol";
 import {PluginA} from "../../../utils/dummy-plugins/PluginA/PluginA.sol";
 import {StagedProposalProcessor as SPP} from "../../../../src/StagedProposalProcessor.sol";
 
+import {DAO} from "@aragon/osx/core/dao/DAO.sol";
 import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
 
 contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
     uint256 proposalId;
+
     modifier givenProposalExists() {
         _;
     }
@@ -56,7 +59,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         whenProposalCanAdvance
         whenProposalIsInLastStage
     {
-        // it should emit event.
+        // it should emit ProposalExecuted event.
         // it should execute the proposal.
 
         // advance last stage
@@ -90,7 +93,8 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
 
     modifier whenSomeSubProposalNeedExtraParams() {
         // configure in the plugin that extra params are needed.
-        PluginA(sppPlugin.getStages(sppPlugin.getCurrentConfigIndex())[1].bodies[0].addr).setNeedExtraParams(true);
+        PluginA(sppPlugin.getStages(sppPlugin.getCurrentConfigIndex())[1].bodies[0].addr)
+            .setNeedExtraParams(true);
 
         _;
     }
@@ -103,7 +107,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         whenAllPluginsOnNextStageAreNonManual
         whenSomeSubProposalNeedExtraParams
     {
-        // it should emit event.
+        // it should emit ProposalAdvanced event.
         // it should advance proposal.
         // it should not create sub proposals since extra param was not provided.
 
@@ -151,7 +155,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         whenAllPluginsOnNextStageAreNonManual
         whenSomeSubProposalNeedExtraParams
     {
-        // it should emit event.
+        // it should emit ProposalAdvanced event.
         // it should advance proposal.
         // it should create sub proposals with correct extra params.
 
@@ -215,7 +219,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         whenAllPluginsOnNextStageAreNonManual
         whenSomeSubProposalNeedExtraParams
     {
-        // it should emit event.
+        // it should emit ProposalAdvanced event.
         // it should advance proposal.
         // it should create sub proposals with correct extra params.
 
@@ -285,7 +289,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         whenAllPluginsOnNextStageAreNonManual
         whenSomeSubProposalNeedExtraParams
     {
-        // it should emit event.
+        // it should emit ProposalAdvanced event.
         // it should advance proposal.
         // it should not create sub proposals since extra param was not provided.
 
@@ -341,7 +345,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         whenProposalIsNotInLastStage
         whenAllPluginsOnNextStageAreNonManual
     {
-        // it should emit event.
+        // it should emit ProposalAdvanced event.
         // it should advance proposal.
         // it should create sub proposals.
 
@@ -388,7 +392,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         whenProposalIsNotInLastStage
         whenAllPluginsOnNextStageAreNonManual
     {
-        // it should emit event.
+        // it should emit ProposalAdvanced event.
         // it should advance proposal.
         // it should create sub proposals.
 
@@ -407,6 +411,13 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         _executeStageProposals(initialStage);
 
         vm.warp(VOTE_DURATION + START_DATE);
+
+        // grant advance permission but not execute permission
+        DAO(payable(address(dao))).grant({
+            _where: address(sppPlugin),
+            _who: users.unauthorized,
+            _permissionId: Permissions.ADVANCE_PERMISSION_ID
+        });
 
         // check event emitted
         vm.expectEmit({emitter: address(sppPlugin)});
@@ -427,6 +438,38 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
             1,
             "proposalsCount"
         );
+    }
+
+    function test_RevertWhen_CallerHasNoAdvancePermission()
+        external
+        givenProposalExists
+        whenProposalCanAdvance
+        whenProposalIsNotInLastStage
+        whenAllPluginsOnNextStageAreNonManual
+    {
+        // it should revert.
+
+        Action[] memory actions = _createDummyActions();
+        proposalId = sppPlugin.createProposal({
+            _actions: actions,
+            _allowFailureMap: 0,
+            _metadata: DUMMY_METADATA,
+            _startDate: START_DATE,
+            _proposalParams: defaultCreationParams
+        });
+        uint256 initialStage;
+
+        // execute proposals on first stage
+        _executeStageProposals(initialStage);
+
+        vm.warp(VOTE_DURATION + START_DATE);
+
+        resetPrank(users.unauthorized);
+        vm.warp(sppPlugin.getProposal(proposalId).lastStageTransition + VOTE_DURATION + START_DATE);
+        vm.expectRevert(
+            abi.encodeWithSelector(Errors.ProposalAdvanceForbidden.selector, proposalId)
+        );
+        sppPlugin.advanceProposal(proposalId);
     }
 
     function test_WhenSomePluginsOnNextStageAreManual()
@@ -483,7 +526,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         whenProposalCanAdvance
         whenProposalIsNotInLastStage
     {
-        // it should emit event.
+        // it should emit ProposalAdvanced event.
         // it should advance proposal.
         // it should not be able to advance until minAdvance.
 
@@ -548,7 +591,14 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         // check proposal can not advance
         assertFalse(sppPlugin.canProposalAdvance(proposalId), "canAdvanceProposal");
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.ProposalCanNotAdvance.selector, proposalId));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Errors.UnexpectedProposalState.selector,
+                proposalId,
+                uint8(SPP.ProposalState.Active),
+                _encodeStateBitmap(SPP.ProposalState.Advanceable)
+            )
+        );
         sppPlugin.advanceProposal(proposalId);
     }
 

@@ -1,0 +1,8 @@
+GetStages_SPP_UnitTest
+├── given invalid index
+│   ├── given index is zero
+│   │   └── it should revert.
+│   └── given index greater than current config index
+│       └── it should revert.
+└── given valid index
+    └── it should return correct stages array.
