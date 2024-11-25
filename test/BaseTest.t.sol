@@ -332,17 +332,17 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
         });
     }
 
-    function _executeStageProposals(uint256 _stage) internal {
+    function _executeStageProposals(uint16 _stageId) internal {
         // execute proposals on first stage
         SPP.Stage[] memory stages = sppPlugin.getStages(sppPlugin.getCurrentConfigIndex());
 
-        for (uint256 i; i < stages[_stage].bodies.length; i++) {
-            PluginA(stages[_stage].bodies[i].addr).execute({_proposalId: 0});
+        for (uint256 i; i < stages[_stageId].bodies.length; i++) {
+            PluginA(stages[_stageId].bodies[i].addr).execute({_proposalId: 0});
         }
     }
 
     function _moveToLastStage(uint256 proposalId) internal {
-        uint256 initialStage;
+        uint16 initialStage;
 
         // move proposal to last stage to be executable
         // execute proposals on first stage

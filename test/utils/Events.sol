@@ -6,7 +6,7 @@ import {StagedProposalProcessor as SPP} from "../../src/StagedProposalProcessor.
 import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
 
 contract Events {
-    event ProposalAdvanced(uint256 indexed proposalId, uint256 indexed stageId);
+    event ProposalAdvanced(uint256 indexed proposalId, uint16 indexed stageId);
     event ProposalResultReported(
         uint256 indexed proposalId,
         uint16 indexed stageId,
@@ -29,13 +29,13 @@ contract Events {
 
     event ProposalCanceled(
         uint256 indexed proposalId,
-        uint256 indexed stageId,
+        uint16 indexed stageId,
         address indexed sender
     );
 
     event ProposalEdited(
         uint256 indexed proposalId,
-        uint256 indexed stageId,
+        uint16 indexed stageId,
         address indexed sender,
         bytes metadata,
         Action[] actions

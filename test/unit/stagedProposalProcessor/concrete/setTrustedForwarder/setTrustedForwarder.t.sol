@@ -7,8 +7,6 @@ import {Permissions} from "../../../../../src/libraries/Permissions.sol";
 import {DAO} from "@aragon/osx/core/dao/DAO.sol";
 import {DaoUnauthorized} from "@aragon/osx-commons-contracts/src/permission/auth/auth.sol";
 
-import {console} from "forge-std/console.sol";
-
 contract SetTrustedForwarder_SPP_UnitTest is BaseTest {
     address newTrustedForwarder = address(1);
 
