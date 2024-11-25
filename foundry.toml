@@ -5,7 +5,7 @@ libs = ["lib"]
 solc = "0.8.28"
 fs_permissions = [{ access = "read", path = "./node_modules/@aragon/osx-commons-configs/dist/deployments/json"}, {access = "write", path = "./"}, { access = "read", path = "out" }]
 
-# openzeppelin-foundry-upgrades related configutations
+# openzeppelin-foundry-upgrades related configurations
 ffi = true
 ast = true
 build_info = true

@@ -2,10 +2,11 @@
 pragma solidity ^0.8.18;
 
 import {BaseTest} from "../../../../BaseTest.t.sol";
+import {Permissions} from "../../../../../src/libraries/Permissions.sol";
 
 import {DaoUnauthorized} from "@aragon/osx-commons-contracts/src/permission/auth/auth.sol";
 
-contract UpdateMetadata_SPP_UnitTest is BaseTest {
+contract SetMetadata_SPP_UnitTest is BaseTest {
     function test_RevertWhen_CallerIsNotAllowed() external {
         // it should revert
 
@@ -17,7 +18,7 @@ contract UpdateMetadata_SPP_UnitTest is BaseTest {
                 address(dao),
                 address(sppPlugin),
                 users.unauthorized,
-                sppPlugin.SET_METADATA_PERMISSION_ID()
+                Permissions.SET_METADATA_PERMISSION_ID
             )
         );
         sppPlugin.setMetadata(DUMMY_METADATA);

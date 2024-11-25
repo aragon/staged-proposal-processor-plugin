@@ -3,12 +3,12 @@ pragma solidity ^0.8.18;
 
 library Permissions {
     /// @notice The ID of the permission required to call the `createProposal` function.
-    bytes32 internal constant CREATE_PROPOSAL_PERMISSION_ID = keccak256("CREATE_PROPOSAL_PERMISSION");
+    bytes32 internal constant CREATE_PROPOSAL_PERMISSION_ID =
+        keccak256("CREATE_PROPOSAL_PERMISSION");
 
     /// @notice The ID of the permission required to call the `setTrustedForwarder` function.
-    bytes32 internal constant SET_TRUSTED_FORWARDER_PERMISSION_ID = keccak256(
-        "SET_TRUSTED_FORWARDER_PERMISSION"
-    );
+    bytes32 internal constant SET_TRUSTED_FORWARDER_PERMISSION_ID =
+        keccak256("SET_TRUSTED_FORWARDER_PERMISSION");
 
     /// @notice The ID of the permission required to call the `updateStages` function.
     bytes32 internal constant UPDATE_STAGES_PERMISSION_ID = keccak256("UPDATE_STAGES_PERMISSION");
@@ -29,7 +29,8 @@ library Permissions {
     bytes32 internal constant UPDATE_RULES_PERMISSION_ID = keccak256("UPDATE_RULES_PERMISSION");
 
     /// @notice The ID of the permission required to call the `setTargetConfig` function.
-    bytes32 internal constant SET_TARGET_CONFIG_PERMISSION_ID = keccak256("SET_TARGET_CONFIG_PERMISSION");
+    bytes32 internal constant SET_TARGET_CONFIG_PERMISSION_ID =
+        keccak256("SET_TARGET_CONFIG_PERMISSION");
 
     /// @notice The ID of the permission required to call the `updateMetadata` function.
     bytes32 internal constant SET_METADATA_PERMISSION_ID = keccak256("SET_METADATA_PERMISSION");

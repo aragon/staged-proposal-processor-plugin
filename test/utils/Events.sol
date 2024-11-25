@@ -26,4 +26,20 @@ contract Events {
     );
     event ProposalCreated(uint256 proposalId, uint64 startDate, uint64 endDate);
     event ProposalExecuted(uint256 indexed proposalId);
+
+    event ProposalCanceled(
+        uint256 indexed proposalId,
+        uint256 indexed stageId,
+        address indexed sender
+    );
+
+    event ProposalEdited(
+        uint256 indexed proposalId,
+        uint256 indexed stageId,
+        address indexed sender,
+        bytes metadata,
+        Action[] actions
+    );
+
+    event TrustedForwarderUpdated(address indexed forwarder);
 }

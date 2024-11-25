@@ -17,18 +17,21 @@ library Errors {
     /// @notice Thrown if stage durations are invalid.
     error StageDurationsInvalid();
 
+    /// @notice Thrown if `_proposalParams`'s length exceeds `type(uint16).max`.
+    error Uint16MaxSizeExceeded();
+
     /// @notice Thrown if the thresholds are invalid.
     error StageThresholdsInvalid();
 
-    /// @notice Thrown if the proposal is not cancalable in the `stageId`.
-    error ProposalCanNotBeCancelled(uint16 stageId);
+    /// @notice Thrown if the proposal is not cancelable in the `stageId`.
+    error ProposalCanNotBeCancelled(uint256 proposalId, uint16 stageId);
 
-    /// @notice Thrown if the proposal is not edittable.
+    /// @notice Thrown if the proposal is not editable.
     /// @dev This can happen in 2 cases:
     ///      either Proposal can not yet be advanced or,
     ///      The stage has `editable:false` in the configuration.
     /// @param proposalId The id of the proposal.
-    error ProposalCanNotBeEditted(uint256 proposalId);
+    error ProposalCanNotBeEdited(uint256 proposalId, uint16 stageId);
 
     /// @notice Thrown if the proposal has already been cancelled.
     /// @param proposalId The id of the proposal.
@@ -51,12 +54,6 @@ library Errors {
 
     /// @notice Thrown if first stage's params don't match the count of the current first stage's bodies' count.
     error InvalidCustomParamsForFirstStage();
-
-    /// ! @notice not used so far
-    error CallerNotABody();
-
-    /// ! @notice not used so far
-    error ProposalCannotExecute(uint256);
 
     /// @notice Thrown when the stages length is zero.
     error StageCountZero();
@@ -81,4 +78,8 @@ library Errors {
     /// @notice Thrown if the proposal execution is forbidden.
     /// @param proposalId The ID of the proposal.
     error ProposalExecutionForbidden(uint256 proposalId);
+
+    /// @notice Thrown if the proposal advance is forbidden.
+    /// @param proposalId The ID of the proposal.
+    error ProposalAdvanceForbidden(uint256 proposalId);
 }

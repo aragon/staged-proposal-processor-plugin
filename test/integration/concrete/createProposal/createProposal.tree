@@ -48,8 +48,11 @@ CreateProposal_SPP_IntegrationTest
 │       │   ├── it should create proposal.
 │       │   └── it should not be able to advance until minAdvance.
 │       ├── given startDate is in the past
-│       │   ├── it should revert.
-│       └── given startDate in in the future
+│       │   └── it should revert.
+│       ├── given startDate is zero
+│       │   ├── it should use block.timestamp for last stage transition.
+│       │   └── it should use block.timestamp for first stage sub proposal startDate.
+│       └── given startDate is in the future
 │           ├── it should use startDate for last stage transition.
 │           └── it should use startDate for first stage sub proposal startDate.
 └── when stages are not configured

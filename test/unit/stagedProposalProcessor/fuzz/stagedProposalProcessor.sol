@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.18;
 
-import {Stage, Body} from "../../../utils/Types.sol";
 import {BaseTest} from "../../../BaseTest.t.sol";
-import {StagedProposalProcessor as SPP} from "../../../../src/StagedProposalProcessor.sol";
+import {Stage, Body} from "../../../utils/Types.sol";
 import {Permissions} from "../../../../src/libraries/Permissions.sol";
+import {StagedProposalProcessor as SPP} from "../../../../src/StagedProposalProcessor.sol";
 
 import {DaoUnauthorized} from "@aragon/osx-commons-contracts/src/permission/auth/auth.sol";
 
@@ -23,7 +23,7 @@ contract SPP_Unit_FuzzTest is BaseTest {
                 address(dao),
                 address(sppPlugin),
                 _randomAddress,
-                sppPlugin.SET_METADATA_PERMISSION_ID()
+                Permissions.SET_METADATA_PERMISSION_ID
             )
         );
         sppPlugin.setMetadata(DUMMY_METADATA);

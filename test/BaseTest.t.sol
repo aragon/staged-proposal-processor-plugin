@@ -3,24 +3,13 @@ pragma solidity ^0.8.18;
 
 import {Test} from "forge-std/Test.sol";
 
-import {
-    UPDATE_STAGES_PERMISSION_ID,
-    SET_TRUSTED_FORWARDER_PERMISSION_ID,
-    SET_TARGET_CONFIG_PERMISSION_ID,
-    SET_METADATA_PERMISSION_ID,
-    UPDATE_RULES_PERMISSION_ID,
-    CREATE_PROPOSAL_PERMISSION_ID,
-    EXECUTE_PROPOSAL_PERMISSION_ID
-} from "./utils/Permissions.sol";
-
-import {Permissions} from "../src/libraries/Permissions.sol";
-
 import {Users} from "./utils/Types.sol";
 import {Events} from "./utils/Events.sol";
 import {Target} from "./utils/Target.sol";
 import {Fuzzers} from "./utils/Fuzzers.sol";
 import {Constants} from "./utils/Constants.sol";
 import {Assertions} from "./utils/Assertions.sol";
+import {Permissions} from "../src/libraries/Permissions.sol";
 import {PluginA} from "./utils/dummy-plugins/PluginA/PluginA.sol";
 import {TrustedForwarder} from "../src/utils/TrustedForwarder.sol";
 import {StagedProposalProcessor as SPP} from "../src/StagedProposalProcessor.sol";
@@ -48,6 +37,8 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
     uint64 internal maxAdvance = MAX_ADVANCE;
     uint64 internal minAdvance = MIN_ADVANCE;
     uint64 internal voteDuration = VOTE_DURATION;
+    bool internal cancellable;
+    bool internal editable;
 
     uint16 internal approvalThreshold = 1;
     uint16 internal vetoThreshold = 1;
@@ -130,7 +121,7 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
 
         // grant permissions
         PermissionLib.MultiTargetPermission[]
-            memory permissions = new PermissionLib.MultiTargetPermission[](6);
+            memory permissions = new PermissionLib.MultiTargetPermission[](8);
 
         // grant update stage permission on SPP plugin to the DAO
         permissions[0] = PermissionLib.MultiTargetPermission({
@@ -184,6 +175,24 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
             who: users.manager,
             condition: PermissionLib.NO_CONDITION,
             permissionId: Permissions.ADVANCE_PERMISSION_ID
+        });
+
+        // grant cancel permission on the spp to the manager
+        permissions[6] = PermissionLib.MultiTargetPermission({
+            operation: PermissionLib.Operation.Grant,
+            where: address(sppPlugin),
+            who: users.manager,
+            condition: PermissionLib.NO_CONDITION,
+            permissionId: Permissions.CANCEL_PERMISSION_ID
+        });
+
+        // grant edit permission on the spp to the manager
+        permissions[7] = PermissionLib.MultiTargetPermission({
+            operation: PermissionLib.Operation.Grant,
+            where: address(sppPlugin),
+            who: users.manager,
+            condition: PermissionLib.NO_CONDITION,
+            permissionId: Permissions.EDIT_PERMISSION_ID
         });
 
         DAO(payable(address(dao))).applyMultiTargetPermissions(permissions);
@@ -279,6 +288,7 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
     function _createStageStruct(
         SPP.Body[] memory _bodies
     ) internal view virtual returns (SPP.Stage memory stage) {
+        // console.log("cancellable", cancellable);
         stage = SPP.Stage({
             bodies: _bodies,
             maxAdvance: maxAdvance,
@@ -286,8 +296,8 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
             voteDuration: voteDuration,
             approvalThreshold: approvalThreshold,
             vetoThreshold: vetoThreshold,
-            cancelable: false,
-            editable: false
+            cancelable: cancellable,
+            editable: editable
         });
     }
 
@@ -331,16 +341,40 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
         }
     }
 
+    function _moveToLastStage(uint256 proposalId) internal {
+        uint256 initialStage;
+
+        // move proposal to last stage to be executable
+        // execute proposals on first stage
+        _executeStageProposals(initialStage);
+
+        // advance to last stage
+        vm.warp(VOTE_DURATION + START_DATE);
+        sppPlugin.advanceProposal(proposalId);
+
+        // execute proposals on first stage
+        _executeStageProposals(initialStage + 1);
+
+        // advance last stage
+        vm.warp(sppPlugin.getProposal(proposalId).lastStageTransition + VOTE_DURATION + START_DATE);
+    }
+
     function _getSetupPermissions() internal pure returns (bytes32[] memory permissionList) {
-        permissionList = new bytes32[](8);
+        permissionList = new bytes32[](10);
 
         permissionList[0] = Permissions.UPDATE_STAGES_PERMISSION_ID;
         permissionList[1] = Permissions.EXECUTE_PERMISSION_ID;
         permissionList[2] = Permissions.SET_TRUSTED_FORWARDER_PERMISSION_ID;
         permissionList[3] = Permissions.SET_TARGET_CONFIG_PERMISSION_ID;
         permissionList[4] = Permissions.SET_METADATA_PERMISSION_ID;
-        permissionList[5] = Permissions.UPDATE_RULES_PERMISSION_ID;
-        permissionList[6] = Permissions.CREATE_PROPOSAL_PERMISSION_ID;
-        permissionList[7] = Permissions.EXECUTE_PERMISSION_ID;
+        permissionList[5] = Permissions.CREATE_PROPOSAL_PERMISSION_ID;
+        permissionList[6] = Permissions.CANCEL_PERMISSION_ID;
+        permissionList[7] = Permissions.ADVANCE_PERMISSION_ID;
+        permissionList[8] = Permissions.EXECUTE_PERMISSION_ID;
+        permissionList[9] = Permissions.UPDATE_RULES_PERMISSION_ID;
+    }
+
+    function _encodeStateBitmap(SPP.ProposalState _proposalState) internal pure returns (bytes32) {
+        return bytes32(1 << uint8(_proposalState));
     }
 }
