@@ -818,7 +818,7 @@ contract StagedProposalProcessor is
     /// @param _proposalId The ID of the proposal.
     /// @param _stageId The stage index.
     /// @param _resultType The result type being reported (`Approval` or `Veto`).
-    /// @param _sender The address that called `processProposalResult` function.
+    /// @param _sender The address that reported the result.
     function _processProposalResult(
         uint256 _proposalId,
         uint16 _stageId,
