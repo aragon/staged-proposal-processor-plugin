@@ -288,13 +288,13 @@ contract StagedProposalProcessor is
             revert Errors.StageIdInvalid(currentStage, _stageId);
         }
 
-        _processProposalResult(_proposalId, _stageId, _resultType);
+        address sender = _msgSender();
+
+        _processProposalResult(_proposalId, _stageId, _resultType, sender);
 
         if (!_tryAdvance) {
             return;
         }
-
-        address sender = _msgSender();
 
         // If the last stage, caller must have `EXECUTE_PERMISSION_ID`, otherwise `ADVANCE_PERMISSION_ID`.
         bool hasPermission = _isAtLastStage(proposal)
@@ -351,7 +351,9 @@ contract StagedProposalProcessor is
             revert Errors.StageCountZero();
         }
 
-        proposalId = _createProposalId(keccak256(abi.encode(_actions, _metadata, _msgSender())));
+        address creator = _msgSender();
+
+        proposalId = _createProposalId(keccak256(abi.encode(_actions, _metadata, creator)));
 
         Proposal storage proposal = proposals[proposalId];
 
@@ -361,7 +363,7 @@ contract StagedProposalProcessor is
 
         proposal.allowFailureMap = _allowFailureMap;
         proposal.targetConfig = getTargetConfig();
-        proposal.creator = _msgSender();
+        proposal.creator = creator;
 
         // store stage configuration per proposal to avoid
         // changing it while proposal is still open
@@ -401,7 +403,7 @@ contract StagedProposalProcessor is
 
         emit ProposalCreated({
             proposalId: proposalId,
-            creator: _msgSender(),
+            creator: creator,
             startDate: proposal.lastStageTransition,
             endDate: 0,
             metadata: _metadata,
@@ -816,15 +818,15 @@ contract StagedProposalProcessor is
     /// @param _proposalId The ID of the proposal.
     /// @param _stageId The stage index.
     /// @param _resultType The result type being reported (`Approval` or `Veto`).
+    /// @param _sender The address that called `processProposalResult` function.
     function _processProposalResult(
         uint256 _proposalId,
         uint16 _stageId,
-        ResultType _resultType
+        ResultType _resultType,
+        address _sender
     ) internal virtual {
-        address sender = _msgSender();
-
-        bodyResults[_proposalId][_stageId][sender] = _resultType;
-        emit ProposalResultReported(_proposalId, _stageId, sender);
+        bodyResults[_proposalId][_stageId][_sender] = _resultType;
+        emit ProposalResultReported(_proposalId, _stageId, _sender);
     }
 
     /// @notice Creates proposals on the non-manual bodies of the `stageId`.
