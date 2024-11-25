@@ -807,8 +807,8 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         whenStagesAreConfigured
         whenProposalDoesNotExist
     {
-        // it should use block.timestamp for first stage sub proposal startDate.
-        // it should use block.timestamp for last stage transition.
+        // it should use startDate for last stage transition.
+        // it should use startDate for first stage sub proposal startDate.
 
         uint64 _expectedStartDate = START_DATE;
 
@@ -837,6 +837,46 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
             _allowFailureMap: 0,
             _metadata: DUMMY_METADATA,
             _startDate: START_DATE,
+            _proposalParams: defaultCreationParams
+        });
+
+        SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
+
+        // check proposal last stage transition
+        assertEq(proposal.lastStageTransition, _expectedStartDate, "lastStageTransition");
+    }
+
+    function test_GivenStartDateIsZero() external whenStagesAreConfigured whenProposalDoesNotExist {
+        // it should use block.timestamp for last stage transition.
+        // it should use block.timestamp for first stage sub proposal startDate.
+        uint64 _expectedStartDate = uint64(block.timestamp);
+        uint64 _startDate = 0;
+
+        // configure stages
+        SPP.Stage[] memory stages = _createDummyStages(2, false, false, false);
+        sppPlugin.updateStages(stages);
+
+        // create proposal
+        Action[] memory actions = _createDummyActions();
+
+        // check proposal start date
+        SPP.Body memory _currentPlugin;
+        for (uint256 i; i < stages[0].bodies.length; i++) {
+            _currentPlugin = stages[0].bodies[i];
+
+            vm.expectEmit({emitter: _currentPlugin.addr});
+            emit ProposalCreated({
+                proposalId: 0,
+                startDate: _expectedStartDate,
+                endDate: _expectedStartDate + stages[0].voteDuration
+            });
+        }
+
+        uint256 proposalId = sppPlugin.createProposal({
+            _actions: actions,
+            _allowFailureMap: 0,
+            _metadata: DUMMY_METADATA,
+            _startDate: _startDate,
             _proposalParams: defaultCreationParams
         });
 
