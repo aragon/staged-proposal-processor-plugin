@@ -800,6 +800,7 @@ contract StagedProposalProcessor is
     /// @param _proposalId The ID of the proposal.
     function _executeProposal(uint256 _proposalId) internal virtual {
         Proposal storage proposal = proposals[_proposalId];
+        
         proposal.executed = true;
 
         _execute(
