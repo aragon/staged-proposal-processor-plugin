@@ -367,7 +367,7 @@ contract StagedProposalProcessor is
         // changing it while proposal is still open
         proposal.stageConfigIndex = index;
 
-        if(_startDate == 0) {
+        if (_startDate == 0) {
             _startDate = uint64(block.timestamp);
         } else if (_startDate < uint64(block.timestamp)) {
             revert Errors.StartDateInvalid(_startDate);
@@ -379,7 +379,7 @@ contract StagedProposalProcessor is
             proposal.actions.push(_actions[i]);
         }
 
-        if(_proposalParams.length > type(uint16).max) {
+        if (_proposalParams.length > type(uint16).max) {
             revert Errors.Uint16MaxSizeExceeded();
         }
 
