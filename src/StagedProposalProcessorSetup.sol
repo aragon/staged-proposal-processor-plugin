@@ -127,7 +127,7 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
             where: _spp,
             who: ANY_ADDR,
             condition: PermissionLib.NO_CONDITION,
-            permissionId: Permissions.EXECUTE_PERMISSION_ID
+            permissionId: Permissions.EXECUTE_PROPOSAL_PERMISSION_ID
         });
 
         permissions[2] = PermissionLib.MultiTargetPermission({

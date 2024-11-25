@@ -11,7 +11,7 @@ import {Constants} from "./utils/Constants.sol";
 import {Assertions} from "./utils/Assertions.sol";
 import {Permissions} from "../src/libraries/Permissions.sol";
 import {PluginA} from "./utils/dummy-plugins/PluginA/PluginA.sol";
-import {TrustedForwarder} from "../src/utils/TrustedForwarder.sol";
+import {TrustedForwarder} from "./utils/TrustedForwarder.sol";
 import {StagedProposalProcessor as SPP} from "../src/StagedProposalProcessor.sol";
 
 import {DAO} from "@aragon/osx/core/dao/DAO.sol";
@@ -332,17 +332,17 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
         });
     }
 
-    function _executeStageProposals(uint256 _stage) internal {
+    function _executeStageProposals(uint16 _stageId) internal {
         // execute proposals on first stage
         SPP.Stage[] memory stages = sppPlugin.getStages(sppPlugin.getCurrentConfigIndex());
 
-        for (uint256 i; i < stages[_stage].bodies.length; i++) {
-            PluginA(stages[_stage].bodies[i].addr).execute({_proposalId: 0});
+        for (uint256 i; i < stages[_stageId].bodies.length; i++) {
+            PluginA(stages[_stageId].bodies[i].addr).execute({_proposalId: 0});
         }
     }
 
     function _moveToLastStage(uint256 proposalId) internal {
-        uint256 initialStage;
+        uint16 initialStage;
 
         // move proposal to last stage to be executable
         // execute proposals on first stage
@@ -363,7 +363,7 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
         permissionList = new bytes32[](10);
 
         permissionList[0] = Permissions.UPDATE_STAGES_PERMISSION_ID;
-        permissionList[1] = Permissions.EXECUTE_PERMISSION_ID;
+        permissionList[1] = Permissions.EXECUTE_PROPOSAL_PERMISSION_ID;
         permissionList[2] = Permissions.SET_TRUSTED_FORWARDER_PERMISSION_ID;
         permissionList[3] = Permissions.SET_TARGET_CONFIG_PERMISSION_ID;
         permissionList[4] = Permissions.SET_METADATA_PERMISSION_ID;

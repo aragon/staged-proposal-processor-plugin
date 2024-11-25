@@ -23,7 +23,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
 
     modifier whenProposalIsInLastStage() {
         proposalId = _configureStagesAndCreateDummyProposal(DUMMY_METADATA);
-        uint256 initialStage;
+        uint16 initialStage;
 
         // execute proposals on first stage
         _executeStageProposals(initialStage);
@@ -120,7 +120,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
             _startDate: START_DATE,
             _proposalParams: defaultCreationParams
         });
-        uint256 initialStage;
+        uint16 initialStage;
 
         // execute proposals on first stage
         _executeStageProposals(initialStage);
@@ -176,7 +176,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
             _startDate: START_DATE,
             _proposalParams: customCreationParam
         });
-        uint256 initialStage;
+        uint16 initialStage;
 
         // execute proposals on first stage
         _executeStageProposals(initialStage);
@@ -246,7 +246,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
             _startDate: START_DATE,
             _proposalParams: customCreationParam
         });
-        uint256 initialStage;
+        uint16 initialStage;
 
         // execute proposals on first stage
         _executeStageProposals(initialStage);
@@ -310,7 +310,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
             _startDate: START_DATE,
             _proposalParams: customCreationParam
         });
-        uint256 initialStage;
+        uint16 initialStage;
 
         // execute proposals on first stage
         _executeStageProposals(initialStage);
@@ -358,7 +358,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
             _startDate: START_DATE,
             _proposalParams: defaultCreationParams
         });
-        uint256 initialStage;
+        uint16 initialStage;
 
         // execute proposals on first stage
         _executeStageProposals(initialStage);
@@ -405,7 +405,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
             _startDate: START_DATE,
             _proposalParams: defaultCreationParams
         });
-        uint256 initialStage;
+        uint16 initialStage;
 
         // execute proposals on first stage
         _executeStageProposals(initialStage);
@@ -457,7 +457,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
             _startDate: START_DATE,
             _proposalParams: defaultCreationParams
         });
-        uint256 initialStage;
+        uint16 initialStage;
 
         // execute proposals on first stage
         _executeStageProposals(initialStage);
@@ -496,7 +496,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
             _proposalParams: defaultCreationParams
         });
 
-        uint256 initialStage;
+        uint16 initialStage;
         // execute proposals on first stage
         _executeStageProposals(initialStage);
 
@@ -548,7 +548,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
             _proposalParams: defaultCreationParams
         });
 
-        uint256 initialStage;
+        uint16 initialStage;
         // execute proposals on first stage
         _executeStageProposals(initialStage);
 
