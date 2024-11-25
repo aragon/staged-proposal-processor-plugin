@@ -39,7 +39,7 @@ contract CanProposalAdvance_SPP_IntegrationTest is BaseTest {
     function test_WhenProposalIsExecuted() external whenExistentProposal {
         // it should return false.
 
-        uint256 initialStage;
+        uint16 initialStage;
 
         // execute proposals on first stage
         _executeStageProposals(initialStage);

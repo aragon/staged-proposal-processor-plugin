@@ -14,6 +14,13 @@ library Permissions {
     bytes32 internal constant UPDATE_STAGES_PERMISSION_ID = keccak256("UPDATE_STAGES_PERMISSION");
 
     /// @notice The ID of the permission required to execute the proposal if it's on the last stage.
+    /// @dev It is important to use a different identifier than keccak256("EXECUTE_PERMISSION") to ensure
+    ///      that it can still be granted with ANY_ADDR. Refer to the DAO.sol function -
+    ///      `isPermissionRestrictedForAnyAddr` for more details.
+    bytes32 internal constant EXECUTE_PROPOSAL_PERMISSION_ID =
+        keccak256("EXECUTE_PROPOSAL_PERMISSION");
+
+    /// @notice The ID of the permission required to execute the proposal on the dao.
     bytes32 internal constant EXECUTE_PERMISSION_ID = keccak256("EXECUTE_PERMISSION");
 
     /// @notice The ID of the permission required to cancel the proposal.

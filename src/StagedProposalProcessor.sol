@@ -145,28 +145,28 @@ contract StagedProposalProcessor is
 
     /// @notice Emitted when the proposal is advanced to the next stage.
     /// @param proposalId The proposal id.
-    /// @param stageId The stage id.
-    event ProposalAdvanced(uint256 indexed proposalId, uint256 indexed stageId);
+    /// @param stageId The stage index.
+    event ProposalAdvanced(uint256 indexed proposalId, uint16 indexed stageId);
 
     /// @notice Emitted when the proposal gets cancelled.
     /// @param proposalId the proposal id.
-    /// @param stageId The stage id in which the proposal was cancelled.
+    /// @param stageId The stage index in which the proposal was cancelled.
     /// @param sender The sender that canceled the proposal.
     event ProposalCanceled(
         uint256 indexed proposalId,
-        uint256 indexed stageId,
+        uint16 indexed stageId,
         address indexed sender
     );
 
     /// @notice Emitted when the proposal gets edited.
     /// @param proposalId the proposal id.
-    /// @param stageId The stage id in which the proposal was edited.
+    /// @param stageId The stage index in which the proposal was edited.
     /// @param sender The sender that edited the proposal.
     /// @param metadata The new metadata that replaces old metadata.
     /// @param actions The new actions that replaces old actions.
     event ProposalEdited(
         uint256 indexed proposalId,
-        uint256 indexed stageId,
+        uint16 indexed stageId,
         address indexed sender,
         bytes metadata,
         Action[] actions
@@ -174,7 +174,7 @@ contract StagedProposalProcessor is
 
     /// @notice Emitted when a body reports results by calling `reportProposalResult`.
     /// @param proposalId The proposal id.
-    /// @param stageId The stage id.
+    /// @param stageId The stage index.
     /// @param body The sender that reported the result.
     event ProposalResultReported(
         uint256 indexed proposalId,
@@ -184,7 +184,7 @@ contract StagedProposalProcessor is
 
     /// @notice Emitted when this plugin successfully creates a proposal on sub-body.
     /// @param proposalId The proposal id.
-    /// @param stageId The stage id.
+    /// @param stageId The stage index.
     /// @param body The sub-body on which sub-proposal has been created.
     /// @param bodyProposalId The proposal id that sub-body returns for later usage by this plugin.
     event SubProposalCreated(
@@ -196,7 +196,7 @@ contract StagedProposalProcessor is
 
     /// @notice Emitted when this plugin fails in creating a proposal on sub-body.
     /// @param proposalId The proposal id.
-    /// @param stageId The stage id.
+    /// @param stageId The stage index.
     /// @param body The sub-body on which sub-proposal failed to be created.
     /// @param reason The reason why it was failed.
     event SubProposalNotCreated(
@@ -265,7 +265,7 @@ contract StagedProposalProcessor is
     ///      If `_tryAdvance` is true, the proposal will attempt to advance to the next stage if eligible.
     ///      Requires the caller to have the `EXECUTE_PERMISSION_ID` permission to execute the final stage.
     /// @param _proposalId The ID of the proposal.
-    /// @param _stageId The ID of the stage being reported on. Must not exceed the current stage of the proposal.
+    /// @param _stageId The index of the stage, being reported on. Must not exceed the current stage of the proposal.
     /// @param _resultType The result type being reported (`Approval` or `Veto`).
     /// @param _tryAdvance Whether to attempt advancing the proposal to the next stage if conditions are met.
     function reportProposalResult(
@@ -561,10 +561,6 @@ contract StagedProposalProcessor is
     function state(uint256 _proposalId) public view virtual returns (ProposalState) {
         Proposal storage proposal = proposals[_proposalId];
 
-        if (!_proposalExists(proposal)) {
-            revert Errors.NonexistentProposal(_proposalId);
-        }
-
         if (proposal.executed) {
             return ProposalState.Executed;
         }
@@ -573,9 +569,13 @@ contract StagedProposalProcessor is
             return ProposalState.Canceled;
         }
 
+        if (!_proposalExists(proposal)) {
+            revert Errors.NonexistentProposal(_proposalId);
+        }
+
         Stage storage stage = stages[proposal.stageConfigIndex][proposal.currentStage];
 
-        if (block.timestamp > proposal.lastStageTransition + stage.maxAdvance) {
+        if (proposal.lastStageTransition + stage.maxAdvance < block.timestamp) {
             return ProposalState.Expired;
         }
 
@@ -618,7 +618,7 @@ contract StagedProposalProcessor is
 
     /// @notice Retrieves the result type submitted by a body for a specific proposal and stage.
     /// @param _proposalId The ID of the proposal.
-    /// @param _stageId The ID of the stage.
+    /// @param _stageId The stage index.
     /// @param _body The address of the sub-body.
     /// @return Returns what resultType the body reported the result with.
     ///     Returns `None (0)` if no result has been provided yet.
@@ -632,7 +632,7 @@ contract StagedProposalProcessor is
 
     /// @notice Retrieves the sub proposal id.
     /// @param _proposalId The ID of the proposal.
-    /// @param _stageId The ID of the stage.
+    /// @param _stageId The stage index.
     /// @param _body The address of the sub-body.
     /// @return Returns what resultType the body reported the result with.
     ///     Returns `None (0)` if no result has been provided yet.
@@ -664,7 +664,7 @@ contract StagedProposalProcessor is
     /// @notice Retrieves the `data` parameter encoded for a sub-body's `createProposal` function in a specific stage.
     ///         Excludes sub-bodies from the first stage, as their parameters are not stored for efficiency.
     /// @param _proposalId The ID of the proposal.
-    /// @param _stageId The ID of the stage.
+    /// @param _stageId The stage index.
     /// @param _index The index of the body within the stage.
     /// @return The encoded `data` parameter for the specified sub-body's `createProposal` function.
     function getCreateProposalParams(
@@ -814,7 +814,7 @@ contract StagedProposalProcessor is
     /// @notice Records the result by the caller.
     /// @dev Assumes that bodies are not duplicated in the same stage. See `_updateStages` function.
     /// @param _proposalId The ID of the proposal.
-    /// @param _stageId The ID of the stage.
+    /// @param _stageId The stage index.
     /// @param _resultType The result type being reported (`Approval` or `Veto`).
     function _processProposalResult(
         uint256 _proposalId,
@@ -830,7 +830,7 @@ contract StagedProposalProcessor is
     /// @notice Creates proposals on the non-manual bodies of the `stageId`.
     /// @dev Assumes that bodies are not duplicated in the same stage. See `_updateStages` function.
     /// @param _proposalId The ID of the proposal.
-    /// @param _stageId The ID of the stage.
+    /// @param _stageId The stage index.
     /// @param _startDate The start date that proposals on sub-bodies will be created with.
     /// @param _stageProposalParams The custom params required for each sub-body to create a proposal.
     function _createBodyProposals(
@@ -955,7 +955,7 @@ contract StagedProposalProcessor is
     /// @dev Assumes that bodies are not duplicated in the same stage. See `_updateStages` function.
     ///      This function ensures that only records from addresses in the stage configuration are used.
     /// @param _proposalId The proposal Id.
-    /// @param _stageId The stage id.
+    /// @param _stageId The stage index.
     /// @return approvals The number of approvals for the proposal.
     /// @return vetoes The number of vetoes for the proposal.
     function _getProposalTally(
@@ -1018,7 +1018,7 @@ contract StagedProposalProcessor is
 
     /// @notice Internal helper function that decides if the stage's thresholds are satisfied.
     /// @param _proposalId The proposal id.
-    /// @param _stageId The stage Id.
+    /// @param _stageId The stage index.
     /// @param _approvalThreshold The approval threshold of the `_stageId`.
     /// @param _vetoThreshold The veto threshold of the `_stageId`.
     /// @return Returns true if the thresholds are met, otherwise false.
