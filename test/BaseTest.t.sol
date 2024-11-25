@@ -11,7 +11,7 @@ import {Constants} from "./utils/Constants.sol";
 import {Assertions} from "./utils/Assertions.sol";
 import {Permissions} from "../src/libraries/Permissions.sol";
 import {PluginA} from "./utils/dummy-plugins/PluginA/PluginA.sol";
-import {TrustedForwarder} from "../src/utils/TrustedForwarder.sol";
+import {TrustedForwarder} from "./utils/TrustedForwarder.sol";
 import {StagedProposalProcessor as SPP} from "../src/StagedProposalProcessor.sol";
 
 import {DAO} from "@aragon/osx/core/dao/DAO.sol";
