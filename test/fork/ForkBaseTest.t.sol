@@ -3,6 +3,7 @@ pragma solidity ^0.8.18;
 
 import {Test} from "forge-std/Test.sol";
 
+import {Target} from "../utils/Target.sol";
 import {Events} from "../utils/Events.sol";
 import {Fuzzers} from "../utils/Fuzzers.sol";
 import {Constants} from "../utils/Constants.sol";
@@ -45,6 +46,7 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, ScriptConstants
     DAOFactory internal daoFactory;
 
     SPPSetup internal sppSetup;
+    Target internal target;
 
     address[] internal members = [address(1), address(2), address(3)];
 
@@ -66,6 +68,8 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, ScriptConstants
         psp = PluginSetupProcessor(getContractAddress(PLUGIN_SETUP_PROCESSOR_KEY));
         daoFactory = DAOFactory(getContractAddress(DAO_FACTORY_ADDRESS_KEY));
         multisigSetup = PluginUpgradeableSetup(getContractAddress(MULTISIG_PLUGIN_SETUP_KEY));
+
+        target = new Target();
 
         // publish new spp version
         sppSetup = new SPPSetup();
@@ -99,6 +103,7 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, ScriptConstants
         vm.label(address(psp), "PSP");
         vm.label(address(daoFactory), "DaoFactory");
         vm.label(address(multisigSetup), "Multisig_Setup");
+        vm.label(address(target), "Target");
     }
 
     function getContractAddress(string memory _baseKey) public view returns (address) {
@@ -210,6 +215,8 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, ScriptConstants
         dao.revoke(address(dao), plugin, dao.EXECUTE_PERMISSION_ID());
 
         resetPrank(deployer);
+
+        vm.label(plugin, "MultisigPlugin");
     }
 
     function _installSPP(
@@ -249,6 +256,8 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, ScriptConstants
         // revoke root permission to the psp
         dao.revoke(address(dao), address(psp), dao.ROOT_PERMISSION_ID());
         resetPrank(deployer);
+
+        vm.label(plugin, "SPPPlugin");
     }
 
     function _uninstallSPP(DAO dao, address plugin, address[] memory currentHelpers) internal {
