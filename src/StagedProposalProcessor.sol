@@ -20,6 +20,7 @@ import {
 } from "@aragon/osx-commons-contracts/src/plugin/extensions/proposal/ProposalUpgradeable.sol";
 
 import {ERC165Checker} from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
+import {console} from "forge-std/console.sol";
 
 /// @title StagedProposalProcessor
 /// @author Aragon X - 2024
@@ -488,7 +489,7 @@ contract StagedProposalProcessor is
 
     /// @notice Edits the proposal.
     /// @dev The proposal can be editable only if it's allowed in the stage configuration.
-    ///      The caller must have the `EDIT_PERMISSION_ID` permission to cancel it
+    ///      The caller must have the `EDIT_PERMISSION_ID` permission to edit
     ///      and stage must be advanceable.
     /// @param _proposalId The id of the proposal.
     /// @param _metadata The metadata of the proposal.
@@ -500,11 +501,25 @@ contract StagedProposalProcessor is
     ) public virtual auth(Permissions.EDIT_PERMISSION_ID) {
         Proposal storage proposal = proposals[_proposalId];
 
-        // Reverts if proposal is not Advanceable or is non-existent.
-        _validateStateBitmap(_proposalId, _encodeStateBitmap(ProposalState.Advanceable));
+        if (!_proposalExists(proposal)) {
+            revert Errors.NonexistentProposal(_proposalId);
+        }
 
         uint16 currentStage = proposal.currentStage;
+
         Stage storage stage = stages[proposal.stageConfigIndex][currentStage];
+
+        // If no bodies in a stage(delay|timelock stage), it should be
+        // edittable at any time, otherwise, only when it's advanceable.
+        if (stage.bodies.length == 0) {
+            _validateStateBitmap(
+                _proposalId,
+                _encodeStateBitmap(ProposalState.Advanceable) |
+                    _encodeStateBitmap(ProposalState.Active)
+            );
+        } else {
+            _validateStateBitmap(_proposalId, _encodeStateBitmap(ProposalState.Advanceable));
+        }
 
         if (!stage.editable) {
             revert Errors.ProposalCanNotBeEdited(_proposalId, currentStage);
