@@ -733,7 +733,7 @@ contract StagedProposalProcessor is
             dao().hasPermission(
                 address(this),
                 _account,
-                Permissions.EXECUTE_PERMISSION_ID,
+                Permissions.EXECUTE_PROPOSAL_PERMISSION_ID,
                 msg.data
             );
     }
