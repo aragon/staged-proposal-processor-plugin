@@ -42,4 +42,8 @@ contract Events {
     );
 
     event TrustedForwarderUpdated(address indexed forwarder);
+
+    // test helpres
+
+    error UnsupportedNetwork(string network);
 }
