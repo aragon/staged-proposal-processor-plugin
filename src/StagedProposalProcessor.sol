@@ -500,24 +500,22 @@ contract StagedProposalProcessor is
     ) public virtual auth(Permissions.EDIT_PERMISSION_ID) {
         Proposal storage proposal = proposals[_proposalId];
 
-        if (!_proposalExists(proposal)) {
-            revert Errors.NonexistentProposal(_proposalId);
-        }
+        // Reverts if proposal doesn't exist.
+        ProposalState currentState = _validateStateBitmap(
+            _proposalId,
+            _encodeStateBitmap(ProposalState.Advanceable) | _encodeStateBitmap(ProposalState.Active)
+        );
 
         uint16 currentStage = proposal.currentStage;
-
         Stage storage stage = stages[proposal.stageConfigIndex][currentStage];
 
-        // If no bodies in a stage(delay|timelock stage), it should be
-        // edittable at any time, otherwise, only when it's advanceable.
-        if (stage.bodies.length == 0) {
-            _validateStateBitmap(
+        // If there're bodies in a stage, state must be Advanceable, otherwise revert.
+        if (stage.bodies.length != 0 && currentState != ProposalState.Advanceable) {
+            revert Errors.UnexpectedProposalState(
                 _proposalId,
-                _encodeStateBitmap(ProposalState.Advanceable) |
-                    _encodeStateBitmap(ProposalState.Active)
+                uint8(currentState),
+                _encodeStateBitmap(ProposalState.Advanceable)
             );
-        } else {
-            _validateStateBitmap(_proposalId, _encodeStateBitmap(ProposalState.Advanceable));
         }
 
         if (!stage.editable) {
