@@ -24,7 +24,7 @@ import {
 
 import {console} from "forge-std/console.sol";
 
-contract ForgeBaseTest is Assertions, Constants, Events, Fuzzers, ScriptConstants, Test {
+contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, ScriptConstants, Test {
     uint256 internal deployerPrivateKey = vm.envUint("DEPLOYER_KEY");
     string internal network = vm.envString("NETWORK_NAME");
     string internal networkRpcUrl = vm.envString("NETWORK_RPC_URL");
