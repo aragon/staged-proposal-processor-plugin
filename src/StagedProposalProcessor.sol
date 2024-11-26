@@ -146,7 +146,12 @@ contract StagedProposalProcessor is
     /// @notice Emitted when the proposal is advanced to the next stage.
     /// @param proposalId The proposal id.
     /// @param stageId The stage index.
-    event ProposalAdvanced(uint256 indexed proposalId, uint16 indexed stageId);
+    /// @param sender The address that advanced the proposal.
+    event ProposalAdvanced(
+        uint256 indexed proposalId,
+        uint16 indexed stageId,
+        address indexed sender
+    );
 
     /// @notice Emitted when the proposal gets cancelled.
     /// @param proposalId the proposal id.
@@ -305,7 +310,7 @@ contract StagedProposalProcessor is
         // can not advance due to permission or state, because as sub-body's
         // proposals could contain other actions that should still succeed.
         if (hasPermission && state(_proposalId) == ProposalState.Advanceable) {
-            _advanceProposal(_proposalId);
+            _advanceProposal(_proposalId, sender);
         }
     }
 
@@ -453,7 +458,7 @@ contract StagedProposalProcessor is
             if (!hasPermission) revert Errors.ProposalAdvanceForbidden(_proposalId);
         }
 
-        _advanceProposal(_proposalId);
+        _advanceProposal(_proposalId, sender);
     }
 
     /// @notice Cancels the proposal.
@@ -800,7 +805,7 @@ contract StagedProposalProcessor is
     /// @param _proposalId The ID of the proposal.
     function _executeProposal(uint256 _proposalId) internal virtual {
         Proposal storage proposal = proposals[_proposalId];
-        
+
         proposal.executed = true;
 
         _execute(
@@ -922,7 +927,8 @@ contract StagedProposalProcessor is
     ///      it creates proposals for the sub-bodies in the next stage.
     ///      If the proposal is in the final stage, it triggers execution.
     /// @param _proposalId The ID of the proposal.
-    function _advanceProposal(uint256 _proposalId) internal virtual {
+    /// @param _sender The address that advances the proposal.
+    function _advanceProposal(uint256 _proposalId, address _sender) internal virtual {
         Proposal storage _proposal = proposals[_proposalId];
         Stage[] storage _stages = stages[_proposal.stageConfigIndex];
 
@@ -939,7 +945,7 @@ contract StagedProposalProcessor is
 
             _createBodyProposals(_proposalId, newStage, uint64(block.timestamp), customParams);
 
-            emit ProposalAdvanced(_proposalId, newStage);
+            emit ProposalAdvanced(_proposalId, newStage, _sender);
         } else {
             _executeProposal(_proposalId);
         }

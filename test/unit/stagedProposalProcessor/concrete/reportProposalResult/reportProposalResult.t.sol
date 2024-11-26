@@ -396,7 +396,7 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         emit ProposalResultReported(proposalId, 0, bodyAddress);
 
         vm.expectEmit({emitter: address(sppPlugin)});
-        emit ProposalAdvanced(proposalId, 1);
+        emit ProposalAdvanced(proposalId, 1, bodyAddress);
 
         // execute the sub proposal to report the result
         PluginA(bodyAddress).execute({_proposalId: 0});
@@ -489,7 +489,7 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         emit ProposalResultReported(proposalId, 0, bodyAddress);
 
         vm.expectEmit({emitter: address(sppPlugin)});
-        emit ProposalAdvanced(proposalId, 1);
+        emit ProposalAdvanced(proposalId, 1, bodyAddress);
 
         // execute the sub proposal to report the result
         PluginA(bodyAddress).execute({_proposalId: 0});
