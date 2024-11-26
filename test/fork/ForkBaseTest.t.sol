@@ -10,19 +10,21 @@ import {Assertions} from "../utils/Assertions.sol";
 import {Constants as ScriptConstants} from "../../script/utils/Constants.sol";
 import {StagedProposalProcessorSetup as SPPSetup} from "../../src/StagedProposalProcessorSetup.sol";
 
-import {IPlugin} from "@aragon/osx-commons-contracts/src/plugin/IPlugin.sol";
-
 import {DAO} from "@aragon/osx/core/dao/DAO.sol";
 import {DAOFactory} from "@aragon/osx/framework/dao/DAOFactory.sol";
-import {PluginRepo} from "@aragon/osx/framework/plugin/repo/PluginRepo.sol";
-import {PluginSetupProcessor} from "@aragon/osx/framework/plugin/setup/PluginSetupProcessor.sol";
 
 import {
     hashHelpers,
     PluginSetupRef
 } from "@aragon/osx/framework/plugin/setup/PluginSetupProcessorHelpers.sol";
-
-import {console} from "forge-std/console.sol";
+import {PluginRepo} from "@aragon/osx/framework/plugin/repo/PluginRepo.sol";
+import {IPlugin} from "@aragon/osx-commons-contracts/src/plugin/IPlugin.sol";
+import {
+    PluginUpgradeableSetup
+} from "@aragon/osx-commons-contracts/src/plugin/setup/PluginUpgradeableSetup.sol";
+import {PermissionLib} from "@aragon/osx-commons-contracts/src/permission/PermissionLib.sol";
+import {IPluginSetup} from "@aragon/osx-commons-contracts/src/plugin/setup/IPluginSetup.sol";
+import {PluginSetupProcessor} from "@aragon/osx/framework/plugin/setup/PluginSetupProcessor.sol";
 
 contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, ScriptConstants, Test {
     uint256 internal deployerPrivateKey = vm.envUint("DEPLOYER_KEY");
@@ -34,13 +36,23 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, ScriptConstants
     address internal immutable deployer = vm.addr(deployerPrivateKey);
     PluginRepo internal sppRepo;
     PluginRepo internal adminRepo;
-    PluginRepo internal multiSigRepo;
+    PluginRepo internal multisigRepo;
+
+    PluginUpgradeableSetup internal multisigSetup;
 
     address internal managementDao;
     PluginSetupProcessor internal psp;
     DAOFactory internal daoFactory;
 
-    SPPSetup internal _sppSetup;
+    SPPSetup internal sppSetup;
+
+    address[] internal members = [address(1), address(2), address(3)];
+
+    // helper structs
+    struct MultisigSettings {
+        bool onlyListed;
+        uint16 minApprovals;
+    }
 
     function setUp() public virtual {
         // Fork the "network"
@@ -49,27 +61,29 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, ScriptConstants
         // get needed contract addresses
         sppRepo = PluginRepo(getContractAddress(SPP_PLUGIN_REPO_KEY));
         adminRepo = PluginRepo(getContractAddress(ADMIN_PLUGIN_REPO_KEY));
-        multiSigRepo = PluginRepo(getContractAddress(MULTISIG_PLUGIN_REPO_KEY));
+        multisigRepo = PluginRepo(getContractAddress(MULTISIG_PLUGIN_REPO_KEY));
         managementDao = getContractAddress(MANAGEMENT_DAO_ADDRESS_KEY);
         psp = PluginSetupProcessor(getContractAddress(PLUGIN_SETUP_PROCESSOR_KEY));
         daoFactory = DAOFactory(getContractAddress(DAO_FACTORY_ADDRESS_KEY));
+        multisigSetup = PluginUpgradeableSetup(getContractAddress(MULTISIG_PLUGIN_SETUP_KEY));
 
         // publish new spp version
-        _sppSetup = new SPPSetup();
+        sppSetup = new SPPSetup();
         // Check release number
         uint256 latestRelease = sppRepo.latestRelease();
 
         uint256 latestBuild = sppRepo.buildCount(uint8(latestRelease));
 
         // create plugin version
-        vm.prank(managementDao);
+        resetPrank(managementDao);
         sppRepo.createVersion(
             uint8(latestRelease),
-            address(_sppSetup),
+            address(sppSetup),
             "dummy build metadata",
             "dummy release metadata"
         );
 
+        resetPrank(deployer);
         // check version was created correctly
         assertEq(sppRepo.latestRelease(), latestRelease, "release");
         assertEq(sppRepo.buildCount(uint8(latestRelease)), latestBuild + 1, "build");
@@ -80,13 +94,14 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, ScriptConstants
     function _labelContracts() internal {
         vm.label(address(sppRepo), "SPP_Repo");
         vm.label(address(adminRepo), "Admin_Repo");
-        vm.label(address(multiSigRepo), "Multisig_Repo");
+        vm.label(address(multisigRepo), "Multisig_Repo");
         vm.label(address(managementDao), "Management_DAO");
         vm.label(address(psp), "PSP");
         vm.label(address(daoFactory), "DaoFactory");
+        vm.label(address(multisigSetup), "Multisig_Setup");
     }
 
-    function getContractAddress(string memory _baseKey) public view returns (address _sppRepo) {
+    function getContractAddress(string memory _baseKey) public view returns (address) {
         string memory _json = _getOsxDeployments(network);
 
         string memory _contractKey = _buildDeploymentCtrKey(protocolVersion, _baseKey);
@@ -94,7 +109,7 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, ScriptConstants
         if (!vm.keyExistsJson(_json, _contractKey)) {
             revert UnsupportedNetwork(network);
         }
-        _sppRepo = vm.parseJsonAddress(_json, _contractKey);
+        return vm.parseJsonAddress(_json, _contractKey);
     }
 
     function _getOsxDeployments(string memory _network) internal view returns (string memory) {
@@ -106,6 +121,7 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, ScriptConstants
             _network,
             ".json"
         );
+
         return vm.readFile(osxDeploymentsPath);
     }
 
@@ -127,16 +143,11 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, ScriptConstants
             metadata: "dummy metadata"
         });
 
-        // install admin plugin
-
         // admin plugin data
-        // IPlugin.TargetConfig memory adminConfig =
         bytes memory adminData = abi.encode(
             deployer,
             IPlugin.TargetConfig({target: address(0), operation: IPlugin.Operation.Call})
         );
-
-        console.log("deployer", deployer);
 
         DAOFactory.PluginSettings[] memory pluginSettings = new DAOFactory.PluginSettings[](1);
         uint8 latestRelease = adminRepo.latestRelease();
@@ -149,22 +160,130 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, ScriptConstants
             data: adminData
         });
 
-        // return daoFactory.createDao(daoSettings, pluginSettings);
+        (dao, installedPlugins) = daoFactory.createDao(daoSettings, pluginSettings);
 
-        console.log("herererere");
-        // daoFactory.createDao(daoSettings, pluginSettings);
+        vm.label(address(dao), "DAO");
+        vm.label(installedPlugins[0].plugin, "AdminPlugin");
+    }
 
-        (bool success, bytes memory returnData) = address(daoFactory).call(
-            abi.encodeWithSelector(daoFactory.createDao.selector, daoSettings, pluginSettings)
+    function _installMultisigAndRevokeRoot(DAO dao) internal returns (address plugin) {
+        resetPrank(address(dao));
+        bytes memory multisigData = abi.encode(
+            members,
+            MultisigSettings({onlyListed: true, minApprovals: 2}),
+            IPlugin.TargetConfig({target: address(0), operation: IPlugin.Operation.Call}),
+            "dummy multisig metadata"
         );
 
-        (dao, installedPlugins) = abi.decode(returnData, (DAO, DAOFactory.InstalledPlugin[]));
+        uint8 latestRelease = multisigRepo.latestRelease();
+        uint256 latestBuild = multisigRepo.buildCount(latestRelease);
+        PluginSetupRef memory multisigSetupRef = PluginSetupRef({
+            versionTag: PluginRepo.Tag({release: latestRelease, build: uint16(latestBuild)}),
+            pluginSetupRepo: multisigRepo
+        });
 
-        console.log(address(dao));
-        console.log(installedPlugins.length);
-        console.log(installedPlugins[0].plugin);
+        IPluginSetup.PreparedSetupData memory preparedSetupData;
 
-        console.log("success", success);
-        console.logBytes(returnData);
+        (plugin, preparedSetupData) = psp.prepareInstallation(
+            address(dao),
+            PluginSetupProcessor.PrepareInstallationParams(multisigSetupRef, multisigData)
+        );
+
+        // grant temporary root permission to psp
+        dao.grant(address(dao), address(psp), dao.ROOT_PERMISSION_ID());
+
+        // Apply plugin.
+        psp.applyInstallation(
+            address(dao),
+            PluginSetupProcessor.ApplyInstallationParams(
+                multisigSetupRef,
+                plugin,
+                preparedSetupData.permissions,
+                hashHelpers(preparedSetupData.helpers)
+            )
+        );
+
+        // revoke root permission to the psp
+        dao.revoke(address(dao), address(psp), dao.ROOT_PERMISSION_ID());
+
+        // revoke execute permission to the plugin
+        dao.revoke(address(dao), plugin, dao.EXECUTE_PERMISSION_ID());
+
+        resetPrank(deployer);
+    }
+
+    function _installSPP(
+        DAO dao,
+        bytes memory sppData
+    ) internal returns (address plugin, address[] memory helpers) {
+        resetPrank(address(dao));
+        uint8 latestRelease = sppRepo.latestRelease();
+        uint256 latestBuild = sppRepo.buildCount(latestRelease);
+        PluginSetupRef memory sppSetupRef = PluginSetupRef({
+            versionTag: PluginRepo.Tag({release: latestRelease, build: uint16(latestBuild)}),
+            pluginSetupRepo: sppRepo
+        });
+
+        IPluginSetup.PreparedSetupData memory preparedSetupData;
+        (plugin, preparedSetupData) = psp.prepareInstallation(
+            address(dao),
+            PluginSetupProcessor.PrepareInstallationParams(sppSetupRef, sppData)
+        );
+
+        helpers = preparedSetupData.helpers;
+
+        // grant temporary root permission to psp
+        dao.grant(address(dao), address(psp), dao.ROOT_PERMISSION_ID());
+
+        // Apply plugin.
+        psp.applyInstallation(
+            address(dao),
+            PluginSetupProcessor.ApplyInstallationParams(
+                sppSetupRef,
+                plugin,
+                preparedSetupData.permissions,
+                hashHelpers(preparedSetupData.helpers)
+            )
+        );
+
+        // revoke root permission to the psp
+        dao.revoke(address(dao), address(psp), dao.ROOT_PERMISSION_ID());
+        resetPrank(deployer);
+    }
+
+    function _uninstallSPP(DAO dao, address plugin, address[] memory currentHelpers) internal {
+        resetPrank(address(dao));
+        uint8 latestRelease = sppRepo.latestRelease();
+        uint256 latestBuild = sppRepo.buildCount(latestRelease);
+        PluginSetupRef memory sppSetupRef = PluginSetupRef({
+            versionTag: PluginRepo.Tag({release: latestRelease, build: uint16(latestBuild)}),
+            pluginSetupRepo: sppRepo
+        });
+
+        PermissionLib.MultiTargetPermission[] memory permissions = psp.prepareUninstallation(
+            address(dao),
+            PluginSetupProcessor.PrepareUninstallationParams(
+                sppSetupRef,
+                IPluginSetup.SetupPayload(plugin, currentHelpers, bytes(""))
+            )
+        );
+
+        // grant temporary root permission to psp
+        dao.grant(address(dao), address(psp), dao.ROOT_PERMISSION_ID());
+
+        // Apply plugin.
+        psp.applyUninstallation(
+            address(dao),
+            PluginSetupProcessor.ApplyUninstallationParams(plugin, sppSetupRef, permissions)
+        );
+
+        // revoke root permission to the psp
+        dao.revoke(address(dao), address(psp), dao.ROOT_PERMISSION_ID());
+        resetPrank(deployer);
+    }
+
+    function resetPrank(address msgSender) public {
+        vm.stopPrank();
+        vm.startPrank(msgSender);
     }
 }

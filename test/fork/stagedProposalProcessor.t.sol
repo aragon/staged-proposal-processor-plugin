@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.18;
 
-import {ForgeBaseTest} from "./ForgeBaseTest.t.sol";
+import {ForkBaseTest} from "./ForkBaseTest.t.sol";
 
 // import {Errors} from "../../../../src/libraries/Errors.sol";
 // import {Permissions} from "../../../../src/libraries/Permissions.sol";
@@ -11,6 +11,4 @@ import {ForgeBaseTest} from "./ForgeBaseTest.t.sol";
 // import {DAO} from "@aragon/osx/core/dao/DAO.sol";
 // import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
 
-contract StagedProposalProcessor_ForkTest is ForgeBaseTest {
-
-}
+contract StagedProposalProcessor_ForkTest is ForkBaseTest {}
