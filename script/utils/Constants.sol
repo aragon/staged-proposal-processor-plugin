@@ -16,4 +16,5 @@ contract Constants {
     string public constant PLUGIN_SETUP_PROCESSOR_KEY = "PluginSetupProcessor.address";
     string public constant MULTISIG_PLUGIN_REPO_KEY = "MultisigRepoProxy.address";
     string public constant ADMIN_PLUGIN_REPO_KEY = "AdminRepoProxy.address";
+    string public constant MULTISIG_PLUGIN_SETUP_KEY = "MultisigSetup.address";
 }
