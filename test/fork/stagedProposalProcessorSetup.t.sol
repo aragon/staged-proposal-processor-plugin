@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.18;
 
-import {ForgeBaseTest} from "./ForgeBaseTest.t.sol";
+import {ForkBaseTest} from "./ForkBaseTest.t.sol";
 
 import {DAO} from "@aragon/osx/core/dao/DAO.sol";
 import {DAOFactory} from "@aragon/osx/framework/dao/DAOFactory.sol";
 
 import {console} from "forge-std/console.sol";
 
-contract stagedProposalProcessorSetup_ForkTest is ForgeBaseTest {
+contract stagedProposalProcessorSetup_ForkTest is ForkBaseTest {
     function test_installSPP() external {
         // install spp
 

@@ -152,11 +152,17 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, ScriptConstants
         // return daoFactory.createDao(daoSettings, pluginSettings);
 
         console.log("herererere");
-        daoFactory.createDao(daoSettings, pluginSettings);
+        // daoFactory.createDao(daoSettings, pluginSettings);
 
         (bool success, bytes memory returnData) = address(daoFactory).call(
             abi.encodeWithSelector(daoFactory.createDao.selector, daoSettings, pluginSettings)
         );
+
+        (dao, installedPlugins) = abi.decode(returnData, (DAO, DAOFactory.InstalledPlugin[]));
+
+        console.log(address(dao));
+        console.log(installedPlugins.length);
+        console.log(installedPlugins[0].plugin);
 
         console.log("success", success);
         console.logBytes(returnData);
