@@ -61,7 +61,10 @@ contract stagedProposalProcessorSetup_ForkTest is ForkBaseTest {
 
     function test_uninstallSPP() external {
         // install spp
-        (address sppPlugin, address[] memory helpers) = _installSPP(dao, _prepareInstallationData());
+        (address sppPlugin, address[] memory helpers) = _installSPP(
+            dao,
+            _prepareInstallationData()
+        );
 
         // check spp plugin is installed
         assertNotEq(address(sppPlugin), address(0), "pluginAddr");
@@ -79,8 +82,10 @@ contract stagedProposalProcessorSetup_ForkTest is ForkBaseTest {
 
         // uninstall spp
 
+        // move to next block because plugin can not be uninstalled in the same block
+        vm.roll(block.number + 4);
 
-        _uninstallSPP(dao, sppPlugin, members);
+        _uninstallSPP(dao, sppPlugin, helpers);
 
         // check spp has no execute permission on dao
         assertFalse(
