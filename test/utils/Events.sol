@@ -43,7 +43,14 @@ contract Events {
 
     event TrustedForwarderUpdated(address indexed forwarder);
 
-    // test helpres
+    event SubProposalCreated(
+        uint256 indexed proposalId,
+        uint16 indexed stageId,
+        address indexed body,
+        uint256 bodyProposalId
+    );
+
+    // test helpers
 
     error UnsupportedNetwork(string network);
 }

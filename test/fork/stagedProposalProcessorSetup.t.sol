@@ -2,7 +2,6 @@
 pragma solidity ^0.8.18;
 
 import {ForkBaseTest} from "./ForkBaseTest.t.sol";
-import {SPPRuleCondition} from "../../src/utils/SPPRuleCondition.sol";
 import {StagedProposalProcessor as SPP} from "../../src/StagedProposalProcessor.sol";
 
 import {DAO} from "@aragon/osx/core/dao/DAO.sol";
