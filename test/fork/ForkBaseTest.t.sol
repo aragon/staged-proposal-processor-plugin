@@ -114,11 +114,14 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, ScriptConstants
 
     function getContractAddress(string memory _baseKey) public view returns (address) {
         string memory _json = _getOsxDeployments(network);
+        if (bytes(_json).length == 0) {
+            revert UnsupportedNetwork(network);
+        }
 
         string memory _contractKey = _buildDeploymentCtrKey(protocolVersion, _baseKey);
 
         if (!vm.keyExistsJson(_json, _contractKey)) {
-            revert UnsupportedNetwork(network);
+            revert ContractKeyNotfoundInNetwork(network, _contractKey);
         }
         return vm.parseJsonAddress(_json, _contractKey);
     }
