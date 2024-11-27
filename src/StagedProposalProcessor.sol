@@ -533,7 +533,7 @@ contract StagedProposalProcessor is
 
     /// @inheritdoc IProposal
     /// @dev Requires the `EXECUTE_PERMISSION_ID` permission.
-    function execute(uint256 _proposalId) public virtual auth(Permissions.EXECUTE_PERMISSION_ID) {
+    function execute(uint256 _proposalId) public virtual auth(Permissions.EXECUTE_PROPOSAL_PERMISSION_ID) {
         if (!canExecute(_proposalId)) {
             revert Errors.ProposalExecutionForbidden(_proposalId);
         }
