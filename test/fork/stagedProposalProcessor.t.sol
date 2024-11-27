@@ -63,7 +63,6 @@ contract StagedProposalProcessor_ForkTest is ForkBaseTest {
         _test_executeLastStage();
     }
 
-
     // ===== Helper functions - i.e NOT TESTS =======
 
     // Since stage 0 has adminPlugin, creating a proposal there automatically
@@ -193,7 +192,7 @@ contract StagedProposalProcessor_ForkTest is ForkBaseTest {
         // approve subproposal so proposal can advance
         uint256 subproposalId = sppPlugin.getBodyProposalId(proposalId, 2, multisigPlugin);
 
-        // Members of multisig are address(1) and address(2), so we set 
+        // Members of multisig are address(1) and address(2), so we set
         // the callers to those in order for `approve` to succeed.
 
         // approve proposal on multisig by address(1)
@@ -202,7 +201,7 @@ contract StagedProposalProcessor_ForkTest is ForkBaseTest {
         assertTrue(succeed, "multisigApprove succeeded");
 
         // approve proposal on multisig by address(2).
-        // This must cause the execution of proposal on multisig 
+        // This must cause the execution of proposal on multisig
         // which must report results on SPP.
         resetPrank(address(2));
         vm.expectEmit({emitter: address(sppPlugin)});
@@ -217,7 +216,7 @@ contract StagedProposalProcessor_ForkTest is ForkBaseTest {
         SPP.ResultType result = sppPlugin.getBodyResult(proposalId, 2, multisigPlugin);
         assertEq(result, SPP.ResultType.Approval, "result");
 
-        // since results were reported the tally 
+        // since results were reported the tally
         // must be updated, so we recheck.
         (uint256 approvals, uint256 vetos) = sppPlugin.getProposalTally(proposalId, 2);
         assertEq(approvals, 1, "approvals");
@@ -252,16 +251,16 @@ contract StagedProposalProcessor_ForkTest is ForkBaseTest {
         // approve subproposal so proposal can advance
         uint256 subproposalId = sppPlugin.getBodyProposalId(proposalId, 2, multisigPlugin);
 
-        // Members of multisig are address(1) and address(2), so we set 
+        // Members of multisig are address(1) and address(2), so we set
         // the callers to those in order for `approve` to succeed.
-        
+
         // approve proposal on multisig by address(1)
         resetPrank(address(1));
         (bool succeed, ) = multisigCallApprove(multisigPlugin, subproposalId, false);
         assertTrue(succeed, "multisigApprove succeeded");
 
         // approve proposal on multisig by address(2).
-        // This must cause the execution of proposal on multisig 
+        // This must cause the execution of proposal on multisig
         // which must report results on SPP.
         resetPrank(address(2));
         (succeed, ) = multisigCallApprove(multisigPlugin, subproposalId, false);
@@ -317,7 +316,7 @@ contract StagedProposalProcessor_ForkTest is ForkBaseTest {
         // stage 0 -> adminPlugin, stage 1 -> no body, stage 2 -> multisigPlugin
         SPP.Body[] memory bodiesStage0 = new SPP.Body[](1);
         SPP.Body[] memory bodiesStage1 = new SPP.Body[](0);
-        SPP.Body[] memory bodiesStage2 = new SPP.Body[](1); 
+        SPP.Body[] memory bodiesStage2 = new SPP.Body[](1);
 
         bodiesStage0[0] = SPP.Body({
             addr: adminPlugin,
@@ -325,7 +324,7 @@ contract StagedProposalProcessor_ForkTest is ForkBaseTest {
             tryAdvance: true,
             resultType: SPP.ResultType.Approval
         });
-        
+
         bodiesStage2[0] = SPP.Body({
             addr: multisigPlugin,
             isManual: false,
