@@ -8,7 +8,9 @@ import {Events} from "../utils/Events.sol";
 import {Fuzzers} from "../utils/Fuzzers.sol";
 import {Constants} from "../utils/Constants.sol";
 import {Assertions} from "../utils/Assertions.sol";
+import {TrustedForwarder} from "../utils/TrustedForwarder.sol";
 import {Constants as ScriptConstants} from "../../script/utils/Constants.sol";
+import {StagedProposalProcessor as SPP} from "../../src/StagedProposalProcessor.sol";
 import {StagedProposalProcessorSetup as SPPSetup} from "../../src/StagedProposalProcessorSetup.sol";
 
 import {DAO} from "@aragon/osx/core/dao/DAO.sol";
@@ -48,6 +50,8 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, ScriptConstants
     SPPSetup internal sppSetup;
     Target internal target;
 
+    TrustedForwarder internal trustedForwarder;
+
     address[] internal members = [address(1), address(2), address(3)];
 
     // helper structs
@@ -70,6 +74,7 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, ScriptConstants
         multisigSetup = PluginUpgradeableSetup(getContractAddress(MULTISIG_PLUGIN_SETUP_KEY));
 
         target = new Target();
+        trustedForwarder = new TrustedForwarder();
 
         // publish new spp version
         sppSetup = new SPPSetup();
@@ -104,6 +109,7 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, ScriptConstants
         vm.label(address(daoFactory), "DaoFactory");
         vm.label(address(multisigSetup), "Multisig_Setup");
         vm.label(address(target), "Target");
+        vm.label(address(trustedForwarder), "TrustedForwarder");
     }
 
     function getContractAddress(string memory _baseKey) public view returns (address) {
@@ -176,7 +182,10 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, ScriptConstants
         bytes memory multisigData = abi.encode(
             members,
             MultisigSettings({onlyListed: true, minApprovals: 2}),
-            IPlugin.TargetConfig({target: address(0), operation: IPlugin.Operation.Call}),
+            IPlugin.TargetConfig({
+                target: address(trustedForwarder),
+                operation: IPlugin.Operation.Call
+            }),
             "dummy multisig metadata"
         );
 
@@ -252,6 +261,9 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, ScriptConstants
                 hashHelpers(preparedSetupData.helpers)
             )
         );
+
+        // set trusted forwarder
+        SPP(plugin).setTrustedForwarder(address(trustedForwarder));
 
         // revoke root permission to the psp
         dao.revoke(address(dao), address(psp), dao.ROOT_PERMISSION_ID());
