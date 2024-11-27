@@ -3,14 +3,18 @@ Edit_SPP_IntegrationTest
 │   ├── when caller is allowed
 │   │   ├── when current stage is editable
 │   │   │   ├── when proposal state is not Advanceable
-│   │   │   │   ├── when proposal is active
-│   │   │   │   │   └── it should revert.
-│   │   │   │   ├── when proposal is cancelled
-│   │   │   │   │    └── it should revert.
-│   │   │   │   ├── when proposal is executed
-│   │   │   │   │    └── it should revert.
-│   │   │   │   └── when proposal is expired
-│   │   │   │       └── it should revert.
+│   │   │   │   ├── when stage has no bodies
+│   │   │   │   │   ├── it should update actions.
+│   │   │   │   │   └── it should emit ProposalEdited event.
+│   │   │   │   └── when stage has bodies
+│   │   │   │   │   ├── when proposal is active
+│   │   │   │   │   │   └── it should revert.
+│   │   │   │   │   ├── when proposal is cancelled
+│   │   │   │   │   │   └── it should revert.
+│   │   │   │   │   ├── when proposal is executed
+│   │   │   │   │   │   └── it should revert.
+│   │   │   │   │   └── when proposal is expired
+│   │   │   │   │       └── it should revert.
 │   │   │   └── when proposal state is Advanceable
 │   │   │       ├── it should update actions.
 │   │   │       └── it should emit ProposalEdited event.
