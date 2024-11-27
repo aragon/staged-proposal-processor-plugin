@@ -164,13 +164,9 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, ScriptConstants
         );
 
         DAOFactory.PluginSettings[] memory pluginSettings = new DAOFactory.PluginSettings[](1);
-        uint8 latestRelease = adminRepo.latestRelease();
-        uint256 latestBuild = adminRepo.buildCount(latestRelease);
+
         pluginSettings[0] = DAOFactory.PluginSettings({
-            pluginSetupRef: PluginSetupRef({
-                versionTag: PluginRepo.Tag({release: latestRelease, build: uint16(latestBuild)}),
-                pluginSetupRepo: adminRepo
-            }),
+            pluginSetupRef: getPluginSetupRef(adminRepo),
             data: adminData
         });
 
@@ -192,12 +188,7 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, ScriptConstants
             "dummy multisig metadata"
         );
 
-        uint8 latestRelease = multisigRepo.latestRelease();
-        uint256 latestBuild = multisigRepo.buildCount(latestRelease);
-        PluginSetupRef memory multisigSetupRef = PluginSetupRef({
-            versionTag: PluginRepo.Tag({release: latestRelease, build: uint16(latestBuild)}),
-            pluginSetupRepo: multisigRepo
-        });
+        PluginSetupRef memory multisigSetupRef = getPluginSetupRef(multisigRepo);
 
         IPluginSetup.PreparedSetupData memory preparedSetupData;
 
@@ -236,12 +227,7 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, ScriptConstants
         bytes memory sppData
     ) internal returns (address plugin, address[] memory helpers) {
         resetPrank(address(dao));
-        uint8 latestRelease = sppRepo.latestRelease();
-        uint256 latestBuild = sppRepo.buildCount(latestRelease);
-        PluginSetupRef memory sppSetupRef = PluginSetupRef({
-            versionTag: PluginRepo.Tag({release: latestRelease, build: uint16(latestBuild)}),
-            pluginSetupRepo: sppRepo
-        });
+        PluginSetupRef memory sppSetupRef = getPluginSetupRef(sppRepo);
 
         IPluginSetup.PreparedSetupData memory preparedSetupData;
         (plugin, preparedSetupData) = psp.prepareInstallation(
@@ -277,12 +263,7 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, ScriptConstants
 
     function _uninstallSPP(DAO dao, address plugin, address[] memory currentHelpers) internal {
         resetPrank(address(dao));
-        uint8 latestRelease = sppRepo.latestRelease();
-        uint256 latestBuild = sppRepo.buildCount(latestRelease);
-        PluginSetupRef memory sppSetupRef = PluginSetupRef({
-            versionTag: PluginRepo.Tag({release: latestRelease, build: uint16(latestBuild)}),
-            pluginSetupRepo: sppRepo
-        });
+        PluginSetupRef memory sppSetupRef = getPluginSetupRef(sppRepo);
 
         PermissionLib.MultiTargetPermission[] memory permissions = psp.prepareUninstallation(
             address(dao),
@@ -304,6 +285,29 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, ScriptConstants
         // revoke root permission to the psp
         dao.revoke(address(dao), address(psp), dao.ROOT_PERMISSION_ID());
         resetPrank(deployer);
+    }
+
+    function getPluginSetupRef(
+        PluginRepo _pluginRepo
+    ) internal view returns (PluginSetupRef memory) {
+        uint8 latestRelease = _pluginRepo.latestRelease();
+        uint256 latestBuild = _pluginRepo.buildCount(latestRelease);
+
+        return
+            PluginSetupRef({
+                versionTag: PluginRepo.Tag({release: latestRelease, build: uint16(latestBuild)}),
+                pluginSetupRepo: _pluginRepo
+            });
+    }
+
+    function multisigCallApprove(
+        address _multisig,
+        uint256 _proposalId,
+        bool _tryExecute
+    ) internal returns (bool success, bytes memory data) {
+        (success, data) = _multisig.call(
+            abi.encodeWithSignature("approve(uint256,bool)", _proposalId, _tryExecute)
+        );
     }
 
     function resetPrank(address msgSender) public {

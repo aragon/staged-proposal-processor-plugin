@@ -100,13 +100,24 @@ contract StagedProposalProcessorSetup_ForkTest is ForkBaseTest {
 
     function _prepareInstallationData() internal view returns (bytes memory) {
         SPP.Stage[] memory stages = new SPP.Stage[](3);
+
         SPP.Body[] memory bodiesStage0 = new SPP.Body[](1);
+        SPP.Body[] memory bodiesStage1 = new SPP.Body[](0);
+        SPP.Body[] memory bodiesStage2 = new SPP.Body[](1);
+
         bodiesStage0[0] = SPP.Body({
             addr: installedAdminPlugin,
             isManual: true,
             tryAdvance: true,
             resultType: SPP.ResultType.Approval
         });
+        bodiesStage2[0] = SPP.Body({
+            addr: multisigPlugin,
+            isManual: true,
+            tryAdvance: true,
+            resultType: SPP.ResultType.Approval
+        });
+
         stages[0] = SPP.Stage({
             bodies: bodiesStage0,
             maxAdvance: 100,
@@ -118,7 +129,7 @@ contract StagedProposalProcessorSetup_ForkTest is ForkBaseTest {
             editable: false
         });
         stages[1] = SPP.Stage({
-            bodies: new SPP.Body[](0),
+            bodies: bodiesStage1,
             maxAdvance: 100,
             minAdvance: 30,
             voteDuration: 10,
@@ -126,13 +137,6 @@ contract StagedProposalProcessorSetup_ForkTest is ForkBaseTest {
             vetoThreshold: 0,
             cancelable: true,
             editable: true
-        });
-        SPP.Body[] memory bodiesStage2 = new SPP.Body[](1);
-        bodiesStage2[0] = SPP.Body({
-            addr: multisigPlugin,
-            isManual: true,
-            tryAdvance: true,
-            resultType: SPP.ResultType.Approval
         });
         stages[2] = SPP.Stage({
             bodies: bodiesStage2,
