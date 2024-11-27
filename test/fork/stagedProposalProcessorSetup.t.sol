@@ -21,7 +21,7 @@ import {
 } from "@aragon/osx-commons-contracts/src/permission/condition/extensions/RuledCondition.sol";
 import {PluginSetupProcessor} from "@aragon/osx/framework/plugin/setup/PluginSetupProcessor.sol";
 
-contract stagedProposalProcessorSetup_ForkTest is ForkBaseTest {
+contract StagedProposalProcessorSetup_ForkTest is ForkBaseTest {
     DAO internal dao;
     address installedAdminPlugin;
     address multisigPlugin;
@@ -82,7 +82,7 @@ contract stagedProposalProcessorSetup_ForkTest is ForkBaseTest {
         // uninstall spp
 
         // move to next block because plugin can not be uninstalled in the same block
-        vm.roll(block.number + 4);
+        vm.roll(block.number + 1);
 
         _uninstallSPP(dao, sppPlugin, helpers);
 
