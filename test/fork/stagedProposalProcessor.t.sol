@@ -189,14 +189,20 @@ contract StagedProposalProcessor_ForkTest is ForkBaseTest {
         uint256 subproposalId = sppPlugin.getBodyProposalId(proposalId, 2, multisigPlugin);
 
         resetPrank(address(1));
-        multisigPlugin.call(abi.encodeWithSignature("approve(uint256,bool)", subproposalId, false));
+        (bool succeed, ) = multisigPlugin.call(
+            abi.encodeWithSignature("approve(uint256,bool)", subproposalId, false)
+        );
+        assertTrue(succeed, "succeed add1");
 
         resetPrank(address(2));
         // should report results
         // emit ProposalResultReported event
         vm.expectEmit({emitter: address(sppPlugin)});
         emit ProposalResultReported(proposalId, 2, multisigPlugin);
-        multisigPlugin.call(abi.encodeWithSignature("approve(uint256,bool)", subproposalId, true));
+        (succeed, ) = multisigPlugin.call(
+            abi.encodeWithSignature("approve(uint256,bool)", subproposalId, true)
+        );
+        assertTrue(succeed, "succeed add2");
 
         resetPrank(deployer);
 
@@ -232,10 +238,16 @@ contract StagedProposalProcessor_ForkTest is ForkBaseTest {
         uint256 subproposalId = sppPlugin.getBodyProposalId(proposalId, 2, multisigPlugin);
 
         resetPrank(address(1));
-        multisigPlugin.call(abi.encodeWithSignature("approve(uint256,bool)", subproposalId, false));
+        (bool succeed, ) = multisigPlugin.call(
+            abi.encodeWithSignature("approve(uint256,bool)", subproposalId, false)
+        );
+        assertTrue(succeed, "succeed add1");
 
         resetPrank(address(2));
-        multisigPlugin.call(abi.encodeWithSignature("approve(uint256,bool)", subproposalId, false));
+        (succeed, ) = multisigPlugin.call(
+            abi.encodeWithSignature("approve(uint256,bool)", subproposalId, false)
+        );
+        assertTrue(succeed, "succeed add2");
 
         resetPrank(deployer);
 
