@@ -1047,6 +1047,7 @@ contract StagedProposalProcessor is
     /// @return The calldata without appended address.
     function _msgData() internal view virtual override returns (bytes calldata) {
         uint256 calldataLength = msg.data.length;
+        
         if (isTrustedForwarder(msg.sender) && calldataLength >= 20) {
             return msg.data[:calldataLength - 20];
         } else {
