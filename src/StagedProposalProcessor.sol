@@ -263,9 +263,6 @@ contract StagedProposalProcessor is
         _updateStages(_stages);
     }
 
-    
-
-
     /// @notice Reports and records the result for a proposal at a specific stage.
     /// @dev This function can be called by any address even if it is not included in the stage configuration.
     ///      `_canProposalAdvance` function ensures that only records from addresses
@@ -565,7 +562,7 @@ contract StagedProposalProcessor is
     /// @param _forwarder The address of the Forwarder contract that is being used.
     /// @return `true` if the forwarder is trusted, otherwise false.
     function isTrustedForwarder(address _forwarder) public view virtual returns (bool) {
-        return forwarder == trustedForwarder();
+        return _forwarder == getTrustedForwarder();
     }
 
     /// @notice Determines whether the specified proposal can be advanced to the next stage.
@@ -1045,7 +1042,7 @@ contract StagedProposalProcessor is
     }
 
     /// @notice Overrides for `msg.data`. Defaults to the original `msg.data` whenever
-    ///         a call is not performed by the trusted forwarder or the calldata length 
+    ///         a call is not performed by the trusted forwarder or the calldata length
     ///         is less than 20 bytes (an address length).
     /// @return The calldata without appended address.
     function _msgData() internal view virtual override returns (bytes calldata) {
@@ -1056,7 +1053,7 @@ contract StagedProposalProcessor is
             return msg.data;
         }
     }
-    
+
     /// @notice Internal helper function that decides if the stage's thresholds are satisfied.
     /// @param _proposalId The proposal id.
     /// @param _stageId The stage index.
