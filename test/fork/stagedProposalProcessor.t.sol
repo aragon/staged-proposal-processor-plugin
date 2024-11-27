@@ -35,7 +35,7 @@ contract StagedProposalProcessor_ForkTest is ForkBaseTest {
         vm.roll(block.number + 4);
     }
 
-    function test_proposalFlow() public {
+    function test_proposalFlowAdvancingLastStage() public {
         // create proposal
         _test_createProposal();
 
@@ -47,6 +47,20 @@ contract StagedProposalProcessor_ForkTest is ForkBaseTest {
 
         // execute proposal
         _test_advanceLastStage();
+    }
+
+    function test_proposalFlowExecutingLastStage() public {
+        // create proposal
+        _test_createProposal();
+
+        // advance to stage 1
+        _test_advanceToStageX(1);
+
+        // advance to stage 2
+        _test_advanceToStageX(2);
+
+        // execute proposal
+        _test_executeLastStage();
     }
 
     function _test_createProposal() public {
@@ -141,7 +155,7 @@ contract StagedProposalProcessor_ForkTest is ForkBaseTest {
 
         // check proposal advanced event emitted
         vm.expectEmit({emitter: address(sppPlugin)});
-        emit ProposalAdvanced(proposalId, _stageId);
+        emit ProposalAdvanced(proposalId, _stageId, deployer);
 
         sppPlugin.advanceProposal(proposalId);
 
@@ -180,7 +194,6 @@ contract StagedProposalProcessor_ForkTest is ForkBaseTest {
         resetPrank(address(2));
         // should report results
         // emit ProposalResultReported event
-
         vm.expectEmit({emitter: address(sppPlugin)});
         emit ProposalResultReported(proposalId, 2, multisigPlugin);
         multisigPlugin.call(abi.encodeWithSignature("approve(uint256,bool)", subproposalId, true));
@@ -205,7 +218,47 @@ contract StagedProposalProcessor_ForkTest is ForkBaseTest {
         SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
         assertTrue(proposal.executed, "executed");
 
-        // todo check actions were executed
+        // check action were executed
+        assertEq(target.val(), TARGET_VALUE, "value");
+    }
+
+    function _test_executeLastStage() public {
+        // check proposal can't advance
+
+        assertFalse(sppPlugin.canProposalAdvance(proposalId));
+
+        // approve subproposal so proposal can advance
+
+        uint256 subproposalId = sppPlugin.getBodyProposalId(proposalId, 2, multisigPlugin);
+
+        resetPrank(address(1));
+        multisigPlugin.call(abi.encodeWithSignature("approve(uint256,bool)", subproposalId, false));
+
+        resetPrank(address(2));
+        multisigPlugin.call(abi.encodeWithSignature("approve(uint256,bool)", subproposalId, false));
+
+        resetPrank(deployer);
+
+        // check proposal is not advanceable due to min advance time
+        assertFalse(sppPlugin.canProposalAdvance(proposalId));
+
+        // move timestamp
+        vm.warp(block.timestamp + minAdvance);
+
+        assertTrue(sppPlugin.canProposalAdvance(proposalId));
+
+        // check proposal executed event emitted
+        vm.expectEmit({emitter: address(sppPlugin)});
+        emit ProposalExecuted(proposalId);
+
+        sppPlugin.execute(proposalId);
+
+        // check proposal executed
+        SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
+        assertTrue(proposal.executed, "executed");
+
+        // check action were executed
+        assertEq(target.val(), TARGET_VALUE, "value");
     }
 
     function _configureDummyDaoAndInstallSPP() internal {
