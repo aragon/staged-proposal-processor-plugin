@@ -533,7 +533,9 @@ contract StagedProposalProcessor is
 
     /// @inheritdoc IProposal
     /// @dev Requires the `EXECUTE_PERMISSION_ID` permission.
-    function execute(uint256 _proposalId) public virtual auth(Permissions.EXECUTE_PROPOSAL_PERMISSION_ID) {
+    function execute(
+        uint256 _proposalId
+    ) public virtual auth(Permissions.EXECUTE_PROPOSAL_PERMISSION_ID) {
         if (!canExecute(_proposalId)) {
             revert Errors.ProposalExecutionForbidden(_proposalId);
         }
@@ -554,6 +556,13 @@ contract StagedProposalProcessor is
         returns (bool)
     {
         return super.supportsInterface(_interfaceId);
+    }
+
+    /// @notice Indicates whether any particular address is the trusted forwarder.
+    /// @param _forwarder The address of the Forwarder contract that is being used.
+    /// @return `true` if the forwarder is trusted, otherwise false.
+    function isTrustedForwarder(address _forwarder) public view virtual returns (bool) {
+        return _forwarder == getTrustedForwarder();
     }
 
     /// @notice Determines whether the specified proposal can be advanced to the next stage.
@@ -734,7 +743,7 @@ contract StagedProposalProcessor is
                 address(this),
                 _account,
                 Permissions.EXECUTE_PROPOSAL_PERMISSION_ID,
-                msg.data
+                _msgData()
             );
     }
 
@@ -747,7 +756,7 @@ contract StagedProposalProcessor is
                 address(this),
                 _account,
                 Permissions.ADVANCE_PERMISSION_ID,
-                msg.data
+                _msgData()
             );
     }
 
@@ -1018,22 +1027,30 @@ contract StagedProposalProcessor is
 
     /// @notice Retrieves the original sender address, considering if the call was made through a trusted forwarder.
     /// @dev If the `msg.sender` is the trusted forwarder, extracts the original sender from the calldata.
-    /// @return sender The address of the original caller
-    ///     or the `msg.sender` if not called through the trusted forwarder.
+    /// @return The address of the original caller or the `msg.sender` if not called through the trusted forwarder.
     function _msgSender() internal view override returns (address) {
-        // If sender is a trusted Forwarder, that means
-        // it would have appended the original sender in the calldata.
-        if (msg.sender == trustedForwarder) {
-            address sender;
-            // solhint-disable-next-line no-inline-assembly
-            assembly {
-                // get the last 20 bytes as an address which was appended
-                // by the trustedForwarder before calling this function.
-                sender := shr(96, calldataload(sub(calldatasize(), 20)))
-            }
-            return sender;
+        uint256 calldataLength = msg.data.length;
+
+        if (isTrustedForwarder(msg.sender) && calldataLength >= 20) {
+            // At this point we know that the sender is a trusted forwarder,
+            // so we trust that the last bytes of msg.data are the verified sender address.
+            // extract sender address from the end of msg.data
+            return address(bytes20(msg.data[calldataLength - 20:]));
         } else {
             return msg.sender;
+        }
+    }
+
+    /// @notice Overrides for `msg.data`. Defaults to the original `msg.data` whenever
+    ///         a call is not performed by the trusted forwarder or the calldata length
+    ///         is less than 20 bytes (an address length).
+    /// @return The calldata without appended address.
+    function _msgData() internal view virtual override returns (bytes calldata) {
+        uint256 calldataLength = msg.data.length;
+        if (isTrustedForwarder(msg.sender) && calldataLength >= 20) {
+            return msg.data[:calldataLength - 20];
+        } else {
+            return msg.data;
         }
     }
 
