@@ -10,6 +10,7 @@ import {StagedProposalProcessor as SPP} from "../../../../src/StagedProposalProc
 import {DAO} from "@aragon/osx/core/dao/DAO.sol";
 import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
 import {DaoUnauthorized} from "@aragon/osx-commons-contracts/src/permission/auth/auth.sol";
+import {console} from "forge-std/console.sol";
 
 contract Edit_SPP_IntegrationTest is BaseTest {
     uint256 proposalId;
