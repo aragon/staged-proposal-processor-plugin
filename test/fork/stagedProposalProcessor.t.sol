@@ -37,7 +37,7 @@ contract StagedProposalProcessor_ForkTest is ForkBaseTest {
 
     function test_proposalFlowAdvancingLastStage() public {
         // create proposal
-        _test_createProposal();
+        _test_createProposalAndExecuteSubproposal();
 
         // advance to stage 1
         _test_advanceToStageX(1);
@@ -51,7 +51,7 @@ contract StagedProposalProcessor_ForkTest is ForkBaseTest {
 
     function test_proposalFlowExecutingLastStage() public {
         // create proposal
-        _test_createProposal();
+        _test_createProposalAndExecuteSubproposal();
 
         // advance to stage 1
         _test_advanceToStageX(1);
@@ -63,7 +63,7 @@ contract StagedProposalProcessor_ForkTest is ForkBaseTest {
         _test_executeLastStage();
     }
 
-    function _test_createProposal() public {
+    function _test_createProposalAndExecuteSubproposal() public {
         uint64 startDate = uint64(block.timestamp);
         bytes memory testMetadata = "test proposal metadata";
         Action[] memory actions = new Action[](1);
@@ -142,11 +142,16 @@ contract StagedProposalProcessor_ForkTest is ForkBaseTest {
         uint256 subproposalId = sppPlugin.getBodyProposalId(proposalId, 0, adminPlugin);
         assertNotEq(subproposalId, 0, "subproposalId");
         assertNotEq(subproposalId, type(uint256).max, "subproposalId");
+
+        // since stage 0 body is Admin it should be executed automatically
+        // check tally
+        (uint256 approvals, uint256 vetos) = sppPlugin.getProposalTally(proposalId, 0);
+        assertEq(approvals, 1, "approvals");
+        assertEq(vetos, 0, "vetos");
     }
 
     function _test_advanceToStageX(uint16 _stageId) public {
         // check proposal can't advance due to min advance time
-
         assertFalse(sppPlugin.canProposalAdvance(proposalId));
 
         // move timestamp
@@ -166,9 +171,12 @@ contract StagedProposalProcessor_ForkTest is ForkBaseTest {
         assertEq(proposal.currentStage, _stageId, "currentStage");
 
         // stage 1 has no bodies so no subroposal was created successfully
-        uint256 subproposalId = sppPlugin.getBodyProposalId(proposalId, _stageId, adminPlugin);
-
         if (_stageId != 1) {
+            uint256 subproposalId = sppPlugin.getBodyProposalId(
+                proposalId,
+                _stageId,
+                multisigPlugin
+            );
             assertNotEq(subproposalId, 0, "subproposalId");
             assertNotEq(subproposalId, type(uint256).max, "subproposalId");
         }
@@ -200,6 +208,16 @@ contract StagedProposalProcessor_ForkTest is ForkBaseTest {
         assertTrue(succeed, "succeed add2");
 
         resetPrank(deployer);
+
+        // check proposal result was store
+        SPP.ResultType result = sppPlugin.getBodyResult(proposalId, 2, multisigPlugin);
+        assertEq(result, SPP.ResultType.Approval, "result");
+
+        // since results were reported the tally must be updated
+        // check tally
+        (uint256 approvals, uint256 vetos) = sppPlugin.getProposalTally(proposalId, 0);
+        assertEq(approvals, 1, "approvals");
+        assertEq(vetos, 0, "vetos");
 
         // check proposal is not advanceable due to min advance time
         assertFalse(sppPlugin.canProposalAdvance(proposalId));
@@ -245,6 +263,16 @@ contract StagedProposalProcessor_ForkTest is ForkBaseTest {
         assertTrue(succeed, "succeed add2");
 
         resetPrank(deployer);
+
+        // check proposal result was not reported yet
+        SPP.ResultType result = sppPlugin.getBodyResult(proposalId, 2, multisigPlugin);
+        assertEq(result, SPP.ResultType.None, "result");
+
+        // result were not reported however the tally should know the subproposal succeeded
+        // check tally
+        (uint256 approvals, uint256 vetos) = sppPlugin.getProposalTally(proposalId, 0);
+        assertEq(approvals, 1, "approvals");
+        assertEq(vetos, 0, "vetos");
 
         // check proposal is not advanceable due to min advance time
         assertFalse(sppPlugin.canProposalAdvance(proposalId));
