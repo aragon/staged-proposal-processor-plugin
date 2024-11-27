@@ -165,10 +165,10 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
             where: address(sppPlugin),
             who: users.manager,
             condition: PermissionLib.NO_CONDITION,
-            permissionId: Permissions.EXECUTE_PERMISSION_ID
+            permissionId: Permissions.EXECUTE_PROPOSAL_PERMISSION_ID
         });
 
-        // grant permission for execute proposals on the spp to the manager
+        // grant permission for advance proposals on the spp to the manager
         permissions[5] = PermissionLib.MultiTargetPermission({
             operation: PermissionLib.Operation.Grant,
             where: address(sppPlugin),
