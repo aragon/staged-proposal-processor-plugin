@@ -139,7 +139,9 @@ contract StagedProposalProcessor_ForkTest is ForkBaseTest {
         );
 
         // check subproposal id was stored
-        assertNotEq(sppPlugin.getBodyProposalId(proposalId, 0, adminPlugin), 0, "subproposalId");
+        uint256 subproposalId = sppPlugin.getBodyProposalId(proposalId, 0, adminPlugin);
+        assertNotEq(subproposalId, 0, "subproposalId");
+        assertNotEq(subproposalId, type(uint256).max, "subproposalId");
     }
 
     function _test_advanceToStageX(uint16 _stageId) public {
@@ -164,18 +166,11 @@ contract StagedProposalProcessor_ForkTest is ForkBaseTest {
         assertEq(proposal.currentStage, _stageId, "currentStage");
 
         // stage 1 has no bodies so no subroposal was created successfully
-        if (_stageId != 1) {
-            assertNotEq(
-                sppPlugin.getBodyProposalId(proposalId, _stageId, multisigPlugin),
-                0,
-                "subproposalId"
-            );
+        uint256 subproposalId = sppPlugin.getBodyProposalId(proposalId, _stageId, adminPlugin);
 
-            assertNotEq(
-                sppPlugin.getBodyProposalId(proposalId, _stageId, multisigPlugin),
-                type(uint256).max,
-                "subproposalId"
-            );
+        if (_stageId != 1) {
+            assertNotEq(subproposalId, 0, "subproposalId");
+            assertNotEq(subproposalId, type(uint256).max, "subproposalId");
         }
     }
 
@@ -352,33 +347,4 @@ contract StagedProposalProcessor_ForkTest is ForkBaseTest {
 
         resetPrank(deployer);
     }
-}
-
-interface IMultisig {
-    struct ProposalParameters {
-        uint16 minApprovals;
-        uint64 snapshotBlock;
-        uint64 startDate;
-        uint64 endDate;
-    }
-
-    function approve(uint256 _proposalId, bool _tryExecution) external;
-
-    function canApprove(uint256 _proposalId, address _account) external view returns (bool);
-
-    function getProposal(
-        uint256 _proposalId
-    )
-        external
-        view
-        returns (
-            bool executed,
-            uint16 approvals,
-            ProposalParameters memory parameters,
-            Action[] memory actions,
-            uint256 allowFailureMap,
-            IPlugin.TargetConfig memory targetConfig
-        );
-
-    function lastMultisigSettingsChange() external view returns (uint64);
 }
