@@ -8,7 +8,7 @@ CreateProposal_SPP_IntegrationTest
 │       ├── given all plugins on stage zero are non manual
 │       │   ├── when sub proposal can not be created
 │       │   │   ├── it should store uint max value as proposal id.
-│       │   │   └── it should emit an event.     // TBD
+│       │   │   └── it should emit SubProposalNotCreated event.
 │       │   └── when sub proposal can be created
 │       │       ├── when none sub proposal need extra params
 │       │       │   ├── it should emit events.
