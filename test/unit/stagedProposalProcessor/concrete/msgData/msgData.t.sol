@@ -32,8 +32,6 @@ contract MsgData_SPP_UnitTest is BaseTest {
                 )
             )
         );
-
-        // set trusted forwarder
     }
 
     modifier whenCallerIsTrustedForwarder() {
