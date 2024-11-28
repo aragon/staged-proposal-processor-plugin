@@ -129,7 +129,8 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
 
         // check event emitted
         vm.expectEmit({emitter: address(sppPlugin)});
-        emit ProposalAdvanced(proposalId, initialStage + 1);
+        // users.manager is from which the `advanceProposal` call is made.
+        emit ProposalAdvanced(proposalId, initialStage + 1, users.manager);
 
         sppPlugin.advanceProposal(proposalId);
 
@@ -185,7 +186,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
 
         // check event emitted
         vm.expectEmit({emitter: address(sppPlugin)});
-        emit ProposalAdvanced(proposalId, initialStage + 1);
+        emit ProposalAdvanced(proposalId, initialStage + 1, users.manager);
 
         sppPlugin.advanceProposal(proposalId);
 
@@ -255,7 +256,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
 
         // check event emitted
         vm.expectEmit({emitter: address(sppPlugin)});
-        emit ProposalAdvanced(proposalId, initialStage + 1);
+        emit ProposalAdvanced(proposalId, initialStage + 1, users.manager);
 
         sppPlugin.advanceProposal(proposalId);
 
@@ -319,7 +320,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
 
         // check event emitted
         vm.expectEmit({emitter: address(sppPlugin)});
-        emit ProposalAdvanced(proposalId, initialStage + 1);
+        emit ProposalAdvanced(proposalId, initialStage + 1, users.manager);
 
         sppPlugin.advanceProposal(proposalId);
 
@@ -367,7 +368,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
 
         // check event emitted
         vm.expectEmit({emitter: address(sppPlugin)});
-        emit ProposalAdvanced(proposalId, initialStage + 1);
+        emit ProposalAdvanced(proposalId, initialStage + 1, users.manager);
 
         sppPlugin.advanceProposal(proposalId);
 
@@ -412,18 +413,20 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
 
         vm.warp(VOTE_DURATION + START_DATE);
 
+        address advanceProposalCaller = users.unauthorized;
+
         // grant advance permission but not execute permission
         DAO(payable(address(dao))).grant({
             _where: address(sppPlugin),
-            _who: users.unauthorized,
+            _who: advanceProposalCaller,
             _permissionId: Permissions.ADVANCE_PERMISSION_ID
         });
 
         // check event emitted
         vm.expectEmit({emitter: address(sppPlugin)});
-        emit ProposalAdvanced(proposalId, initialStage + 1);
+        emit ProposalAdvanced(proposalId, initialStage + 1, advanceProposalCaller);
 
-        resetPrank(users.unauthorized);
+        resetPrank(advanceProposalCaller);
         sppPlugin.advanceProposal(proposalId);
 
         SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
@@ -504,7 +507,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
 
         // check event emitted
         vm.expectEmit({emitter: address(sppPlugin)});
-        emit ProposalAdvanced(proposalId, initialStage + 1);
+        emit ProposalAdvanced(proposalId, initialStage + 1, users.manager);
         sppPlugin.advanceProposal(proposalId);
 
         SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
@@ -556,7 +559,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
 
         // check event emitted
         vm.expectEmit({emitter: address(sppPlugin)});
-        emit ProposalAdvanced(proposalId, initialStage + 1);
+        emit ProposalAdvanced(proposalId, initialStage + 1, users.manager);
         sppPlugin.advanceProposal(proposalId);
 
         SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);

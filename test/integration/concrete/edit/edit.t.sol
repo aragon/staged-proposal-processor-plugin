@@ -10,10 +10,13 @@ import {StagedProposalProcessor as SPP} from "../../../../src/StagedProposalProc
 import {DAO} from "@aragon/osx/core/dao/DAO.sol";
 import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
 import {DaoUnauthorized} from "@aragon/osx-commons-contracts/src/permission/auth/auth.sol";
+import {console} from "forge-std/console.sol";
 
 contract Edit_SPP_IntegrationTest is BaseTest {
     uint256 proposalId;
-    bytes32 validStageBitmap = _encodeStateBitmap(SPP.ProposalState.Advanceable);
+    bytes32 validStageBitmap =
+        _encodeStateBitmap(SPP.ProposalState.Advanceable) |
+            _encodeStateBitmap(SPP.ProposalState.Active);
     bytes newMetadata = "dummy metadata 2";
 
     modifier whenProposalExists() {
@@ -38,14 +41,50 @@ contract Edit_SPP_IntegrationTest is BaseTest {
         _;
     }
 
-    function test_RevertWhen_ProposalIsActive()
+    function test_WhenStageHasNoBodies()
         external
         whenProposalExists
         whenCallerIsAllowed
         whenCurrentStageIsEditable
         whenProposalStateIsNotAdvanceable
     {
+        // it should update actions.
+        // it should emit ProposalEdited event.
+
+        // configure stage with no bodies
+        proposalId = _configureStageWithNoBodies("dummy metadata 3");
+
+        assertEq(uint8(sppPlugin.state(proposalId)), uint8(SPP.ProposalState.Active), "active");
+
+        // check event emitted
+        vm.expectEmit({emitter: address(sppPlugin)});
+        emit ProposalEdited(
+            proposalId,
+            sppPlugin.getProposal(proposalId).currentStage,
+            users.manager,
+            newMetadata,
+            _newFancyActions()
+        );
+
+        sppPlugin.edit(proposalId, newMetadata, _newFancyActions());
+    }
+
+    modifier whenStageHasBodies() {
+        _;
+    }
+
+    function test_RevertWhen_ProposalIsActive()
+        external
+        whenProposalExists
+        whenCallerIsAllowed
+        whenCurrentStageIsEditable
+        whenProposalStateIsNotAdvanceable
+        whenStageHasBodies
+    {
         // it should revert.
+
+        // since the stage has bodies only can be edited if the state is advanceable
+        validStageBitmap = _encodeStateBitmap(SPP.ProposalState.Advanceable);
         vm.expectRevert(
             abi.encodeWithSelector(
                 Errors.UnexpectedProposalState.selector,
@@ -64,6 +103,7 @@ contract Edit_SPP_IntegrationTest is BaseTest {
         whenCallerIsAllowed
         whenCurrentStageIsEditable
         whenProposalStateIsNotAdvanceable
+        whenStageHasBodies
     {
         // it should revert.
 
@@ -87,6 +127,7 @@ contract Edit_SPP_IntegrationTest is BaseTest {
         whenCallerIsAllowed
         whenCurrentStageIsEditable
         whenProposalStateIsNotAdvanceable
+        whenStageHasBodies
     {
         // it should revert.
 
@@ -110,6 +151,7 @@ contract Edit_SPP_IntegrationTest is BaseTest {
         whenCallerIsAllowed
         whenCurrentStageIsEditable
         whenProposalStateIsNotAdvanceable
+        whenStageHasBodies
     {
         // it should revert.
 
@@ -219,5 +261,27 @@ contract Edit_SPP_IntegrationTest is BaseTest {
         actions = new Action[](2);
         actions[0] = Action({to: address(1), value: 1, data: abi.encode(0x1234)});
         actions[1] = Action({to: address(2), value: 2, data: abi.encode(0x5678)});
+    }
+
+    function _configureStageWithNoBodies(
+        bytes memory _metadata
+    ) internal returns (uint256 _proposalId) {
+        approvalThreshold = 0;
+        vetoThreshold = 0;
+
+        SPP.Stage[] memory stages = new SPP.Stage[](1);
+        stages[0] = _createStageStruct(new SPP.Body[](0));
+
+        sppPlugin.updateStages(stages);
+
+        // create proposal
+        Action[] memory actions = _createDummyActions();
+        _proposalId = sppPlugin.createProposal({
+            _actions: actions,
+            _allowFailureMap: 0,
+            _metadata: _metadata,
+            _startDate: START_DATE,
+            _proposalParams: defaultCreationParams
+        });
     }
 }

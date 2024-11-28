@@ -23,8 +23,6 @@ The repo uses [Foundry](https://book.getfoundry.sh/)
 
 ```shell
 yarn
-rm -rf lib/openzeppelin-foundry-upgrades
-forge install OpenZeppelin/openzeppelin-foundry-upgrades --no-commit
 yarn build
 ```
 

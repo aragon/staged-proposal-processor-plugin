@@ -5,8 +5,8 @@ import {BaseTest} from "../../../BaseTest.t.sol";
 import {Errors} from "../../../../src/libraries/Errors.sol";
 import {StagedProposalProcessor as SPP} from "../../../../src/StagedProposalProcessor.sol";
 
-import {Options} from "openzeppelin-foundry-upgrades/Options.sol";
-import {Upgrades} from "openzeppelin-foundry-upgrades/LegacyUpgrades.sol";
+import {Options} from "@openzeppelin/openzeppelin-foundry-upgrades/Options.sol";
+import {Upgrades} from "@openzeppelin/openzeppelin-foundry-upgrades/LegacyUpgrades.sol";
 
 contract Upgradeability_SPP_IntegrationTest is BaseTest {
     address implementation;

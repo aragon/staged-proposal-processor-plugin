@@ -92,7 +92,6 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         whenProposalDoesNotExist
         givenAllPluginsOnStageZeroAreNonManual
     {
-        // todo TBD that event is not being emitted currently.
         // it should emit an event.
         // it should store uint max value as proposal id.
 
@@ -102,6 +101,15 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         SPP.Stage[] memory _stages = new SPP.Stage[](1);
         _stages[0] = _createStageStruct(_bodies);
         sppPlugin.updateStages(_stages);
+
+        vm.expectEmit({
+            checkTopic1: false,
+            checkTopic2: true,
+            checkTopic3: true,
+            checkData: false,
+            emitter: address(sppPlugin)
+        });
+        emit SubProposalNotCreated(0, 0, _bodies[0].addr, "");
 
         uint256 proposalId = sppPlugin.createProposal({
             _actions: new Action[](0),

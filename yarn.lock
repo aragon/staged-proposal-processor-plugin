@@ -589,6 +589,10 @@
   resolved "https://registry.yarnpkg.com/@openzeppelin/contracts/-/contracts-4.9.6.tgz#2a880a24eb19b4f8b25adc2a5095f2aa27f39677"
   integrity sha512-xSmezSupL+y9VkHZJGDoCBpmnB2ogM13ccaYDWqJTfS3dbuHkgjuwDFUmaFauBCboQMGB/S5UqUl2y54X99BmA==
 
+"@openzeppelin/openzeppelin-foundry-upgrades@github:openzeppelin/openzeppelin-foundry-upgrades":
+  version "0.3.6"
+  resolved "https://codeload.github.com/openzeppelin/openzeppelin-foundry-upgrades/tar.gz/8e754fde23b2b030a35bb47cd84b77dd42a44437"
+
 "@scure/base@~1.1.6":
   version "1.1.6"
   resolved "https://registry.yarnpkg.com/@scure/base/-/base-1.1.6.tgz#8ce5d304b436e4c84f896e0550c83e4d88cb917d"
