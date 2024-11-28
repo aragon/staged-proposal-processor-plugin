@@ -1,0 +1,8 @@
+MsgData_SPP_UnitTest
+├── when caller is trusted forwarder  
+│   ├── when calldata length is greater than 20 bytes
+│   │   └── it should return the calldata without the appended address.
+│   └── when calldata length is less than 20 bytes
+│       └── it should return the original calldata.
+└── when caller is not trusted forwarder
+    └── it should return the original calldata.

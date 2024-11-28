@@ -1,0 +1,8 @@
+MsgSender_SPP_UnitTest
+├── when caller is trusted forwarder  
+│   ├── when calldata length is greater than 20 bytes
+│   │   └── it should return the appended address as the sender.
+│   └── when calldata length is less than 20 bytes
+│       └── it should return the trusted forwarder as the sender.
+└── when caller is not trusted forwarder
+    └── it should return the trusted forwarder as the sender.
