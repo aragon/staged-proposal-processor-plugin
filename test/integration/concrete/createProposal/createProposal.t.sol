@@ -129,7 +129,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         _;
     }
 
-    function test_WhenNoneSubProposalNeedExtraParams1()
+    function test_WhenNoneSubProposalNeedExtraParams()
         external
         whenStagesAreConfigured
         whenProposalDoesNotExist
