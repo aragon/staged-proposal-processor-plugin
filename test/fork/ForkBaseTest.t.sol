@@ -154,6 +154,7 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, ScriptConstants
             trustedForwarder: address(0),
             daoURI: "dummy dao description",
             subdomain: "test",
+            subdomain: "test-dao-some-unique-subdomain",
             metadata: "dummy metadata"
         });
 
