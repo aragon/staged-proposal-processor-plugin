@@ -153,7 +153,7 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, ScriptConstants
         DAOFactory.DAOSettings memory daoSettings = DAOFactory.DAOSettings({
             trustedForwarder: address(0),
             daoURI: "dummy dao description",
-            subdomain: "test-dao",
+            subdomain: "test",
             metadata: "dummy metadata"
         });
 
