@@ -16,7 +16,6 @@ contract MsgData_SPP_UnitTest is BaseTest {
         super.setUp();
 
         // create spp harness
-
         sppHarness = SppHarness(
             createProxyAndCall(
                 address(new SppHarness()),
@@ -107,7 +106,7 @@ contract MsgData_SPP_UnitTest is BaseTest {
 
         (bool success, bytes memory returnData) = address(sppHarness).call(data);
 
-        // fists 4 bytes is the signature, rest is the datavalue
+        // fists 4 bytes is the signature, rest is the datavalue + trustedForwarder
         bytes memory msgData = abi.decode(returnData, (bytes));
 
         bytes32 msgDataNext32Bytes;
