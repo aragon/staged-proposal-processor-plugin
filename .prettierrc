@@ -13,7 +13,7 @@
         "useTabs": false,
         "singleQuote": false,
         "bracketSpacing": false,
-        "compiler": "0.8.17"
+        "compiler": "0.8.28"
       }
     },
     {

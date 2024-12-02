@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.18;
 
-import {Errors} from "../libraries/Errors.sol";
+import {Errors} from "../../src/libraries/Errors.sol";
 
 import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
 

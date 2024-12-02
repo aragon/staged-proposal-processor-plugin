@@ -3,8 +3,8 @@ pragma solidity ^0.8.18;
 
 import {BaseTest} from "../../../BaseTest.t.sol";
 import {Errors} from "../../../../src/libraries/Errors.sol";
+import {Permissions} from "../../../../src/libraries/Permissions.sol";
 import {PluginA} from "../../../utils/dummy-plugins/PluginA/PluginA.sol";
-import {EXECUTE_PROPOSAL_PERMISSION_ID} from "../../../utils/Permissions.sol";
 import {StagedProposalProcessor as SPP} from "../../../../src/StagedProposalProcessor.sol";
 
 import {DAO} from "@aragon/osx/core/dao/DAO.sol";
@@ -29,7 +29,7 @@ contract Execute_SPP_IntegrationTest is BaseTest {
         // it should emit event.
         // it should execute proposal.
 
-        _moveToLastStage();
+        _moveToLastStage(proposalId);
 
         // check event emitted
         vm.expectEmit({emitter: address(sppPlugin)});
@@ -68,7 +68,7 @@ contract Execute_SPP_IntegrationTest is BaseTest {
                 address(dao),
                 address(sppPlugin),
                 users.unauthorized,
-                EXECUTE_PROPOSAL_PERMISSION_ID
+                Permissions.EXECUTE_PROPOSAL_PERMISSION_ID
             )
         );
 
@@ -78,25 +78,9 @@ contract Execute_SPP_IntegrationTest is BaseTest {
     function test_RevertWhen_ProposalDoesNotExist() external {
         // it should revert.
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.NonexistentProposal.selector, proposalId));
-        sppPlugin.execute(proposalId);
-    }
-
-    function _moveToLastStage() internal {
-        uint256 initialStage;
-
-        // move proposal to last stage to be executable
-        // execute proposals on first stage
-        _executeStageProposals(initialStage);
-
-        // advance to last stage
-        vm.warp(VOTE_DURATION + START_DATE);
-        sppPlugin.advanceProposal(proposalId);
-
-        // execute proposals on first stage
-        _executeStageProposals(initialStage + 1);
-
-        // advance last stage
-        vm.warp(sppPlugin.getProposal(proposalId).lastStageTransition + VOTE_DURATION + START_DATE);
+        vm.expectRevert(
+            abi.encodeWithSelector(Errors.NonexistentProposal.selector, NON_EXISTENT_PROPOSAL_ID)
+        );
+        sppPlugin.execute(NON_EXISTENT_PROPOSAL_ID);
     }
 }

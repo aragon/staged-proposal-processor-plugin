@@ -5,7 +5,7 @@ import {BaseTest} from "../../../../BaseTest.t.sol";
 import {Errors} from "../../../../../src/libraries/Errors.sol";
 import {SppHarness} from "../../../../utils/harness/SppHarness.sol";
 import {PluginA} from "../../../../utils/dummy-plugins/PluginA/PluginA.sol";
-import {TrustedForwarder} from "../../../../../src/utils/TrustedForwarder.sol";
+import {TrustedForwarder} from "../../../../utils/TrustedForwarder.sol";
 import {GasExpensivePlugin} from "../../../../utils/dummy-plugins/GasExpensivePlugin.sol";
 import {StagedProposalProcessor as SPP} from "../../../../../src/StagedProposalProcessor.sol";
 
@@ -43,7 +43,9 @@ contract CreatePluginProposals_64_63_Rule is BaseTest {
             _proposalId: proposalId,
             _stageId: 1,
             _startDate: uint64(block.timestamp),
-            _createProposalParams: new bytes[](sppPlugin.getStages()[0].bodies.length)
+            _createProposalParams: new bytes[](
+                sppPlugin.getStages(sppPlugin.getCurrentConfigIndex())[0].bodies.length
+            )
         });
         uint256 gasAfter = gasleft();
 
