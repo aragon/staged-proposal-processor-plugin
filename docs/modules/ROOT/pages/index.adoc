@@ -4,7 +4,7 @@
 a series of configurable stages, enabling complex decision-making processes where proposals progress through predefined stages with 
 multiple “bodies” (other governance plugins or contracts) that report results such as approvals or vetoes. By chaining these bodies and 
 applying thresholds, durations, and conditions, the plugin guides proposals from creation to execution in a flexible, modular manner, 
-addressing the problems facing large monolithic DAOs stuck with one-size-fits-all governance processes. 
+addressing the link:https://blog.aragon.org/the-future-of-governance-is-modular-2/[problems facing large monolithic DAOs] stuck with one-size-fits-all governance processes. 
 
 == Key Concepts
 
