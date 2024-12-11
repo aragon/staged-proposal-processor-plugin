@@ -39,8 +39,8 @@ to advance or veto the parent proposal, but not voting directly on the proposal 
 
 Sub-proposals creation can only be “automatic” if both of the following are true:
 
-1. body supports IERC165 and `IProposal` interface, thus supporting `createProposal` and other necessary functions.
-2. body is added in a stage with `isManual` setting set to false.
+* body supports IERC165 and `IProposal` interface, thus supporting `createProposal` and other necessary functions.
+* body is added in a stage with `isManual` setting set to false.
 
 If a body does not meet these criteria, it is “manual,” and the external body (an EOA or other smart contract) must report results explicitly.
 
@@ -48,11 +48,11 @@ If a body does not meet these criteria, it is “manual,” and the external bod
 
 For each stage, you must define the following in the configuration:
 
-- **Approval Threshold:** How many bodies must approve for the proposal to proceed.
-- **Veto Threshold:** How many vetoes are necessary to prevent the proposal from being advanced, regardless of the number of approvals. 
+* **Approval Threshold:** How many bodies must approve for the proposal to proceed.
+* **Veto Threshold:** How many vetoes are necessary to prevent the proposal from being advanced, regardless of the number of approvals. 
 Vetoes always trump approvals.
-- **minAdvance & maxAdvance:** Minimum and maximum time windows controlling when the proposal can be advanced to the next stage.
-- **voteDuration:** Has two different effects:
+* **minAdvance & maxAdvance:** Minimum and maximum time windows controlling when the proposal can be advanced to the next stage.
+* **voteDuration:** Has two different effects:
     - Used to calculate the `endTime` for sub-proposals created  on automatic bodies
     - If and only if there are any vetoing bodies, used to extend the advance time window (potentially overriding `minAdvance`),  
     ensuring they have enough time to veto it before it is advanced.
@@ -60,7 +60,10 @@ Vetoes always trump approvals.
 If all the above conditions are met before `maxAdvance`, the proposal becomes `Advanceable`. After `maxAdvance`, it becomes `Expired` and 
 can no longer be advanced.
 
+[NOTE]
+====
 When a proposal reaches its final stage and meets that stage’s advanceability criteria, the proposal’s actions can be executed. 
+====
 
 === Configurations
 
@@ -70,22 +73,22 @@ When a proposal reaches its final stage and meets that stage’s advanceability 
 
 1. **Creation:**
     
-    A user with `CREATE_PROPOSAL_PERMISSION_ID` calls `createProposal` providing metadata, actions, and start times. The proposal 
+    * A user with `CREATE_PROPOSAL_PERMISSION_ID` calls `createProposal` providing metadata, actions, and start times. The proposal 
     references the active configuration index and starts at stage 0, where sub-proposals are created on its automatic bodies.
     
 2. **Evaluation at Each Stage:**
     
-    Bodies at the current stage report `Approval` or `Veto` results via `reportProposalResult`. If the required advanceability criteria 
+    * Bodies at the current stage report `Approval` or `Veto` results via `reportProposalResult`. If the required advanceability criteria 
     are met (see above), the proposal state becomes `Advanceable`.
     
 3. **Advancing to Next Stages:**
     
-    Proposal can be advanced by calling `advanceProposal` function, requiring the caller to have `ADVANCE_PERMISSION_ID`. This moves the 
+    * Proposal can be advanced by calling `advanceProposal` function, requiring the caller to have `ADVANCE_PERMISSION_ID`. This moves the 
     proposal to the next stage, triggering sub-proposals on the new stage’s automatic bodies.
     
 4. **Execution:**
     
-    Once the proposal reaches the last stage and becomes `Advanceable`, it can be executed. A user with `EXECUTE_PROPOSAL_PERMISSION_ID` 
+    * Once the proposal reaches the last stage and becomes `Advanceable`, it can be executed. A user with `EXECUTE_PROPOSAL_PERMISSION_ID` 
     calls `execute`. 
     
 
@@ -102,8 +105,82 @@ A user with `CANCEL_PERMISSION_ID` can cancel the proposal if the stage permits 
 During the plugin’s installation process, the setup contract deploys and configures the following contracts:
 
 - **StagedProposalProcessor Proxy**
-    - A UUPS proxy instance of the main `StagedProposalProcessor` contract. This proxy is initialized with the chosen stages, metadata, and target configuration. It is the primary contract that users interact with to create, advance, and execute proposals through multiple stages.
+    - A UUPS proxy instance of the main `StagedProposalProcessor` contract. This proxy is initialized with the chosen stages, metadata, 
+    and target configuration. It is the primary contract that users interact with to create, advance, and execute proposals through multiple 
+    stages.
 - **StagedProposalProcessor Implementation Contract**
-    - The underlying implementation referenced by the UUPS proxy. While you typically won’t interact with this contract directly, it provides the upgradable logic that the proxy delegates all calls to. As the DAO evolves, addresses with permission to do so can upgrade this logic.
+    - The underlying implementation referenced by the UUPS proxy. While you typically won’t interact with this contract directly, it provides 
+    the upgradable logic that the proxy delegates all calls to. As the DAO evolves, addresses with permission to do so can upgrade this logic.
 - **SPPRuleCondition**
-    - A condition contract deployed to enforce rules for determining whether callers meet the necessary criteria to create proposals on the StagedProposalProcessor. The condition’s logic modularly inherits conditional logic from other conditions. For example, the condition can be configured to return true if the `msg.sender` is a member of a multisig plugin and/or **tokenvoting plugin, using boolean operators.
+    - A condition contract deployed to enforce rules for determining whether callers meet the necessary criteria to create proposals on 
+    the StagedProposalProcessor. The condition’s logic modularly inherits conditional logic from other conditions. For example, 
+    the condition can be configured to return true if the `msg.sender` is a member of a multisig plugin and/or **tokenvoting plugin, 
+    using boolean operators.
+
+
+
+**Permissions**: The following permissions are set up by default by the **StagedProposalProcessorSetup**:
+
+|===
+| Permission ID | Where (Granted By) | Who (Granted To) | Condition | Functions
+
+| UPDATE_STAGES_PERMISSION_ID
+| Plugin
+| DAO
+| None
+| updateStages
+
+| CREATE_PROPOSAL_PERMISSION_ID
+| Plugin
+| Any Address
+| SPPRuleCondition
+| createProposal
+
+| SET_TRUSTED_FORWARDER_PERMISSION_ID
+| Plugin
+| DAO
+| None
+| setTrustedForwarder
+
+| SET_TARGET_CONFIG_PERMISSION_ID
+| Plugin
+| DAO
+| None
+| setTargetConfig
+
+| SET_METADATA_PERMISSION_ID
+| Plugin
+| DAO
+| None
+| setMetadata
+
+| EXECUTE_PROPOSAL_PERMISSION_ID
+| Plugin
+| Any Address
+| None
+| execute
+
+| CANCEL_PERMISSION_ID
+| Plugin
+| Any Address
+| None
+| cancel
+
+| ADVANCE_PERMISSION_ID
+| Plugin
+| Any Address
+| None
+| advanceProposal
+
+| EXECUTE_PERMISSION_ID
+| DAO
+| Plugin
+| None
+| execute
+
+| UPDATE_RULES_PERMISSION_ID
+| SPPRuleCondition
+| DAO
+| None
+| updateRules
+|===
