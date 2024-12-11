@@ -1,5 +1,9 @@
 = StagedProposalProcessor
 
+WARNING: The contracts are currently being audited, *DO NOT USE IN PRODUCTION*.
+
+== Description
+
 **StagedProposalProcessor** is a governance plugin developed and maintained by the Aragon core team. It orchestrates proposals through 
 a series of configurable stages, enabling complex decision-making processes where proposals progress through predefined stages with 
 multiple “bodies” (other governance plugins or contracts) that report results such as approvals or vetoes. By chaining these bodies and 
