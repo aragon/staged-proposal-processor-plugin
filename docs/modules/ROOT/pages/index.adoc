@@ -118,7 +118,7 @@ During the plugin’s installation process, the setup contract deploys and confi
 - **SPPRuleCondition**
     - A condition contract deployed to enforce rules for determining whether callers meet the necessary criteria to create proposals on 
     the StagedProposalProcessor. The condition’s logic modularly inherits conditional logic from other conditions. For example, 
-    the condition can be configured to return true if the `msg.sender` is a member of a multisig plugin and/or **tokenvoting plugin, 
+    the condition can be configured to return true if the `msg.sender` is a member of a multisig plugin and/or tokenvoting plugin, 
     using boolean operators.
 
 
