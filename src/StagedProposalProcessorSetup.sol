@@ -111,7 +111,7 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
         address _ruledCondition,
         PermissionLib.Operation _op
     ) private pure returns (PermissionLib.MultiTargetPermission[] memory permissions) {
-        permissions = new PermissionLib.MultiTargetPermission[](10);
+        permissions = new PermissionLib.MultiTargetPermission[](9);
 
         // Permissions on SPP
         permissions[0] = PermissionLib.MultiTargetPermission({
@@ -169,19 +169,11 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
             where: _spp,
             who: ANY_ADDR,
             condition: PermissionLib.NO_CONDITION,
-            permissionId: Permissions.CANCEL_PERMISSION_ID
-        });
-
-        permissions[7] = PermissionLib.MultiTargetPermission({
-            operation: _op,
-            where: _spp,
-            who: ANY_ADDR,
-            condition: PermissionLib.NO_CONDITION,
             permissionId: Permissions.ADVANCE_PERMISSION_ID
         });
 
         /// Permissions on the dao by SPP.
-        permissions[8] = PermissionLib.MultiTargetPermission({
+        permissions[7] = PermissionLib.MultiTargetPermission({
             operation: _op,
             where: _dao,
             who: _spp,
@@ -190,7 +182,7 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
         });
 
         /// Permissions on the ruledCondition
-        permissions[9] = PermissionLib.MultiTargetPermission({
+        permissions[8] = PermissionLib.MultiTargetPermission({
             operation: _op,
             where: _ruledCondition,
             who: _dao,
