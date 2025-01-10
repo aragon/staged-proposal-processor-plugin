@@ -4,6 +4,7 @@ pragma solidity ^0.8.18;
 import {BaseTest} from "../../../../BaseTest.t.sol";
 import {Errors} from "../../../../../src/libraries/Errors.sol";
 import {PluginB} from "../../../../utils/dummy-plugins/PluginB/PluginB.sol";
+import {PluginA} from "../../../../utils/dummy-plugins/PluginA/PluginA.sol";
 import {StagedProposalProcessor as SPP} from "../../../../../src/StagedProposalProcessor.sol";
 import {Permissions} from "../../../../../src/libraries/Permissions.sol";
 
@@ -180,7 +181,7 @@ contract UpdateStages_SPP_UnitTest is BaseTest {
         // it should revert.
 
         // create stages structure with duplicated body address
-        address duplicatedAddr = address(new PluginB(address(trustedForwarder)));
+        address duplicatedAddr = address(new PluginA(defaultTargetConfig));
 
         SPP.Body[] memory stageBodies = new SPP.Body[](2);
         stageBodies[0] = _createBodyStruct(duplicatedAddr, false);
@@ -190,6 +191,29 @@ contract UpdateStages_SPP_UnitTest is BaseTest {
 
         vm.expectRevert(
             abi.encodeWithSelector(Errors.DuplicateBodyAddress.selector, 0, duplicatedAddr)
+        );
+        sppPlugin.updateStages(stages);
+    }
+
+    function test_RevertWhen_ThereAreBodiesWithNoResultType()
+        external
+        whenTheNewStagesListHasMultipleStages
+    {
+        // it should revert.
+
+        // set result type to none
+        resultType = SPP.ResultType.None;
+
+        // create stages structure with duplicated body address
+        SPP.Body[] memory stageBodies = new SPP.Body[](2);
+
+        stageBodies[0] = _createBodyStruct(address(new PluginA(defaultTargetConfig)), false);
+        stageBodies[1] = _createBodyStruct(address(new PluginA(defaultTargetConfig)), false);
+        SPP.Stage[] memory stages = new SPP.Stage[](1);
+        stages[0] = _createStageStruct(stageBodies);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(Errors.BodyResultTypeNotSet.selector, stageBodies[0].addr)
         );
         sppPlugin.updateStages(stages);
     }
