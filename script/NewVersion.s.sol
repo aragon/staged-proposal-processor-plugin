@@ -52,7 +52,7 @@ contract NewVersion is BaseScript {
 
     function _buildProposalData(
         address _sppSetup
-    ) internal view returns (ProposalData memory _proposalData) {
+    ) internal returns (ProposalData memory _proposalData) {
         _proposalData.title = string(
             abi.encodePacked(
                 "Publish Staged Proposal Plugin ",
@@ -66,6 +66,10 @@ contract NewVersion is BaseScript {
                 " of the Staged Proposal Plugin"
             )
         );
+
+        // get build and release metadata ipfs cids
+        (string memory _buildCID, string memory _releaseCID) = _uploadMetadataToIPFS();
+
         _proposalData.actions = new Action[](1);
         _proposalData.actions[0] = Action({
             to: address(sppRepo),
@@ -74,8 +78,8 @@ contract NewVersion is BaseScript {
                 sppRepo.createVersion.selector,
                 PluginSettings.VERSION_RELEASE,
                 _sppSetup,
-                PluginSettings.BUILD_METADATA,
-                PluginSettings.RELEASE_METADATA
+                bytes(_buildCID),
+                bytes(_releaseCID)
             )
         });
     }

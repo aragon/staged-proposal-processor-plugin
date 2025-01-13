@@ -94,12 +94,15 @@ contract BaseScript is Script, Constants {
             revert InvalidVersionBuild(PluginSettings.VERSION_BUILD, uint8(latestBuild));
         }
 
+        // get build and release metadata ipfs cids
+        (string memory _buildCID, string memory _releaseCID) = _uploadMetadataToIPFS();
+
         // create plugin version
         sppRepo.createVersion(
             PluginSettings.VERSION_RELEASE,
             address(_sppSetup),
-            PluginSettings.BUILD_METADATA,
-            PluginSettings.RELEASE_METADATA
+            bytes(_buildCID),
+            bytes(_releaseCID)
         );
 
         // check version was created correctly
@@ -109,7 +112,7 @@ contract BaseScript is Script, Constants {
 
         console.log(
             "Published Staged Proposal Plugin at ",
-            address(sppSetup),
+            address(_sppSetup),
             " with ",
             _versionString(PluginSettings.VERSION_RELEASE, PluginSettings.VERSION_BUILD)
         );
@@ -150,5 +153,19 @@ contract BaseScript is Script, Constants {
                     vm.toString(version[2])
                 )
             );
+    }
+
+    function _uploadMetadataToIPFS()
+        internal
+        returns (string memory buildCID, string memory releaseCID)
+    {
+        string[] memory inputs = new string[](4);
+        inputs[0] = "npx";
+        inputs[1] = "ts-node";
+        inputs[2] = "script/upload-metadata-to-pinnata.ts";
+        inputs[3] = PluginSettings.PLUGIN_REPO_ENS_SUBDOMAIN_NAME;
+
+        bytes memory res = vm.ffi(inputs);
+        (buildCID, releaseCID) = abi.decode(res, (string, string));
     }
 }
