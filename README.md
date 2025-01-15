@@ -28,6 +28,13 @@ yarn build
 
 ### Test
 
-```shell
-$ yarn test
-```
+To run the tests, run `yarn test`.
+
+In case you want to run the tests against zksync network:
+
+* First, you need a stable foundry-zksync. We recommend downloading zip extention from foundry zksync's official [release](https://github.com/matter-labs/foundry-zksync/releases/tag/nightly-420660c5243e06af1f12febb1765a9abc9c77461)
+* Next, you need to build the binary by running: `foundryup-zksync --path path-to-foundryup-zksync`
+* Run `foundryup-zksync --version nightly-420660c5243e06af1f12febb1765a9abc9c77461` to install this specific version.
+* `yarn test:zksync`
+
+If the tests fail with `The application panicked` error, remove `cache` folder and run `yarn test:zksync` again. Due to some limitations, fork tests will not be able to run on zksync network.
