@@ -33,6 +33,6 @@ Due to some limitations, fork tests will not be able to run on zksync network.
 
 ### Deploy
 
-To deploy the plugin with new plugin repo, you can run: "make deploy" on EVM based networks and "make deploy-zksync" on zksync.
+To deploy the plugin with new plugin repo, you can run: `make deploy` on EVM based networks and `make deploy-zksync` on zksync.
 
 To upgrade the repo with a new version, run `make upgrade-repo` on EVM based networks and `make upgrade-repo-zksync` on zksync.
