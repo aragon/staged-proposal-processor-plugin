@@ -7,6 +7,7 @@ import {console} from "forge-std/console.sol";
 import {Constants} from "./utils/Constants.sol";
 import {PluginSettings} from "../src/utils/PluginSettings.sol";
 import {StagedProposalProcessorSetup as SPPSetup} from "../src/StagedProposalProcessorSetup.sol";
+import {StagedProposalProcessorSetup as SPPSetupZkSync} from "../src/StagedProposalProcessorSetupZkSync.sol";
 
 import {PluginRepo} from "@aragon/osx/framework/plugin/repo/PluginRepo.sol";
 
@@ -81,7 +82,17 @@ contract BaseScript is Script, Constants {
     }
 
     function _createAndCheckNewVersion() internal returns (SPPSetup _sppSetup) {
-        _sppSetup = new SPPSetup();
+        bytes32 networkHash = keccak256(abi.encodePacked(network));
+        if(networkHash == keccak256(abi.encodePacked("zksyncSepolia")) || networkHash == keccak256(abi.encodePacked("zksyncMainnet"))) {
+            _sppSetup = SPPSetup(address(new SPPSetupZkSync()));
+            console.log("coming here1");
+            console.log(address(_sppSetup));
+        } else {
+            _sppSetup = new SPPSetup();
+            console.log("coming here2");
+            console.log(address(_sppSetup));
+        }
+        
         // Check release number
         uint256 latestRelease = sppRepo.latestRelease();
 
@@ -109,7 +120,7 @@ contract BaseScript is Script, Constants {
 
         console.log(
             "Published Staged Proposal Plugin at ",
-            address(sppSetup),
+            address(_sppSetup),
             " with ",
             _versionString(PluginSettings.VERSION_RELEASE, PluginSettings.VERSION_BUILD)
         );
