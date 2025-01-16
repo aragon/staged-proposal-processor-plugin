@@ -85,12 +85,8 @@ contract BaseScript is Script, Constants {
         bytes32 networkHash = keccak256(abi.encodePacked(network));
         if(networkHash == keccak256(abi.encodePacked("zksyncSepolia")) || networkHash == keccak256(abi.encodePacked("zksyncMainnet"))) {
             _sppSetup = SPPSetup(address(new SPPSetupZkSync()));
-            console.log("coming here1");
-            console.log(address(_sppSetup));
         } else {
             _sppSetup = new SPPSetup();
-            console.log("coming here2");
-            console.log(address(_sppSetup));
         }
         
         // Check release number
