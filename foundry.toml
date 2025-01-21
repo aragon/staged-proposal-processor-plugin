@@ -4,6 +4,7 @@ out = "out"
 libs = ["lib"]
 solc = "0.8.28"
 fs_permissions = [{ access = "read", path = "./node_modules/@aragon/osx-commons-configs/dist/deployments/json"}, {access = "write", path = "./"}, { access = "read", path = "out" }]
+gas_limit = 50073741824
 
 # openzeppelin-foundry-upgrades related configurations
 ffi = true

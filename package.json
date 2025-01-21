@@ -21,6 +21,7 @@
     "prettier:check": "prettier --check --plugin=prettier-plugin-solidity  \"**/*.{js,json,md,sol,ts,yml}\"",
     "prettier:write": "prettier --write --plugin=prettier-plugin-solidity  \"**/*.{js,json,md,sol,ts,yml}\"",
     "test": "forge test -vvv",
+    "test:zksync": "bash test-zksync.sh",
     "test:coverage": "forge coverage",
     "test:coverage:report": "forge coverage --report lcov && genhtml lcov.info --branch-coverage --output-dir coverage",
     "deploy": "dotenv forge script Deploy --chain $CHAIN --rpc-url $NETWORK_RPC_URL --etherscan-api-key $ETHERSCAN_API_KEY --verifier $VERIFIER --verify --broadcast",

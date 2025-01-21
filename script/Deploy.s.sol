@@ -23,7 +23,7 @@ contract Deploy is BaseScript {
         sppRepo = _createPluginRepo();
         sppSetup = _createAndCheckNewVersion();
 
-        //transfer ownership of the plugin to the management DAO and revoke from deployer
+        // transfer ownership of the plugin to the management DAO and revoke from deployer
         _transferOwnershipToManagementDao();
 
         vm.stopBroadcast();

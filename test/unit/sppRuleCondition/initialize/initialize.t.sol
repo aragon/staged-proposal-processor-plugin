@@ -12,7 +12,7 @@ contract Initialize_SPPRuleCondition_UnitTest is RuleConditionConfiguredTest {
     address internal sppRuleCondition;
 
     modifier whenDeployingAClone() {
-        sppRuleCondition = ruleConditionImplementation.deployMinimalProxy(bytes(""));
+        sppRuleCondition = ruleConditionImplementation.deployUUPSProxy(bytes(""));
 
         _;
     }
