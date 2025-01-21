@@ -805,6 +805,11 @@ contract StagedProposalProcessor is
                     revert Errors.InterfaceNotSupported();
                 }
 
+                // body result type must be set
+                if (bodies[j].resultType == ResultType.None) {
+                    revert Errors.BodyResultTypeNotSet(bodies[j].addr);
+                }
+
                 // If not copied manually, requires via-ir compilation
                 // pipeline which is still slow.
                 stage.bodies.push(bodies[j]);
