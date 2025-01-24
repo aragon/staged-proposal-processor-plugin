@@ -7,7 +7,9 @@ import {console} from "forge-std/console.sol";
 import {Constants} from "./utils/Constants.sol";
 import {PluginSettings} from "../src/utils/PluginSettings.sol";
 import {StagedProposalProcessorSetup as SPPSetup} from "../src/StagedProposalProcessorSetup.sol";
-import {StagedProposalProcessorSetup as SPPSetupZkSync} from "../src/StagedProposalProcessorSetupZkSync.sol";
+import {
+    StagedProposalProcessorSetupZkSync as SPPSetupZkSync
+} from "../src/StagedProposalProcessorSetupZkSync.sol";
 
 import {PluginRepo} from "@aragon/osx/framework/plugin/repo/PluginRepo.sol";
 
@@ -83,12 +85,15 @@ contract BaseScript is Script, Constants {
 
     function _createAndCheckNewVersion() internal returns (SPPSetup _sppSetup) {
         bytes32 networkHash = keccak256(abi.encodePacked(network));
-        if(networkHash == keccak256(abi.encodePacked("zksyncSepolia")) || networkHash == keccak256(abi.encodePacked("zksyncMainnet"))) {
+        if (
+            networkHash == keccak256(abi.encodePacked("zksyncSepolia")) ||
+            networkHash == keccak256(abi.encodePacked("zksyncMainnet"))
+        ) {
             _sppSetup = SPPSetup(address(new SPPSetupZkSync()));
         } else {
             _sppSetup = new SPPSetup();
         }
-        
+
         // Check release number
         uint256 latestRelease = sppRepo.latestRelease();
 

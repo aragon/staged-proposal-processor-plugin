@@ -21,7 +21,7 @@ import {
 /// @author Aragon X - 2024
 /// @notice The setup contract of the `StagedProposalProcessor` plugin.
 /// @dev Release 1, Build 1
-contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
+contract StagedProposalProcessorSetupZkSync is PluginUpgradeableSetup {
     using ProxyLib for address;
 
     /// @notice A special address encoding permissions that are valid for any address `who` or `where`.
