@@ -29,14 +29,15 @@
     "upgrade-repo": "dotenv forge script UpgradeRepo --chain $CHAIN --rpc-url $NETWORK_RPC_URL --etherscan-api-key $ETHERSCAN_API_KEY --verifier $VERIFIER --verify --broadcast"
   },
   "devDependencies": {
+    "@openzeppelin/openzeppelin-foundry-upgrades": "github:openzeppelin/openzeppelin-foundry-upgrades",
     "dotenv-cli": "^7.4.2",
     "ds-test": "github:dapphub/ds-test",
     "forge-std": "github:foundry-rs/forge-std#v1.9.4",
-    "@openzeppelin/openzeppelin-foundry-upgrades": "github:openzeppelin/openzeppelin-foundry-upgrades",
     "prettier": "^2.8.8",
     "prettier-plugin-solidity": "^1.1.3",
     "solhint": "^3.6.2",
-    "solhint-plugin-prettier": "^0.0.5"
+    "solhint-plugin-prettier": "^0.0.5",
+    "solidity-stringutils": "github:Arachnid/solidity-stringutils"
   },
   "dependencies": {
     "@aragon/osx": "1.3.0",
@@ -44,6 +45,7 @@
     "@aragon/osx-commons-contracts": "1.4.0-alpha.5",
     "@ensdomains/ens-contracts": "^1.1.4",
     "@openzeppelin/contracts": "^4.9.6",
-    "@openzeppelin/contracts-upgradeable": "^4.9.6"
+    "@openzeppelin/contracts-upgradeable": "^4.9.6",
+    "@openzeppelin/upgrades-core": "^1.41.0"
   }
 }
