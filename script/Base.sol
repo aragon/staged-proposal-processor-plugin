@@ -12,13 +12,11 @@ import {StagedProposalProcessorSetup as SPPSetupZkSync} from "../src/StagedPropo
 import {PluginRepo} from "@aragon/osx/framework/plugin/repo/PluginRepo.sol";
 
 contract BaseScript is Script, Constants {
-    // core contracts
-    address public pluginRepoFactory = vm.envOr("PLUGIN_REPO_FACTORY_ADDRESS", address(0));
-    address public managementDao = vm.envOr("MANAGEMENT_DAO_ADDRESS", address(0));
-
     SPPSetup public sppSetup;
     PluginRepo public sppRepo;
 
+    address public pluginRepoFactory = vm.envOr("PLUGIN_REPO_FACTORY_ADDRESS", address(0));
+    address public managementDao = vm.envOr("MANAGEMENT_DAO_ADDRESS", address(0));
     uint256 internal deployerPrivateKey = vm.envUint("DEPLOYER_KEY");
     string internal network = vm.envString("NETWORK_NAME");
     string internal protocolVersion = vm.envString("PROTOCOL_VERSION");
