@@ -8,3 +8,4 @@ ds-test/=node_modules/ds-test/src
 @aragon/osx-commons-contracts/=node_modules/@aragon/osx-commons-contracts/
 
 @ensdomains/ens-contracts/=node_modules/@ensdomains/ens-contracts/
+solidity-stringutils/=node_modules/solidity-stringutils/
