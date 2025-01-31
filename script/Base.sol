@@ -164,4 +164,18 @@ contract BaseScript is Script, Constants {
                 )
             );
     }
+
+    function _storeDeploymentJSON(
+        uint256 _chainId,
+        address[] memory _addresses
+    ) internal returns (bytes memory) {
+        string[] memory inputs = new string[](6);
+        inputs[0] = "npx";
+        inputs[1] = "ts-node";
+        inputs[2] = "scripts/store-deployments.ts";
+        inputs[3] = vm.toString(_chainId); 
+        inputs[4] = vm.toString(abi.encode(_addresses));
+
+        vm.ffi(inputs);
+    }
 }

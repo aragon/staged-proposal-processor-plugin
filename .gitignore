@@ -12,6 +12,8 @@ docs/
 # Dotenv file
 .env
 
+deployed-contracts.json
+
 # Node modules
 node_modules/
 .DS_Store

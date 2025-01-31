@@ -26,6 +26,12 @@ contract Deploy is BaseScript {
         // transfer ownership of the plugin to the management DAO and revoke from deployer
         _transferOwnershipToManagementDao();
 
+        address[] memory addresses = new address[](2);
+        addresses[0] =  address(sppRepo);
+        addresses[1] = PluginRepoFactory(pluginRepoFactory).pluginRepoBase();
+        
+        _storeDeploymentJSON(block.chainid, addresses);
+       
         vm.stopBroadcast();
     }
 
