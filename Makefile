@@ -13,15 +13,29 @@ $(shell rm -rf out/temp.sol)
 $(shell forge cache clean all)
 $(shell rm -rf cache)
 
+define append_common_args
+	command="$$command --rpc-url $(NETWORK_RPC_URL)"; \
+	[ "$(broadcast)" = "true" ] && command="$$command --broadcast"; \
+	[ "$(NETWORK_NAME)" != "local" ] && [ "$(broadcast)" = "true" ] && command="$$command --chain $(CHAIN) --verify --etherscan-api-key $(ETHERSCAN_API_KEY) --verifier $(VERIFIER)"; \
+	command="$$command --slow -vvvv"; \
+	echo "Running: $$command";
+endef
+
 ### Deployment short codes for EVM based networks
 deploy:
-	forge script Deploy --chain $(CHAIN) --rpc-url $(NETWORK_RPC_URL) --etherscan-api-key $(ETHERSCAN_API_KEY) --verifier $(VERIFIER) --verify --broadcast
+	@command="forge script Deploy"; \
+	$(call append_common_args) \
+	$$command
 
 new-version:
-	forge script NewVersion --chain $(CHAIN) --rpc-url $(NETWORK_RPC_URL) --etherscan-api-key $(ETHERSCAN_API_KEY) --verifier $(VERIFIER) --verify --broadcast
+	@command="forge script NewVersion"; \
+	$(call append_common_args) \
+	$$command
 
 upgrade-repo:
-	forge script UpgradeRepo --chain $(CHAIN) --rpc-url $(NETWORK_RPC_URL) --etherscan-api-key $(ETHERSCAN_API_KEY) --verifier $(VERIFIER) --verify --broadcast
+	@command="forge script UpgradeRepo"; \
+	$(call append_common_args) \
+	$$command
 
 ### Deployment short codes for zksync network
 deploy-zksync:
