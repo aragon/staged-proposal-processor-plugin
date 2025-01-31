@@ -24,9 +24,9 @@
     "test:zksync": "bash test-zksync.sh",
     "test:coverage": "forge coverage",
     "test:coverage:report": "forge coverage --report lcov && genhtml lcov.info --branch-coverage --output-dir coverage",
-    "deploy": "dotenv forge script Deploy --chain $CHAIN --rpc-url $NETWORK_RPC_URL --etherscan-api-key $ETHERSCAN_API_KEY --verifier $VERIFIER --verify --broadcast",
-    "new-version": "dotenv forge script NewVersion --chain $CHAIN --rpc-url $NETWORK_RPC_URL --etherscan-api-key $ETHERSCAN_API_KEY --verifier $VERIFIER --verify --broadcast",
-    "upgrade-repo": "dotenv forge script UpgradeRepo --chain $CHAIN --rpc-url $NETWORK_RPC_URL --etherscan-api-key $ETHERSCAN_API_KEY --verifier $VERIFIER --verify --broadcast"
+    "deploy": "make deploy",
+    "new-version": "make new-version",
+    "upgrade-repo": "make upgrade-repo"
   },
   "devDependencies": {
     "dotenv-cli": "^7.4.2",
