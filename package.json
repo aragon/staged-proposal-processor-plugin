@@ -33,6 +33,7 @@
     "ds-test": "github:dapphub/ds-test",
     "forge-std": "github:foundry-rs/forge-std#v1.9.4",
     "@openzeppelin/openzeppelin-foundry-upgrades": "github:openzeppelin/openzeppelin-foundry-upgrades",
+    "solidity-stringutils": "github:Arachnid/solidity-stringutils",
     "prettier": "^2.8.8",
     "prettier-plugin-solidity": "^1.1.3",
     "solhint": "^3.6.2",
