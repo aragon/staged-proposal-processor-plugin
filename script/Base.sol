@@ -26,6 +26,9 @@ contract BaseScript is Script, Constants {
     // solhint-disable immutable-vars-naming
     address internal immutable deployer = vm.addr(deployerPrivateKey);
 
+    address internal pluginRepoFactory = vm.envOr("PLUGIN_REPO_FACTORY_ADDRESS", address(0));
+    address internal managementDAO = vm.envOr("MANAGEMENT_DAO_ADDRESS", address(0));
+
     error UnsupportedNetwork(string network);
 
     error InvalidVersionRelease(uint8 release, uint8 latestRelease);
@@ -38,6 +41,10 @@ contract BaseScript is Script, Constants {
     }
 
     function getRepoFactoryAddress() public view returns (address _repoFactory) {
+        if(pluginRepoFactory != address(0)) {
+            return pluginRepoFactory;
+        }
+
         string memory _json = _getOsxConfigs(network);
 
         string memory _repoFactoryKey = _buildKey(protocolVersion, PLUGIN_FACTORY_ADDRESS_KEY);
@@ -49,6 +56,10 @@ contract BaseScript is Script, Constants {
     }
 
     function getManagementDaoAddress() public view returns (address _managementDao) {
+        if(managementDAO != address(0)) {
+            return managementDAO;
+        }
+        
         string memory _json = _getOsxConfigs(network);
 
         string memory _managementDaoKey = _buildKey(protocolVersion, MANAGEMENT_DAO_ADDRESS_KEY);
