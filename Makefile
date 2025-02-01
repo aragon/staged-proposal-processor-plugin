@@ -16,7 +16,12 @@ $(shell rm -rf cache)
 define append_common_args
 	command="$$command --rpc-url $(NETWORK_RPC_URL)"; \
 	[ "$(broadcast)" = "true" ] && command="$$command --broadcast"; \
-	[ "$(NETWORK_NAME)" != "local" ] && [ "$(broadcast)" = "true" ] && command="$$command --chain $(CHAIN) --verify --etherscan-api-key $(ETHERSCAN_API_KEY) --verifier $(VERIFIER)"; \
+	if [ "$(NETWORK_NAME)" != "local" ] && [ "$(broadcast)" = "true" ]; then \
+		command="$$command --chain $(CHAIN) --verify --etherscan-api-key $(ETHERSCAN_API_KEY) --verifier $(VERIFIER)"; \
+		if [ -n "$(VERIFIER_URL)" ]; then \
+			command="$$command --verifier-url $(VERIFIER_URL)"; \
+		fi; \
+	fi; \
 	command="$$command --slow -vvvv"; \
 	echo "Running: $$command";
 endef
