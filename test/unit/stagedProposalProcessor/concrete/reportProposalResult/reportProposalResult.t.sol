@@ -187,7 +187,7 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         DAO(payable(address(dao))).grant({
             _where: address(sppPlugin),
             _who: bodyAddress,
-            _permissionId: Permissions.EXECUTE_PERMISSION_ID
+            _permissionId: Permissions.EXECUTE_PROPOSAL_PERMISSION_ID
         });
 
         // check event
@@ -285,11 +285,11 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         SPP.Stage[] memory stages = sppPlugin.getStages(sppPlugin.getCurrentConfigIndex());
         address bodyAddress = stages[1].bodies[0].addr;
 
-        // grant permission to the plugin
+        // grant execute permission to the plugin
         DAO(payable(address(dao))).grant(
             address(sppPlugin),
             bodyAddress,
-            Permissions.EXECUTE_PERMISSION_ID
+            Permissions.EXECUTE_PROPOSAL_PERMISSION_ID
         );
 
         vm.warp(proposal.lastStageTransition + stages[1].minAdvance + 1);
@@ -396,7 +396,7 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         emit ProposalResultReported(proposalId, 0, bodyAddress);
 
         vm.expectEmit({emitter: address(sppPlugin)});
-        emit ProposalAdvanced(proposalId, 1);
+        emit ProposalAdvanced(proposalId, 1, bodyAddress);
 
         // execute the sub proposal to report the result
         PluginA(bodyAddress).execute({_proposalId: 0});
@@ -489,7 +489,7 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         emit ProposalResultReported(proposalId, 0, bodyAddress);
 
         vm.expectEmit({emitter: address(sppPlugin)});
-        emit ProposalAdvanced(proposalId, 1);
+        emit ProposalAdvanced(proposalId, 1, bodyAddress);
 
         // execute the sub proposal to report the result
         PluginA(bodyAddress).execute({_proposalId: 0});

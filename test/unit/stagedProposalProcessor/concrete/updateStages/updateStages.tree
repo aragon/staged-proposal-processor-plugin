@@ -17,6 +17,8 @@ UpdateStages_SPP_UnitTest
     │   └── it should revert.
     ├── when there are duplicated bodies on same stage
     │   └── it should revert.
+    ├── when there are bodies with no result type
+    │   └── it should revert.
     ├── when some stages have zero bodies
     │   ├── it should emit event.
     │   └── it should update the stages.

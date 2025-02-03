@@ -35,6 +35,7 @@ contract CreatePluginProposals_64_63_Rule is BaseTest {
         });
     }
 
+    // TODO:Claudia for zksync, this fails.
     function test_RevertWhen_CreatingPluginProposalAnd_6364_Rule() external {
         // it should revert.
 

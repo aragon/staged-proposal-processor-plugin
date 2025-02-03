@@ -2,9 +2,10 @@ forge-std/=node_modules/forge-std/src/
 ds-test/=node_modules/ds-test/src
 @openzeppelin/contracts/=node_modules/@openzeppelin/contracts/
 @openzeppelin/contracts-upgradeable/=node_modules/@openzeppelin/contracts-upgradeable/
-@openzeppelin/openzeppelin-foundry-upgrades/=lib/@openzeppelin/openzeppelin-foundry-upgrades/
+@openzeppelin/openzeppelin-foundry-upgrades/=node_modules/@openzeppelin/openzeppelin-foundry-upgrades/src/
 
 @aragon/osx/=node_modules/@aragon/osx/
 @aragon/osx-commons-contracts/=node_modules/@aragon/osx-commons-contracts/
 
 @ensdomains/ens-contracts/=node_modules/@ensdomains/ens-contracts/
+solidity-stringutils/=node_modules/solidity-stringutils/

@@ -48,6 +48,10 @@ library Errors {
     /// @param body The address that is duplicated in `stageId`.
     error DuplicateBodyAddress(uint256 stageId, address body);
 
+    /// @notice Thrown if the body result type is not set.
+    /// @param body The address of the body.
+    error BodyResultTypeNotSet(address body);
+
     /// @notice Thrown if the proposal with same actions and metadata already exists.
     /// @param proposalId The id of the proposal.
     error ProposalAlreadyExists(uint256 proposalId);

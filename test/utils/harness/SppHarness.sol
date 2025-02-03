@@ -13,4 +13,14 @@ contract SppHarness is SPP {
     ) external {
         _createBodyProposals(_proposalId, _stageId, _startDate, _createProposalParams);
     }
+
+    // exposed function for internal `_msgSender`
+    function exposed_msgSender() external view returns (address) {
+        return _msgSender();
+    }
+
+    // exposed function for internal `_msgData`
+    function exposed_msgData() external view returns (bytes calldata) {
+        return _msgData();
+    }
 }

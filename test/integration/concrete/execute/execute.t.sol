@@ -68,7 +68,7 @@ contract Execute_SPP_IntegrationTest is BaseTest {
                 address(dao),
                 address(sppPlugin),
                 users.unauthorized,
-                Permissions.EXECUTE_PERMISSION_ID
+                Permissions.EXECUTE_PROPOSAL_PERMISSION_ID
             )
         );
 

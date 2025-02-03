@@ -146,7 +146,12 @@ contract StagedProposalProcessor is
     /// @notice Emitted when the proposal is advanced to the next stage.
     /// @param proposalId The proposal id.
     /// @param stageId The stage index.
-    event ProposalAdvanced(uint256 indexed proposalId, uint16 indexed stageId);
+    /// @param sender The address that advanced the proposal.
+    event ProposalAdvanced(
+        uint256 indexed proposalId,
+        uint16 indexed stageId,
+        address indexed sender
+    );
 
     /// @notice Emitted when the proposal gets cancelled.
     /// @param proposalId the proposal id.
@@ -288,13 +293,13 @@ contract StagedProposalProcessor is
             revert Errors.StageIdInvalid(currentStage, _stageId);
         }
 
-        _processProposalResult(_proposalId, _stageId, _resultType);
+        address sender = _msgSender();
+
+        _processProposalResult(_proposalId, _stageId, _resultType, sender);
 
         if (!_tryAdvance) {
             return;
         }
-
-        address sender = _msgSender();
 
         // If the last stage, caller must have `EXECUTE_PERMISSION_ID`, otherwise `ADVANCE_PERMISSION_ID`.
         bool hasPermission = _isAtLastStage(proposal)
@@ -305,7 +310,7 @@ contract StagedProposalProcessor is
         // can not advance due to permission or state, because as sub-body's
         // proposals could contain other actions that should still succeed.
         if (hasPermission && state(_proposalId) == ProposalState.Advanceable) {
-            _advanceProposal(_proposalId);
+            _advanceProposal(_proposalId, sender);
         }
     }
 
@@ -351,7 +356,9 @@ contract StagedProposalProcessor is
             revert Errors.StageCountZero();
         }
 
-        proposalId = _createProposalId(keccak256(abi.encode(_actions, _metadata, _msgSender())));
+        address creator = _msgSender();
+
+        proposalId = _createProposalId(keccak256(abi.encode(_actions, _metadata, creator)));
 
         Proposal storage proposal = proposals[proposalId];
 
@@ -361,7 +368,7 @@ contract StagedProposalProcessor is
 
         proposal.allowFailureMap = _allowFailureMap;
         proposal.targetConfig = getTargetConfig();
-        proposal.creator = _msgSender();
+        proposal.creator = creator;
 
         // store stage configuration per proposal to avoid
         // changing it while proposal is still open
@@ -401,7 +408,7 @@ contract StagedProposalProcessor is
 
         emit ProposalCreated({
             proposalId: proposalId,
-            creator: _msgSender(),
+            creator: creator,
             startDate: proposal.lastStageTransition,
             endDate: 0,
             metadata: _metadata,
@@ -451,7 +458,7 @@ contract StagedProposalProcessor is
             if (!hasPermission) revert Errors.ProposalAdvanceForbidden(_proposalId);
         }
 
-        _advanceProposal(_proposalId);
+        _advanceProposal(_proposalId, sender);
     }
 
     /// @notice Cancels the proposal.
@@ -481,7 +488,7 @@ contract StagedProposalProcessor is
 
     /// @notice Edits the proposal.
     /// @dev The proposal can be editable only if it's allowed in the stage configuration.
-    ///      The caller must have the `EDIT_PERMISSION_ID` permission to cancel it
+    ///      The caller must have the `EDIT_PERMISSION_ID` permission to edit
     ///      and stage must be advanceable.
     /// @param _proposalId The id of the proposal.
     /// @param _metadata The metadata of the proposal.
@@ -493,11 +500,23 @@ contract StagedProposalProcessor is
     ) public virtual auth(Permissions.EDIT_PERMISSION_ID) {
         Proposal storage proposal = proposals[_proposalId];
 
-        // Reverts if proposal is not Advanceable or is non-existent.
-        _validateStateBitmap(_proposalId, _encodeStateBitmap(ProposalState.Advanceable));
+        // Reverts if proposal doesn't exist.
+        ProposalState currentState = _validateStateBitmap(
+            _proposalId,
+            _encodeStateBitmap(ProposalState.Advanceable) | _encodeStateBitmap(ProposalState.Active)
+        );
 
         uint16 currentStage = proposal.currentStage;
         Stage storage stage = stages[proposal.stageConfigIndex][currentStage];
+
+        // If there're bodies in a stage, state must be Advanceable, otherwise revert.
+        if (stage.bodies.length != 0 && currentState != ProposalState.Advanceable) {
+            revert Errors.UnexpectedProposalState(
+                _proposalId,
+                uint8(currentState),
+                _encodeStateBitmap(ProposalState.Advanceable)
+            );
+        }
 
         if (!stage.editable) {
             revert Errors.ProposalCanNotBeEdited(_proposalId, currentStage);
@@ -514,7 +533,9 @@ contract StagedProposalProcessor is
 
     /// @inheritdoc IProposal
     /// @dev Requires the `EXECUTE_PERMISSION_ID` permission.
-    function execute(uint256 _proposalId) public virtual auth(Permissions.EXECUTE_PERMISSION_ID) {
+    function execute(
+        uint256 _proposalId
+    ) public virtual auth(Permissions.EXECUTE_PROPOSAL_PERMISSION_ID) {
         if (!canExecute(_proposalId)) {
             revert Errors.ProposalExecutionForbidden(_proposalId);
         }
@@ -535,6 +556,13 @@ contract StagedProposalProcessor is
         returns (bool)
     {
         return super.supportsInterface(_interfaceId);
+    }
+
+    /// @notice Indicates whether any particular address is the trusted forwarder.
+    /// @param _forwarder The address of the Forwarder contract that is being used.
+    /// @return `true` if the forwarder is trusted, otherwise false.
+    function isTrustedForwarder(address _forwarder) public view virtual returns (bool) {
+        return _forwarder == getTrustedForwarder();
     }
 
     /// @notice Determines whether the specified proposal can be advanced to the next stage.
@@ -714,8 +742,8 @@ contract StagedProposalProcessor is
             dao().hasPermission(
                 address(this),
                 _account,
-                Permissions.EXECUTE_PERMISSION_ID,
-                msg.data
+                Permissions.EXECUTE_PROPOSAL_PERMISSION_ID,
+                _msgData()
             );
     }
 
@@ -728,7 +756,7 @@ contract StagedProposalProcessor is
                 address(this),
                 _account,
                 Permissions.ADVANCE_PERMISSION_ID,
-                msg.data
+                _msgData()
             );
     }
 
@@ -777,6 +805,11 @@ contract StagedProposalProcessor is
                     revert Errors.InterfaceNotSupported();
                 }
 
+                // body result type must be set
+                if (bodies[j].resultType == ResultType.None) {
+                    revert Errors.BodyResultTypeNotSet(bodies[j].addr);
+                }
+
                 // If not copied manually, requires via-ir compilation
                 // pipeline which is still slow.
                 stage.bodies.push(bodies[j]);
@@ -798,6 +831,7 @@ contract StagedProposalProcessor is
     /// @param _proposalId The ID of the proposal.
     function _executeProposal(uint256 _proposalId) internal virtual {
         Proposal storage proposal = proposals[_proposalId];
+
         proposal.executed = true;
 
         _execute(
@@ -816,15 +850,15 @@ contract StagedProposalProcessor is
     /// @param _proposalId The ID of the proposal.
     /// @param _stageId The stage index.
     /// @param _resultType The result type being reported (`Approval` or `Veto`).
+    /// @param _sender The address that reported the result.
     function _processProposalResult(
         uint256 _proposalId,
         uint16 _stageId,
-        ResultType _resultType
+        ResultType _resultType,
+        address _sender
     ) internal virtual {
-        address sender = _msgSender();
-
-        bodyResults[_proposalId][_stageId][sender] = _resultType;
-        emit ProposalResultReported(_proposalId, _stageId, sender);
+        bodyResults[_proposalId][_stageId][_sender] = _resultType;
+        emit ProposalResultReported(_proposalId, _stageId, _sender);
     }
 
     /// @notice Creates proposals on the non-manual bodies of the `stageId`.
@@ -919,7 +953,8 @@ contract StagedProposalProcessor is
     ///      it creates proposals for the sub-bodies in the next stage.
     ///      If the proposal is in the final stage, it triggers execution.
     /// @param _proposalId The ID of the proposal.
-    function _advanceProposal(uint256 _proposalId) internal virtual {
+    /// @param _sender The address that advances the proposal.
+    function _advanceProposal(uint256 _proposalId, address _sender) internal virtual {
         Proposal storage _proposal = proposals[_proposalId];
         Stage[] storage _stages = stages[_proposal.stageConfigIndex];
 
@@ -936,7 +971,7 @@ contract StagedProposalProcessor is
 
             _createBodyProposals(_proposalId, newStage, uint64(block.timestamp), customParams);
 
-            emit ProposalAdvanced(_proposalId, newStage);
+            emit ProposalAdvanced(_proposalId, newStage, _sender);
         } else {
             _executeProposal(_proposalId);
         }
@@ -997,22 +1032,31 @@ contract StagedProposalProcessor is
 
     /// @notice Retrieves the original sender address, considering if the call was made through a trusted forwarder.
     /// @dev If the `msg.sender` is the trusted forwarder, extracts the original sender from the calldata.
-    /// @return sender The address of the original caller
-    ///     or the `msg.sender` if not called through the trusted forwarder.
+    /// @return The address of the original caller or the `msg.sender` if not called through the trusted forwarder.
     function _msgSender() internal view override returns (address) {
-        // If sender is a trusted Forwarder, that means
-        // it would have appended the original sender in the calldata.
-        if (msg.sender == trustedForwarder) {
-            address sender;
-            // solhint-disable-next-line no-inline-assembly
-            assembly {
-                // get the last 20 bytes as an address which was appended
-                // by the trustedForwarder before calling this function.
-                sender := shr(96, calldataload(sub(calldatasize(), 20)))
-            }
-            return sender;
+        uint256 calldataLength = msg.data.length;
+
+        if (isTrustedForwarder(msg.sender) && calldataLength >= 20) {
+            // At this point we know that the sender is a trusted forwarder,
+            // so we trust that the last bytes of msg.data are the verified sender address.
+            // extract sender address from the end of msg.data
+            return address(bytes20(msg.data[calldataLength - 20:]));
         } else {
             return msg.sender;
+        }
+    }
+
+    /// @notice Overrides for `msg.data`. Defaults to the original `msg.data` whenever
+    ///         a call is not performed by the trusted forwarder or the calldata length
+    ///         is less than 20 bytes (an address length).
+    /// @return The calldata without appended address.
+    function _msgData() internal view virtual override returns (bytes calldata) {
+        uint256 calldataLength = msg.data.length;
+
+        if (isTrustedForwarder(msg.sender) && calldataLength >= 20) {
+            return msg.data[:calldataLength - 20];
+        } else {
+            return msg.data;
         }
     }
 

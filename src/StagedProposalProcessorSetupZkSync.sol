@@ -68,7 +68,7 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
 
         // Clone and initialize the plugin contract.
         bytes memory initData = abi.encodeCall(SPPRuleCondition.initialize, (_dao, rules));
-        address sppCondition = CONDITION_IMPLEMENTATION.deployMinimalProxy(initData);
+        address sppCondition = CONDITION_IMPLEMENTATION.deployUUPSProxy(initData);
 
         preparedSetupData.permissions = _getPermissions(
             _dao,
@@ -163,7 +163,7 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
             condition: _ruledCondition,
             permissionId: Permissions.CREATE_PROPOSAL_PERMISSION_ID
         });
-
+        
         permissions[6] = PermissionLib.MultiTargetPermission({
             operation: _op,
             where: _spp,
