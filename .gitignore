@@ -7,7 +7,7 @@ zkout/
 /broadcast
 
 # Docs
-docs/
+foundry-docs/
 
 # Dotenv file
 .env

@@ -18,5 +18,8 @@ gas_reports = ["StagedProposalProcessor", "StagedProposalProcessorSetup"]
 [rpc_endpoints]
 local = "http://127.0.0.1:8545"
 
+[doc]
+out = "./foundry-docs"
+
 [fuzz]
 runs = 2

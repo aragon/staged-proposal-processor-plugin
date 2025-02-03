@@ -3,6 +3,6 @@
 cp src/StagedProposalProcessorSetup.sol src/temp.sol
 cp src/StagedProposalProcessorSetupZkSync.sol src/StagedProposalProcessorSetup.sol
 
-forge test --zksync
+forge-zk test --zksync
 
 mv src/temp.sol src/StagedProposalProcessorSetup.sol

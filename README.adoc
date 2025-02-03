@@ -1,0 +1,11 @@
+= StagedProposalProcessor API
+
+== Core
+
+{{StagedProposalProcessor}}
+
+{{StagedProposalProcessorSetup}}
+
+{{SPPRuleCondition}}
+
+{{Permissions}}
