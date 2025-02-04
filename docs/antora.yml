@@ -1,5 +1,5 @@
 name: spp
-title: Staged Proposal Processor
+title: '@aragon/staged-proposal-processor'
 version: 1.x
 prerelease: false
 nav:
