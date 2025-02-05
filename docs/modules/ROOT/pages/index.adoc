@@ -1,7 +1,5 @@
 = StagedProposalProcessor
 
-WARNING: This is a *New* plugin that uses *1.4 protocol version*. Currently, these are being audited, we do *NOT* recommend using these latest versions in production until audit is finished.
-
 == Description
 
 **StagedProposalProcessor** is a governance plugin developed and maintained by the Aragon core team. It orchestrates proposals through 
