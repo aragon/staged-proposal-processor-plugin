@@ -125,7 +125,7 @@
 
 [.contract]
 [[StagedProposalProcessor]]
-=== `++StagedProposalProcessor++` link:https://github.com/aragon/staged-proposal-processor-plugin/blob/v1.0.0-alpha.1//Users/giorgilagidze/Desktop/work/multibody/staged-proposal-processor-plugin/src/StagedProposalProcessor.sol[{github-icon},role=heading-link]
+=== `++StagedProposalProcessor++` link:https://github.com/aragon/staged-proposal-processor-plugin/blob/v1.1/src/StagedProposalProcessor.sol[{github-icon},role=heading-link]
 
 [.contract-index]
 .Functions
@@ -707,7 +707,7 @@ Emitted when the trusted forwarder is updated.
 
 [.contract]
 [[StagedProposalProcessorSetup]]
-=== `++StagedProposalProcessorSetup++` link:https://github.com/aragon/staged-proposal-processor-plugin/blob/v1.0.0-alpha.1//Users/giorgilagidze/Desktop/work/multibody/staged-proposal-processor-plugin/src/StagedProposalProcessorSetupZkSync.sol[{github-icon},role=heading-link]
+=== `++StagedProposalProcessorSetup++` link:https://github.com/aragon/staged-proposal-processor-plugin/blob/v1.1/src/StagedProposalProcessorSetupZkSync.sol[{github-icon},role=heading-link]
 
 Release 1, Build 1
 
@@ -812,7 +812,7 @@ The address of the condition implementation contract.
 
 [.contract]
 [[SPPRuleCondition]]
-=== `++SPPRuleCondition++` link:https://github.com/aragon/staged-proposal-processor-plugin/blob/v1.0.0-alpha.1//Users/giorgilagidze/Desktop/work/multibody/staged-proposal-processor-plugin/src/utils/SPPRuleCondition.sol[{github-icon},role=heading-link]
+=== `++SPPRuleCondition++` link:https://github.com/aragon/staged-proposal-processor-plugin/blob/v1.1/src/utils/SPPRuleCondition.sol[{github-icon},role=heading-link]
 
 This contract must be deployed either with clonable or `new` keyword.
 
@@ -957,7 +957,7 @@ The ID of the permission required to call the `updateRules` function.
 
 [.contract]
 [[Permissions]]
-=== `++Permissions++` link:https://github.com/aragon/staged-proposal-processor-plugin/blob/v1.0.0-alpha.1//Users/giorgilagidze/Desktop/work/multibody/staged-proposal-processor-plugin/src/libraries/Permissions.sol[{github-icon},role=heading-link]
+=== `++Permissions++` link:https://github.com/aragon/staged-proposal-processor-plugin/blob/v1.1/src/libraries/Permissions.sol[{github-icon},role=heading-link]
 
 [.contract-index]
 .Internal Variables
