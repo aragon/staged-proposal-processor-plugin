@@ -18,7 +18,7 @@ If you desire to deploy or run tests against zksync network, make sure to instal
 ### Build
 
 ```shell
-yarn
+yarn --ignore-scripts
 forge build or forge build --zksync
 ```
 
