@@ -11,7 +11,7 @@ TARGET_ABI_FILE="./src/abi.ts"
 # Move into contracts package and install dependencies
 cd $CONTRACTS_FOLDER
 
-yarn install && yarn build
+yarn --ignore-scripts && yarn build
 
 # Move back to artifacts package
 cd - > /dev/null
@@ -33,17 +33,10 @@ do
     fi
 
     ABI=$(node -e "console.log(JSON.stringify(JSON.parse(fs.readFileSync(\"$SRC_FILE_PATH\").toString()).abi))")
-    BYTECODE=$(node -e "console.log(JSON.parse(fs.readFileSync(\"$SRC_FILE_PATH\").toString()).bytecode.object)")
 
-    echo "const ${CONTRACT_NAME}ABI = $ABI as const;" >> $TARGET_ABI_FILE
-    if [ "$BYTECODE" == "0x" -o "$BYTECODE" == "" ]; then
-        echo "export const $CONTRACT_NAME = { abi: ${CONTRACT_NAME}ABI, bytecode: null };" >> $TARGET_ABI_FILE
-    else
-        echo "const ${CONTRACT_NAME}Bytecode = \"$BYTECODE\";" >> $TARGET_ABI_FILE
-        echo "export const $CONTRACT_NAME = { abi: ${CONTRACT_NAME}ABI, bytecode: ${CONTRACT_NAME}Bytecode };" >> $TARGET_ABI_FILE
-    fi
+    echo "export const ${CONTRACT_NAME}ABI = $ABI as const;" >> $TARGET_ABI_FILE
 
-    # echo "" >> $TARGET_ABI_FILE
+    echo "" >> $TARGET_ABI_FILE
 done
 
 echo "ABI prepared: $TARGET_ABI_FILE"
