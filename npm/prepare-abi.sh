@@ -34,7 +34,8 @@ do
 
     ABI=$(node -e "console.log(JSON.stringify(JSON.parse(fs.readFileSync(\"$SRC_FILE_PATH\").toString()).abi))")
 
-    echo "export const ${CONTRACT_NAME}ABI = $ABI as const;" >> $TARGET_ABI_FILE
+    echo "const ${CONTRACT_NAME}ABI = $ABI as const;" >> $TARGET_ABI_FILE
+    echo "export {${CONTRACT_NAME}ABI};" >> $TARGET_ABI_FILE
 
     echo "" >> $TARGET_ABI_FILE
 done
