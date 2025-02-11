@@ -1,6 +1,6 @@
 # Staged Proposal Processor plugin artifacts
 
-This package contains the ABI of the Staged Proposal Processor plugin for OSx, as well as the address of its plugin repository on each network. Install it with:
+This package contains the ABI of the Staged Proposal Processor plugin for OSx, as well as the address of its plugin repository on each supported network. Install it with:
 
 ```sh
 yarn add @aragon/staged-proposal-processor-plugin-artifacts
