@@ -1,4 +1,4 @@
-name: Publish Artifacts
+name: Publish NPM Artifacts
 
 on:
   workflow_dispatch:
@@ -32,7 +32,7 @@ jobs:
 
       - name: Configure NPM for Scoped Package
         run: |
-          cd npm
+          cd npm-artifacts
           SCOPE=$(jq -r '.name' package.json | cut -d'/' -f1)
           echo "$SCOPE:registry=https://registry.npmjs.org/" > ~/.npmrc
           echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" >> ~/.npmrc
@@ -40,7 +40,7 @@ jobs:
       - name: Get Version from package.json
         id: get_version
         run: |
-          cd npm
+          cd npm-artifacts
           VERSION=$(jq -r '.version' package.json)
           TAG_VERSION="v$VERSION"
           echo "VERSION=$TAG_VERSION" >> $GITHUB_ENV
@@ -54,21 +54,21 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          cd npm
+          cd npm-artifacts
           yarn install
 
       - name: Build Package
         env:
           ALCHEMY_API_KEY: ${{ secrets.ALCHEMY_API_KEY }}
         run: |
-          cd npm
+          cd npm-artifacts
           yarn build
 
       - name: Publish to NPM
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          cd npm
+          cd npm-artifacts
           if [[ "$VERSION" == *"-alpha"* ]]; then
             npm publish --tag alpha --access public
           else
