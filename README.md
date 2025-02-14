@@ -3,6 +3,16 @@
 [foundry]: https://getfoundry.sh/
 [foundry-badge]: https://img.shields.io/badge/Built%20with-Foundry-FFDB1C.svg
 
+## Audit
+
+### v1.1.0
+
+**Halborn**: [audit report](https://github.com/aragon/osx/tree/main/audits/Halborn_AragonOSx_v1_4_Smart_Contract_Security_Assessment_Report_2025_01_03.pdf)
+
+- Commit ID: [dca24e2db5625d9898c29c9d579873442879dcf3](https://github.com/aragon/staged-proposal-processor-plugin/commit/dca24e2db5625d9898c29c9d579873442879dcf3)
+- Started: 2024-11-18
+- Finished: 2025-02-13
+
 ## Project
 
 The root folder of the repo includes `src` subfolder with the plugin contracts.
