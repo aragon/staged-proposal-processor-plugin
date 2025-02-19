@@ -9,7 +9,7 @@ pragma solidity ^0.8.18;
 library PluginSettings {
     string public constant PLUGIN_CONTRACT_NAME = "StagedProposalProcessor";
     string public constant PLUGIN_SETUP_CONTRACT_NAME = "StagedProposalProcessorSetup";
-    string public constant PLUGIN_REPO_ENS_SUBDOMAIN_NAME = "testting"; // 'spp.plugin.dao.eth'
+    string public constant PLUGIN_REPO_ENS_SUBDOMAIN_NAME = "spp";
 
     // Specify the version of your plugin that you are currently working on. The first version is v1.1.
     // For more details, visit https://devs.aragon.org/docs/osx/how-it-works/framework/plugin-management/plugin-repo.
