@@ -115,9 +115,11 @@ contract BaseScript is Script, Constants {
         }
 
         console.log(
-            "Published Staged Proposal Plugin at ",
-            address(_sppSetup),
-            " with ",
+            "- SPP PluginSetup: ",
+            address(_sppSetup)
+        );
+        console.log(
+            "- Version: ",
             _versionString(PluginSettings.VERSION_RELEASE, PluginSettings.VERSION_BUILD)
         );
     }
