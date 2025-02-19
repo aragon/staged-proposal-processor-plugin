@@ -37,12 +37,10 @@
     "upgrade-repo": "dotenv forge script UpgradeRepo --chain $CHAIN --rpc-url $NETWORK_RPC_URL --etherscan-api-key $ETHERSCAN_API_KEY --verifier $VERIFIER --verify --broadcast"
   },
   "devDependencies": {
+    "@openzeppelin/openzeppelin-foundry-upgrades": "github:openzeppelin/openzeppelin-foundry-upgrades",
     "dotenv-cli": "^7.4.2",
-    "ds-test": "github:dapphub/ds-test",
     "forge-std": "github:foundry-rs/forge-std#v1.9.4",
     "lodash.startcase": "^4.4.0",
-    "@openzeppelin/openzeppelin-foundry-upgrades": "github:openzeppelin/openzeppelin-foundry-upgrades",
-    "solidity-stringutils": "github:Arachnid/solidity-stringutils",
     "prettier": "^2.8.8",
     "prettier-plugin-solidity": "^1.1.3",
     "solc": "^0.8.28",
