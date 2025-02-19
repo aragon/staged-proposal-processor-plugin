@@ -118,6 +118,7 @@ contract BaseScript is Script, Constants {
             "- SPP PluginSetup: ",
             address(_sppSetup)
         );
+        console.log("- Plugin implementation: ", _sppSetup.implementation());
         console.log(
             "- Version: ",
             _versionString(PluginSettings.VERSION_RELEASE, PluginSettings.VERSION_BUILD)
