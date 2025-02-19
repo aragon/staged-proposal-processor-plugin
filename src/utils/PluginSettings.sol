@@ -20,6 +20,6 @@ library PluginSettings {
     // 2. use ethers to convert it to utf8 bytes:
     // ethers.utils.hexlify(ethers.utils.toUtf8Bytes(`ipfs://${cid}`))
     // 3. Copy/paste the bytes into BUILD_METADATA and RELEASE_METADATA
-    bytes public constant BUILD_METADATA = "dummy";
-    bytes public constant RELEASE_METADATA = "dummy";
+    bytes public constant BUILD_METADATA = "ipfs://bafkreifia6hhz7klfbaqawd4vcplkoiesycbmrf5c2x24zfuivyn35mfsu";
+    bytes public constant RELEASE_METADATA = "ipfs://bafkreif23p6yw325rkwwlhgkudiasvq64lonqmfnt7ls5ksfam5hedcb4m";
 }
