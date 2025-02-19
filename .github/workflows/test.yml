@@ -1,6 +1,19 @@
 name: test
 
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "lib/**"
+      - "script/**"
+      - "src/**"
+      - "test/**"
+      - "utils/**"
+      - ".github/workflows/*.yml"
+      - ".gitignore"
+      - "remappings.txt"
+      - "foundry.toml"
+
 
 env:
   FOUNDRY_PROFILE: ci
@@ -20,7 +33,12 @@ jobs:
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
-          version: nightly
+          version: stable
+
+      - name: Run install
+        uses: borales/actions-yarn@v4
+        with:
+          cmd: install
 
       - name: Run Forge build
         run: |
