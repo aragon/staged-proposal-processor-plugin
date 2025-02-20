@@ -105,8 +105,8 @@ contract BaseScript is Script, Constants {
         sppRepo.createVersion(
             PluginSettings.VERSION_RELEASE,
             address(_sppSetup),
-            PluginSettings.BUILD_METADATA,
-            PluginSettings.RELEASE_METADATA
+            bytes(PluginSettings.BUILD_METADATA),
+            bytes(PluginSettings.RELEASE_METADATA)
         );
 
         // check version was created correctly

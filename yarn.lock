@@ -3842,6 +3842,10 @@ solidity-docgen@^0.6.0-beta.36:
     handlebars "^4.7.7"
     solidity-ast "^0.4.38"
 
+"solidity-stringutils@github:Arachnid/solidity-stringutils":
+  version "0.0.0"
+  resolved "https://codeload.github.com/Arachnid/solidity-stringutils/tar.gz/4b2fcc43fa0426e19ce88b1f1ec16f5903a2e461"
+
 source-map-support@^0.5.19:
   version "0.5.21"
   resolved "https://registry.yarnpkg.com/source-map-support/-/source-map-support-0.5.21.tgz#04fe7c7f9e1ed2d662233c28cb2b35b9f63f6e4f"

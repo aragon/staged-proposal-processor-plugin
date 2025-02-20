@@ -45,7 +45,8 @@
     "solc": "^0.8.28",
     "solhint": "^3.6.2",
     "solhint-plugin-prettier": "^0.0.5",
-    "solidity-docgen": "^0.6.0-beta.36"
+    "solidity-docgen": "^0.6.0-beta.36",
+    "solidity-stringutils": "github:Arachnid/solidity-stringutils"
   },
   "dependencies": {
     "@aragon/osx": "^1.4.0",
