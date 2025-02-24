@@ -30,10 +30,10 @@ import {IPluginSetup} from "@aragon/osx-commons-contracts/src/plugin/setup/IPlug
 import {PluginSetupProcessor} from "@aragon/osx/framework/plugin/setup/PluginSetupProcessor.sol";
 
 contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, ScriptConstants, Test {
-    uint256 internal deployerPrivateKey = vm.envOr("DEPLOYER_KEY", uint256(0));
-    string internal network = vm.envString("NETWORK_NAME");
+    uint256 internal deployerPrivateKey = vm.envOr("DEPLOYER_KEY", uint256(0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80));
+    string internal network = vm.envOr("NETWORK_NAME", string("sepolia"));
     string internal networkRpcUrl = vm.envString("NETWORK_RPC_URL");
-    string internal protocolVersion = vm.envString("PROTOCOL_VERSION");
+    string internal protocolVersion = vm.envOr("PROTOCOL_VERSION", string("v1.4.0"));
 
     // solhint-disable immutable-vars-naming
     address internal immutable deployer = vm.addr(deployerPrivateKey);
