@@ -30,7 +30,7 @@ import {IPluginSetup} from "@aragon/osx-commons-contracts/src/plugin/setup/IPlug
 import {PluginSetupProcessor} from "@aragon/osx/framework/plugin/setup/PluginSetupProcessor.sol";
 
 contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, ScriptConstants, Test {
-    uint256 internal deployerPrivateKey = vm.envUint("DEPLOYER_KEY");
+    uint256 internal deployerPrivateKey = vm.envOr("DEPLOYER_KEY", uint256(0));
     string internal network = vm.envString("NETWORK_NAME");
     string internal networkRpcUrl = vm.envString("NETWORK_RPC_URL");
     string internal protocolVersion = vm.envString("PROTOCOL_VERSION");
