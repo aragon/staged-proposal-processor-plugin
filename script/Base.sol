@@ -19,7 +19,7 @@ contract BaseScript is Script, Constants {
     SPPSetup public sppSetup;
     PluginRepo public sppRepo;
 
-    uint256 internal deployerPrivateKey = vm.envOr("DEPLOYER_KEY", uint256(0));
+    uint256 internal deployerPrivateKey = vm.envUint("DEPLOYER_KEY");
     string internal network = vm.envString("NETWORK_NAME");
     string internal protocolVersion = vm.envString("PROTOCOL_VERSION");
 
