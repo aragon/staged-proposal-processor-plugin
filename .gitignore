@@ -7,7 +7,7 @@ zkout/
 /broadcast
 
 # Docs
-docs/
+foundry-docs/
 
 # Dotenv file
 .env
@@ -17,4 +17,6 @@ node_modules/
 .DS_Store
 src/.DS_Store
 
+npm-artifacts/src/abi.ts
+npm-artifacts/dist
 

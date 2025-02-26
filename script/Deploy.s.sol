@@ -37,10 +37,12 @@ contract Deploy is BaseScript {
         );
 
         console.log(
-            "SPP repo deployed with ENS domain",
-            PluginSettings.PLUGIN_REPO_ENS_SUBDOMAIN_NAME,
-            "at address: ",
+            "- SPP PluginRepo: ",
             address(_sppRepo)
+        );
+        console.log(
+            "- ENS subdomain",
+            PluginSettings.PLUGIN_REPO_ENS_SUBDOMAIN_NAME
         );
     }
 

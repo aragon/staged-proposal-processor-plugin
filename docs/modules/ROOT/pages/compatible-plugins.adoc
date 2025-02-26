@@ -1,0 +1,90 @@
+= SPP Plugin Compatibility
+
+In the StagedProposalProcessor (SPP), each “body” within a stage can be configured as either **automatic** or **manual**. 
+Automatic bodies simplify the user experience by having the SPP create sub-proposals on their behalf, while manual bodies 
+require external intervention. Understanding how to set up and operate both types of bodies ensures smooth integration with the SPP.
+
+== Automatic vs. Manual Bodies
+
+* **Automatic Bodies:** If `isManual` is set to `false` in the stage configuration, the SPP will automatically create sub-proposals on these bodies 
+whenever a proposal enters their stage. This approach reduces the operational overhead, making governance processes more seamless.
+To qualify as an automatic body:
+** The plugin must meet the compatibility requirements detailed below.
+** The SPP must have the necessary permission to call `createProposal` on the body.
+
+* **Manual Bodies:** If `isManual` is set to `true`, you must create and manage sub-proposals externally. In this case, the body is responsible for 
+calling `reportProposalResult` on the SPP to register approvals or vetoes. While this offers flexibility—useful if the body’s 
+contract does not support the required interfaces—it can be more labor-intensive.
+    
+
+== Requirements for Automatic Bodies
+
+A plugin that fully integrates with the SPP as an automatic body must implement the 
+link:https://github.com/aragon/osx-commons/blob/develop/contracts/src/plugin/extensions/proposal/IProposal.sol[IProposal interface] and 
+support ERC165. You can simplify this by inheriting from the link:https://github.com/aragon/osx-commons/blob/develop/contracts/src/plugin/extensions/proposal/Proposal.sol[Proposal] 
+or link:https://github.com/aragon/osx-commons/blob/develop/contracts/src/plugin/extensions/proposal/ProposalUpgradeable.sol[ProposalUpgradeable] abstract contracts 
+provided by Aragon, which handle ERC165 requirements automatically.
+
+**Key Functions:**
+
+=== createProposal
+
+Automatic bodies must implement `createProposal` to accept parameters from the SPP:
+
+* `_startDate` / `_endDate`: The time window for the sub-proposal. For a voting plugin, this defines the voting period.
+* `_data`: Custom parameters for scenarios where default inputs are insufficient. To support these, implement `customProposalParamsABI` to declare the expected parameters, for example:
+    
+```solidity
+function customProposalParamsABI() external pure override returns (string memory) {
+    return "(uint256 allowFailureMap, uint8 voteOption, bool tryEarlyExecution)";
+}
+```
+
+[IMPORTANT]
+====
+Do not add custom conditional logic in `createProposal` to restrict who can create proposals. The SPP relies on 
+permissioning to determine eligibility. If you add conditions that require holding tokens or similar checks, 
+`createProposal` might fail when called by the SPP, breaking automatic proposal creation.
+====
+
+=== hasSucceeded
+
+The SPP calls `hasSucceeded` to determine if a sub-proposal has met its success criteria without triggering execution. 
+This should return `true` if the sub-proposal passed at any point. Avoid time-based logic here — once `true`, it should 
+remain `true`, reflecting that the sub-proposal succeeded during its designated window, regardless of when SPP checks it.
+
+[IMPORTANT]
+====
+If `hasSucceeded` returns true only within the time window and false afterward, SPP's stage may become non-advanceable. 
+This is because SPP might need to call this function after the time window has elapsed, relying on this body's result 
+to meet the threshold for advancing. However, since the function returns false outside the time window, SPP's proposals 
+could become stuck, unable to progress to the next stage.
+====
+
+=== canExecute
+
+Unlike `hasSucceeded`, the `canExecute` function may include time window checks or other conditions to determine if the sub-proposal can still be executed. The SPP does not rely on `canExecute` for its decision-making, so you have complete freedom in defining these rules.
+
+## Manual Body Best Practices
+
+For manual bodies, the SPP does not create sub-proposals automatically. Instead, you must manually call `reportProposalResult` on the SPP to inform it of approval or veto outcomes. This might involve creating external transactions or leveraging another governance process to signal results.
+
+**Example Using a Safe:**
+
+* Add the Safe’s address as a body with `isManual = true`.
+* After creating a proposal in the SPP, note its `proposalId` and initiate a transaction on the Safe, where:
+    ** **to**: SPP’s address
+    ** **data**: `abi.encodeCall(StagedProposalProcessor.reportProposalResult, (proposalId, stageId, resultType, tryAdvance))`
+        *** `resultType` can be `Approval` or `Veto`.
+        *** `stageId` must correspond to the stage where this body is registered. We require bodies to pass this explicitly
+        as there could be the same body added in multiple stages. If `stageId` is passed in which this body has not been added, the resultType
+        will not be used in SPP's decision making process to advance(i.e it will have no effect other than for you, spending gas in vain).
+        *** `tryAdvance` if you know the result is enough to advance the proposal and body also has `ADVANCE_PERMISSION_ID`, this can be `true` which 
+        will automatically advance the proposal to the next stage.
+* Once the transaction is executed, the SPP records the result. Ensure this transaction occurs before the `maxAdvance` time of the relevant stage.
+
+[NOTE]
+====
+If you are creating a new contract to act as a body, consider implementing `IProposal` for seamless automatic integration. 
+Manual bodies are mainly useful when you must incorporate existing contracts that cannot meet automatic body requirements (e.g., a Safe or a Governor contract).
+====

@@ -3,22 +3,42 @@
 [foundry]: https://getfoundry.sh/
 [foundry-badge]: https://img.shields.io/badge/Built%20with-Foundry-FFDB1C.svg
 
+## Audit
+
+### v1.1.0
+
+**Halborn**: [audit report](https://github.com/aragon/osx/tree/main/audits/Halborn_AragonOSx_v1_4_Smart_Contract_Security_Assessment_Report_2025_01_03.pdf)
+
+- Commit ID: [dca24e2db5625d9898c29c9d579873442879dcf3](https://github.com/aragon/staged-proposal-processor-plugin/commit/dca24e2db5625d9898c29c9d579873442879dcf3)
+- Started: 2024-11-18
+- Finished: 2025-02-13
+
 ## Project
 
 The root folder of the repo includes `src` subfolder with the plugin contracts.
 
 The root-level `package.json` file contains global `dev-dependencies` for formatting and linting.
 
-If you desire to deploy or run tests against zksync network, make sure to install foundry-zksync as below:
+### Targetting ZkSync
 
-* First, you need a stable foundry-zksync. We recommend downloading zip extention from foundry zksync's official [release](https://github.com/matter-labs/foundry-zksync/releases/tag/nightly-420660c5243e06af1f12febb1765a9abc9c77461)
-* Next, you need to build the binary by running: `foundryup-zksync --path path-to-foundryup-zksync`
+If you desire to deploy or run tests against zksync network, make sure to install `foundry-zksync`:
+
+* First, you need a stable foundry-zksync. We recommend the zip extention from foundry zksync's official [release](https://github.com/matter-labs/foundry-zksync/releases/tag/nightly-420660c5243e06af1f12febb1765a9abc9c77461)
+* Build the binary by running: `foundryup-zksync --path path-to-foundryup-zksync`
 * Run `foundryup-zksync --version nightly-420660c5243e06af1f12febb1765a9abc9c77461` to install this specific version.
+
+### Targetting Peaq and Agung testnet
+
+Edit `foundry.toml` and uncomment the `evm_version` setting:
+
+```toml
+evm_version = "london"
+```
 
 ### Build
 
 ```shell
-yarn
+yarn --ignore-scripts
 forge build or forge build --zksync
 ```
 

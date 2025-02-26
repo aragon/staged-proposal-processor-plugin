@@ -1,0 +1,2 @@
+.API
+* xref:StagedProposalProcessor.adoc[Staged Proposal Processor]

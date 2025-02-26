@@ -105,8 +105,8 @@ contract BaseScript is Script, Constants {
         sppRepo.createVersion(
             PluginSettings.VERSION_RELEASE,
             address(_sppSetup),
-            PluginSettings.BUILD_METADATA,
-            PluginSettings.RELEASE_METADATA
+            bytes(PluginSettings.BUILD_METADATA),
+            bytes(PluginSettings.RELEASE_METADATA)
         );
 
         // check version was created correctly
@@ -115,9 +115,12 @@ contract BaseScript is Script, Constants {
         }
 
         console.log(
-            "Published Staged Proposal Plugin at ",
-            address(_sppSetup),
-            " with ",
+            "- SPP PluginSetup: ",
+            address(_sppSetup)
+        );
+        console.log("- Plugin implementation: ", _sppSetup.implementation());
+        console.log(
+            "- Version: ",
             _versionString(PluginSettings.VERSION_RELEASE, PluginSettings.VERSION_BUILD)
         );
     }
