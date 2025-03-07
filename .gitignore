@@ -3,6 +3,7 @@ cache/
 out/
 zkout/
 *.bak
+*.log
 
 # Ignores development broadcast logs
 /broadcast

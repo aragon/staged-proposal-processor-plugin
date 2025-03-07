@@ -55,15 +55,18 @@ predeploy: clean  ## Simulate a clean SPP deployment (standard EVM)
 
 deploy: clean  ## Deploy a clean SPP (standard EVM)
 	forge script Deploy --chain $(CHAIN) --rpc-url $(NETWORK_RPC_URL) \
-	   --etherscan-api-key $(ETHERSCAN_API_KEY) --verifier $(VERIFIER) --verify --broadcast
+	   --etherscan-api-key $(ETHERSCAN_API_KEY) --verifier $(VERIFIER) --verify --broadcast \
+		| tee -a $(@).log
 
 new-version: clean  ## Publish a new SPP version (standard EVM)
 	forge script NewVersion --chain $(CHAIN) --rpc-url $(NETWORK_RPC_URL) \
-	   --etherscan-api-key $(ETHERSCAN_API_KEY) --verifier $(VERIFIER) --verify --broadcast
+	   --etherscan-api-key $(ETHERSCAN_API_KEY) --verifier $(VERIFIER) --verify --broadcast \
+		| tee -a $(@).log
 
 upgrade-repo: clean  ## Deploy and upgrade the SPP plugin repo (standard EVM)
 	forge script UpgradeRepo --chain $(CHAIN) --rpc-url $(NETWORK_RPC_URL) \
-	   --etherscan-api-key $(ETHERSCAN_API_KEY) --verifier $(VERIFIER) --verify --broadcast
+	   --etherscan-api-key $(ETHERSCAN_API_KEY) --verifier $(VERIFIER) --verify --broadcast \
+		| tee -a $(@).log
 
 ##
 
@@ -87,15 +90,18 @@ predeploy-zksync: clean  ## Simulate a clean SPP deployment (ZkSync)
 
 deploy-zksync: clean  ## Deploy a clean SPP (ZkSync)
 	forge-zksync script Deploy --chain $(CHAIN) --rpc-url $(NETWORK_RPC_URL) \
-	   --verify --verifier zksync --verifier-url $(VERIFIER_URL) --broadcast --zksync
+	   --verify --verifier zksync --verifier-url $(VERIFIER_URL) --broadcast --zksync \
+		| tee -a $(@).log
 
 new-version-zksync: clean  ## Publish a new SPP version (ZkSync)
 	forge-zksync script NewVersion --chain $(CHAIN) --rpc-url $(NETWORK_RPC_URL) \
-	   --verify --verifier zksync --verifier-url $(VERIFIER_URL) --broadcast --zksync
+	   --verify --verifier zksync --verifier-url $(VERIFIER_URL) --broadcast --zksync \
+		| tee -a $(@).log
 
 upgrade-repo-zksync: clean  ## Deploy and upgrade the SPP plugin repo (ZkSync)
 	forge-zksync script UpgradeRepo --chain $(CHAIN) --rpc-url $(NETWORK_RPC_URL) \
-	   --verify --verifier zksync --verifier-url $(VERIFIER_URL) --broadcast --zksync
+	   --verify --verifier zksync --verifier-url $(VERIFIER_URL) --broadcast --zksync \
+		| tee -a $(@).log
 
 verify-zksync-implementation:  ## Verify the plugin implementation (if not automatically done)
 	@if [ -z "$(address)" ]; then \
