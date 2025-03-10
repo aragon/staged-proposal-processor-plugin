@@ -35,7 +35,7 @@ jobs:
         with:
           version: stable
 
-      - name: Run install
+      - name: Install dependencies
         uses: borales/actions-yarn@v4
         with:
           cmd: install
@@ -46,7 +46,7 @@ jobs:
           forge build --sizes
         id: build
 
-      - name: Run Forge tests
+      - name: Run unit tests
         env:
           NETWORK_RPC_URL: ${{ secrets.NETWORK_RPC_URL }}
           DEPLOYER_KEY: ${{ secrets.DEPLOYER_KEY }}
