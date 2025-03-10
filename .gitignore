@@ -2,6 +2,8 @@
 cache/
 out/
 zkout/
+*.bak
+*.log
 
 # Ignores development broadcast logs
 /broadcast
@@ -19,4 +21,3 @@ src/.DS_Store
 
 npm-artifacts/src/abi.ts
 npm-artifacts/dist
-

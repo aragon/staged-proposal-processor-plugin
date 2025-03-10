@@ -1,35 +1,138 @@
-#!/bin/bash
+.DEFAULT_TARGET: help
+SHELL:=/bin/bash
+FORGE:=forge
+FORGE_ZKSYNC:=forge-zksync
 
+# Import the .env file and export their values
 include .env
 
-### When running the tests on zksync, we copy SPPSetupZksync into SPPSetup to avoid 
-### changing imports in the tests. This requires to temporarily store SPPSetup's code 
-### in a temp file, so that after tests are done, we can restore the original codebase.
-### Without removing zkout/temp.sol, compiler fails as it can't find temp.sol in the 
-### src directory, but it still finds it in the compilation output.
+# TARGETS
 
-$(shell rm -rf zkout/temp.sol)
-$(shell rm -rf out/temp.sol)
-$(shell forge cache clean all)
-$(shell rm -rf cache)
+##
 
-### Deployment short codes for EVM based networks
-deploy:
-	forge script Deploy --chain $(CHAIN) --rpc-url $(NETWORK_RPC_URL) --etherscan-api-key $(ETHERSCAN_API_KEY) --verifier $(VERIFIER) --verify --broadcast
+.PHONY: help
+help: ## Display the current message
+	@echo "Available targets:"
+	@cat Makefile | while IFS= read -r line; do \
+	   if [[ "$$line" == "##" ]]; then \
+			echo "" ; \
+		elif [[ "$$line" =~ ^([^:]+):(.*)##\ (.*)$$ ]]; then \
+			echo -e " - make $${BASH_REMATCH[1]} \t\t$${BASH_REMATCH[3]}" ; \
+		fi ; \
+	done
 
-new-version:
-	forge script NewVersion --chain $(CHAIN) --rpc-url $(NETWORK_RPC_URL) --etherscan-api-key $(ETHERSCAN_API_KEY) --verifier $(VERIFIER) --verify --broadcast
+.PHONY: init
+init: ## Install foundry and foundry-zksync on your computer
+	@echo "Installing Foundry ZkSync"
+	curl -L https://raw.githubusercontent.com/matter-labs/foundry-zksync/main/install-foundry-zksync | bash
+	foundryup-zksync
+	mv ~/.foundry/bin/forge ~/.foundry/bin/$(FORGE_ZKSYNC)
+	mv ~/.foundry/bin/cast ~/.foundry/bin/cast-zksync
 
-upgrade-repo:
-	forge script UpgradeRepo --chain $(CHAIN) --rpc-url $(NETWORK_RPC_URL) --etherscan-api-key $(ETHERSCAN_API_KEY) --verifier $(VERIFIER) --verify --broadcast
+	@echo "Installing Foundry"
+	curl -L https://foundry.paradigm.xyz | bash
+	foundryup -v stable
 
-### Deployment short codes for zksync network
-deploy-zksync:
-	forge script Deploy --chain $(CHAIN) --rpc-url $(NETWORK_RPC_URL) --verify --verifier zksync --verifier-url $(VERIFIER_URL) --broadcast --zksync
+.PHONY: clean
+clean: ## Clean the generated artifacts
+	$(FORGE) cache clean all || true
+	$(FORGE_ZKSYNC) cache clean all || true
+	rm -rf ./cache
+	rm -rf ./out
+	rm -rf ./zkout
 
-new-version-zksync:
-	forge script NewVersion --chain $(CHAIN) --rpc-url $(NETWORK_RPC_URL) --verify --verifier zksync --verifier-url $(VERIFIER_URL) --broadcast --zksync
+##
 
-upgrade-repo-zksync:
-	forge script UpgradeRepo --chain $(CHAIN) --rpc-url $(NETWORK_RPC_URL) --verify --verifier zksync --verifier-url $(VERIFIER_URL) --broadcast --zksync
+.PHONY: test
+test: ## Run the test suite (standard EVM)
+	$(FORGE) test -vvvv --match-path "test/unit/**"
 
+.PHONY: test-fork
+test-fork: ## Run the fork test suite (standard EVM)
+	$(FORGE) test -vvvv --match-path "test/fork/*"
+
+.PHONY: test-integration
+test-integration: ## Run the integration test suite (standard EVM)
+	$(FORGE) test -vvvv --match-path "test/integration/*"
+
+##
+
+### Deployment targets for EVM based networks
+
+predeploy:  ## Simulate a clean SPP deployment (standard EVM)
+	$(FORGE) script Deploy --chain $(CHAIN) --rpc-url $(NETWORK_RPC_URL) -vvvv
+
+deploy:  ## Deploy a clean SPP (standard EVM)
+	$(FORGE) script Deploy --chain $(CHAIN) --rpc-url $(NETWORK_RPC_URL) \
+	   --etherscan-api-key $(ETHERSCAN_API_KEY) --verifier $(VERIFIER) --verify --broadcast \
+		2>&1 | tee -a $(@).log
+
+new-version:  ## Publish a new SPP version (standard EVM)
+	$(FORGE) script NewVersion --chain $(CHAIN) --rpc-url $(NETWORK_RPC_URL) \
+	   --etherscan-api-key $(ETHERSCAN_API_KEY) --verifier $(VERIFIER) --verify --broadcast \
+		2>&1 | tee -a $(@).log
+
+upgrade-repo:  ## Deploy and upgrade the SPP plugin repo (standard EVM)
+	$(FORGE) script UpgradeRepo --chain $(CHAIN) --rpc-url $(NETWORK_RPC_URL) \
+	   --etherscan-api-key $(ETHERSCAN_API_KEY) --verifier $(VERIFIER) --verify --broadcast \
+		2>&1 | tee -a $(@).log
+
+##
+
+### Deployment targets for zksync network
+
+.PHONY: test-zksync
+test-zksync: clean ## Run the test suite (ZkSync)
+	@### When running the tests on zksync, we copy SPPSetupZksync into SPPSetup to avoid
+	@### changing imports in the tests. This requires to temporarily store SPPSetup's code
+	@### in a temp file, so that after tests are done, we can restore the original codebase.
+	@### Without removing zkout/temp.sol, compiler fails as it can't find temp.sol in the
+	@### src directory, but it still finds it in the compilation output.
+	@echo "Temporarily using the ZkSync version of StagedProposalProcessorSetup"
+	cp src/StagedProposalProcessorSetup.sol src/StagedProposalProcessorSetup.sol.bak
+	cp src/StagedProposalProcessorSetupZkSync.sol src/StagedProposalProcessorSetup.sol
+
+	$(FORGE_ZKSYNC) test -vvvv --zksync ; \
+	if [ "$$?" = "0" ]; then \
+	   mv src/StagedProposalProcessorSetup.sol.bak src/StagedProposalProcessorSetup.sol ; \
+	else \
+		mv src/StagedProposalProcessorSetup.sol.bak src/StagedProposalProcessorSetup.sol ; \
+		exit 1 ; \
+	fi
+
+predeploy-zksync:  ## Simulate a clean SPP deployment (ZkSync)
+	$(FORGE_ZKSYNC) script Deploy --chain $(CHAIN) --rpc-url $(NETWORK_RPC_URL) --zksync -vvvv
+
+deploy-zksync:  ## Deploy a clean SPP (ZkSync)
+	$(FORGE_ZKSYNC) script Deploy --chain $(CHAIN) --rpc-url $(NETWORK_RPC_URL) \
+	   --verify --verifier zksync --verifier-url $(VERIFIER_URL) --broadcast --zksync \
+		2>&1 | tee -a $(@).log
+
+new-version-zksync:  ## Publish a new SPP version (ZkSync)
+	$(FORGE_ZKSYNC) script NewVersion --chain $(CHAIN) --rpc-url $(NETWORK_RPC_URL) \
+	   --verify --verifier zksync --verifier-url $(VERIFIER_URL) --broadcast --zksync \
+		2>&1 | tee -a $(@).log
+
+upgrade-repo-zksync:  ## Deploy and upgrade the SPP plugin repo (ZkSync)
+	$(FORGE_ZKSYNC) script UpgradeRepo --chain $(CHAIN) --rpc-url $(NETWORK_RPC_URL) \
+	   --verify --verifier zksync --verifier-url $(VERIFIER_URL) --broadcast --zksync \
+		2>&1 | tee -a $(@).log
+
+##
+
+verify-zksync-implementation:  ## Verify the plugin implementation (if not automatically done)
+	@if [ -z "$(address)" ]; then \
+		echo "Please, invoke with the address:" ; \
+		echo "$$ make $(@) address=0x1234..." ; \
+		echo ; \
+		exit 1 ; \
+	fi
+	$(FORGE_ZKSYNC) verify-contract \
+        --zksync \
+        --chain $(CHAIN) \
+        --num-of-optimizations 200 \
+        --watch \
+        --verifier zksync  \
+        --verifier-url $(VERIFIER_URL) \
+        $(address) \
+        src/StagedProposalProcessor.sol:StagedProposalProcessor
