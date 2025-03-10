@@ -33,6 +33,9 @@ init: ## Install foundry and foundry-zksync on your computer
 	curl -L https://foundry.paradigm.xyz | bash
 	foundryup -v stable
 
+	@$(FORGE) build
+	@which lcov > /dev/null || echo "Note: lcov can be installed by running 'sudo apt install lcov'"
+
 .PHONY: clean
 clean: ## Clean the generated artifacts
 	$(FORGE) cache clean all || true
@@ -40,12 +43,25 @@ clean: ## Clean the generated artifacts
 	rm -rf ./cache
 	rm -rf ./out
 	rm -rf ./zkout
+	rm -Rf lcov.info* ./report/*
 
 ##
 
 .PHONY: test
 test: ## Run the test suite (standard EVM)
 	$(FORGE) test -vvvv --match-path "test/unit/**"
+
+.PHONY: test-coverage
+test-coverage: report/index.html ## Generate an HTML coverage report under ./report
+	@which open > /dev/null && open report/index.html || echo -n
+	@which xdg-open > /dev/null && xdg-open report/index.html || echo -n
+
+report/index.html: lcov.info
+	genhtml $^ -o report --branch-coverage --ignore-errors inconsistent
+
+lcov.info: $(TEST_COVERAGE_SRC_FILES)
+	$(FORGE) coverage --match-path "test/unit/**" --report lcov \
+		| grep -v "| node_modules" | grep -v "| script/" | grep -v "| test/" | grep -v "\-\-|$$"
 
 .PHONY: test-fork
 test-fork: ## Run the fork test suite (standard EVM)

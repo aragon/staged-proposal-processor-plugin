@@ -21,3 +21,5 @@ src/.DS_Store
 
 npm-artifacts/src/abi.ts
 npm-artifacts/dist
+report/
+lcov.info
