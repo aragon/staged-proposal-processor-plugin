@@ -4,7 +4,7 @@ FORGE:=forge
 FORGE_ZKSYNC:=forge-zksync
 
 # Import the .env file and export their values
-include .env
+-include .env
 
 # TARGETS
 
