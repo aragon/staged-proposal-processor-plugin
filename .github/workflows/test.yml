@@ -1,6 +1,19 @@
 name: test
 
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "lib/**"
+      - "script/**"
+      - "src/**"
+      - "test/**"
+      - "*.sh"
+      - ".github/workflows/*.yml"
+      - ".gitignore"
+      - "remappings.txt"
+      - "foundry.toml"
+      - "Makefile"
 
 env:
   FOUNDRY_PROFILE: ci
@@ -14,13 +27,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: recursive
+        # with:
+        #   submodules: recursive
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
-          version: nightly
+          version: stable
+
+      - name: Run install
+        uses: borales/actions-yarn@v4
+        with:
+          cmd: install
 
       - name: Run Forge build
         run: |
@@ -29,6 +47,9 @@ jobs:
         id: build
 
       - name: Run Forge tests
+        env:
+          NETWORK_RPC_URL: ${{ secrets.NETWORK_RPC_URL }}
+          DEPLOYER_KEY: ${{ secrets.DEPLOYER_KEY }}
         run: |
-          forge test -vvv
+          make test
         id: test
