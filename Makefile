@@ -95,6 +95,16 @@ upgrade-repo:  ## Deploy and upgrade the SPP plugin repo (standard EVM)
 
 ##
 
+predeploy-proxy:  ## Simulate a proxy instance deployment
+	$(FORGE) script DeployProxy --chain $(CHAIN) --rpc-url $(NETWORK_RPC_URL) -vvvv
+
+deploy-proxy:  ## Deploy a proxy instance with the current settings
+	$(FORGE) script DeployProxy --chain $(CHAIN) --rpc-url $(NETWORK_RPC_URL) \
+	   --etherscan-api-key $(ETHERSCAN_API_KEY) --verifier $(VERIFIER) --verify --broadcast \
+		2>&1 | tee -a $(@).log
+
+##
+
 ### Deployment targets for zksync network
 
 .PHONY: test-zksync
@@ -132,6 +142,16 @@ new-version-zksync:  ## Publish a new SPP version (ZkSync)
 upgrade-repo-zksync:  ## Deploy and upgrade the SPP plugin repo (ZkSync)
 	$(FORGE_ZKSYNC) script UpgradeRepo --chain $(CHAIN) --rpc-url $(NETWORK_RPC_URL) \
 	   --verify --verifier zksync --verifier-url $(VERIFIER_URL) --broadcast --zksync \
+		2>&1 | tee -a $(@).log
+
+##
+
+predeploy-proxy-zksync:  ## Simulate a proxy instance deployment (ZkSync)
+	$(FORGE) script DeployProxy --chain $(CHAIN) --rpc-url $(NETWORK_RPC_URL) --zksync -vvvv
+
+deploy-proxy-zksync:  ## Deploy a proxy instance with the current settings (ZkSync)
+	$(FORGE) script DeployProxy --chain $(CHAIN) --rpc-url $(NETWORK_RPC_URL) \
+	   --etherscan-api-key $(ETHERSCAN_API_KEY) --verifier $(VERIFIER) --verify --broadcast --zksync \
 		2>&1 | tee -a $(@).log
 
 ##
