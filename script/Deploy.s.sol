@@ -9,6 +9,7 @@ import {PluginSettings} from "../src/utils/PluginSettings.sol";
 import {PluginRepo} from "@aragon/osx/framework/plugin/repo/PluginRepo.sol";
 import {PluginRepoFactory} from "@aragon/osx/framework/plugin/repo/PluginRepoFactory.sol";
 import {PermissionLib} from "@aragon/osx-commons-contracts/src/permission/PermissionLib.sol";
+import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 contract Deploy is BaseScript {
     function run() external {
@@ -22,6 +23,9 @@ contract Deploy is BaseScript {
         // crete plugin repo and version
         sppRepo = _createPluginRepo();
         sppSetup = _createAndCheckNewVersion();
+
+        // Deploy a dummy proxy to force its verification
+        new ERC1967Proxy(address(sppRepo), bytes(""));
 
         // transfer ownership of the plugin to the management DAO and revoke from deployer
         _transferOwnershipToManagementDao();
