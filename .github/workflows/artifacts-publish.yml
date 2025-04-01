@@ -17,6 +17,11 @@ jobs:
           node-version: '18'
           registry-url: 'https://registry.npmjs.org/'
 
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+
       - name: Configure NPM for Scoped Package
         run: |
           cd npm-artifacts

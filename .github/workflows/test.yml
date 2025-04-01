@@ -38,7 +38,7 @@ jobs:
       - name: Install dependencies
         uses: borales/actions-yarn@v4
         with:
-          cmd: install
+          cmd: install --ignore-scripts
 
       - name: Run Forge build
         run: |
