@@ -1,10 +1,7 @@
-name: Publish NPM Artifacts
+name: Publish Artifacts
 
 on:
   workflow_dispatch:
-
-env:
-  FOUNDRY_PROFILE: ci
 
 jobs:
   publish-artifacts-to-npm:
@@ -20,19 +17,9 @@ jobs:
           node-version: '18'
           registry-url: 'https://registry.npmjs.org/'
 
-      - name: Install Foundry (forge)
-        uses: foundry-rs/foundry-toolchain@v1
-        with:
-          version: nightly
-
-      - name: Configure Git for Foundry
-        run: |
-          git config --global user.name "github-actions"
-          git config --global user.email "github-actions@github.com"
-
       - name: Configure NPM for Scoped Package
         run: |
-          cd npm-artifacts
+          cd packages/artifacts
           SCOPE=$(jq -r '.name' package.json | cut -d'/' -f1)
           echo "$SCOPE:registry=https://registry.npmjs.org/" > ~/.npmrc
           echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" >> ~/.npmrc
@@ -40,7 +27,7 @@ jobs:
       - name: Get Version from package.json
         id: get_version
         run: |
-          cd npm-artifacts
+          cd packages/artifacts
           VERSION=$(jq -r '.version' package.json)
           TAG_VERSION="v$VERSION"
           echo "VERSION=$TAG_VERSION" >> $GITHUB_ENV
@@ -54,21 +41,21 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          cd npm-artifacts
-          yarn install
+          cd packages/artifacts
+          yarn install --frozen-lockfile --ignore-scripts
 
       - name: Build Package
         env:
           ALCHEMY_API_KEY: ${{ secrets.ALCHEMY_API_KEY }}
         run: |
-          cd npm-artifacts
+          cd packages/artifacts
           yarn build
 
       - name: Publish to NPM
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          cd npm-artifacts
+          cd packages/artifacts
           if [[ "$VERSION" == *"-alpha"* ]]; then
             npm publish --tag alpha --access public
           else
