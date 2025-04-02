@@ -3,6 +3,9 @@ name: Publish Artifacts
 on:
   workflow_dispatch:
 
+env:
+  FOUNDRY_PROFILE: ci
+
 jobs:
   publish-artifacts-to-npm:
     runs-on: ubuntu-latest
@@ -21,6 +24,11 @@ jobs:
         uses: foundry-rs/foundry-toolchain@v1
         with:
           version: stable
+
+      - name: Configure Git for Foundry
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
 
       - name: Configure NPM for Scoped Package
         run: |
