@@ -13,6 +13,8 @@
 - Started: 2024-11-18
 - Finished: 2025-02-13
 
+To get the contract ABI and contract addresses, check out the [npm-artifacts folder](./npm-artifacts/README.md).
+
 ## Project
 
 The root folder of the repo includes `src` subfolder with the plugin contracts.
@@ -46,7 +48,7 @@ forge build or forge build --zksync
 
 To run the tests against evm based network, run `yarn test`. For zksync, run `yarn test:zksync`. See above how to install foundry zksync toolchain.
 
-If the tests fail with `The application panicked` error on zksync, remove `cache` folder and run `yarn test:zksync` again. 
+If the tests fail with `The application panicked` error on zksync, remove `cache` folder and run `yarn test:zksync` again.
 
 Due to some limitations, fork tests will not be able to run on zksync network.
 

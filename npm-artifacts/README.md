@@ -20,7 +20,7 @@ import {
 import { addresses } from "@aragon/staged-proposal-processor-plugin-artifacts";
 ```
 
-You can also open [addresses.json](./src/addresses.json) directly.
+You can also open [addresses.json](https://github.com/aragon/staged-proposal-processor-plugin/blob/main/npm-artifacts/src/addresses.json) directly.
 
 ## Development
 
