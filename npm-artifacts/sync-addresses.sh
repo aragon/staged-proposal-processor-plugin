@@ -17,13 +17,13 @@ fi
 SOURCE_DIR="$1"
 DEST_FILE="$2"
 
-DEPRECATED_NETWORKS=(
+UNSUPPORTED_NETWORKS=(
     "goerli"
     "baseGoerli"
     "devSepolia"
 )
 
-#
+# Checks
 
 if [[ ! -d "$SOURCE_DIR" ]]; then
     echo "Error: Source directory '$SOURCE_DIR' not found." >&2
@@ -40,22 +40,14 @@ if [ "$SOURCE_DIR" == "$(dirname $DEST_FILE)" ]; then
     exit 1
 fi
 
-echo "Processing JSON files in '$SOURCE_DIR'..."
+# Helpers
 
-# Create a temporary file to store intermediate JSON structures
-# Each line in this file will be a JSON object like: {"pluginRepo": {"network_name": "value"}}
-TEMP_MERGE_FILE=$(mktemp)
-
-# Ensure temporary file is removed on script exit (normal or error)
-trap 'rm -f "$TEMP_MERGE_FILE"' EXIT
-
-# Helper functions
 containsElement () {
   local seeking=$1; shift
-  local in=1 # Default is not found (bash false)
+  local in=1 # Not found
   for element; do
     if [[ "$element" == "$seeking" ]]; then
-      in=0 # Found (bash true)
+      in=0 # Found
       break
     fi
   done
@@ -73,12 +65,23 @@ networkAlias () {
     fi
 }
 
+# Ready
+
+echo "Processing $SOURCE_DIR"
+
+# Create a temporary file to store intermediate JSON structures
+# Each line in this file will be a JSON object like: {"pluginRepo": {"network_name": "value"}}
+TEMP_MERGE_FILE=$(mktemp)
+
+# Clean the temp file when the script exits
+trap 'rm -f "$TEMP_MERGE_FILE"' EXIT
+
 # List source address files
 find "$SOURCE_DIR" -maxdepth 1 -name '*.json' | sort | while read source_file; do
     filename=$(basename "$source_file")
     network="${filename%.json}"
 
-    if containsElement "$network" "${DEPRECATED_NETWORKS[@]}"; then
+    if containsElement "$network" "${UNSUPPORTED_NETWORKS[@]}"; then
         echo "Skipping deprecated network: $network"
         continue
     fi
@@ -103,11 +106,10 @@ echo "Merging addresses..."
 jq -s 'map(.pluginRepo) | add | {pluginRepo: .}' "$TEMP_MERGE_FILE" > "$DEST_FILE"
 
 
-if [[ $? -eq 0 ]]; then
-    echo "Addresses written to '$DEST_FILE'"
-else
+if [[ $? -ne 0 ]]; then
     echo "Error: Failed to merge the values into '$DEST_FILE'" >&2
     exit 1
 fi
 
+echo "Addresses written to '$DEST_FILE'"
 exit 0
