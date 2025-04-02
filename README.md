@@ -13,7 +13,9 @@
 - Started: 2024-11-18
 - Finished: 2025-02-13
 
-To get the contract ABI and contract addresses, check out the [npm-artifacts folder](./npm-artifacts/README.md).
+## ABI and artifacts
+
+Check out the [npm-artifacts folder](./npm-artifacts/README.md) to get the deployed addresses and the contract ABI's.
 
 ## Project
 
