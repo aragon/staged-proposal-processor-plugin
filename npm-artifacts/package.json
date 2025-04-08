@@ -1,7 +1,13 @@
 {
   "name": "@aragon/staged-proposal-processor-plugin-artifacts",
   "author": "Aragon X",
-  "version": "1.1.0",
+  "version": "1.1.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aragon/staged-proposal-processor-plugin",
+    "directory": "npm-artifacts"
+  },
+  "homepage": "https://github.com/aragon/staged-proposal-processor-plugin/tree/main/npm-artifacts#readme",
   "license": "AGPL-3.0-or-later",
   "description": "The ABI definition of the Staged Proposal Processor plugin",
   "typings": "dist/index.d.ts",
