@@ -1,7 +1,7 @@
 {
   "name": "@aragon/staged-proposal-processor-plugin-artifacts",
   "author": "Aragon X",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "repository": {
     "type": "git",
     "url": "https://github.com/aragon/staged-proposal-processor-plugin",
@@ -21,7 +21,7 @@
   "scripts": {
     "build": "yarn prepare-abi && rm -Rf dist && tsc -p tsconfig.json",
     "prepare-abi": "bash ./prepare-abi.sh",
-    "sync-addrs": "bash ./sync-addresses.sh ../../osx-commons/configs/src/deployments/json ./src/addresses.json"
+    "sync-addresses": "bash ./sync-addresses.sh ../../osx-commons/configs/src/deployments/json ./src/addresses.json"
   },
   "devDependencies": {
     "typescript": "^5.5.4"
