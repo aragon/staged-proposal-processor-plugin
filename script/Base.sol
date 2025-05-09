@@ -38,36 +38,19 @@ contract BaseScript is Script, Constants {
     }
 
     function getRepoFactoryAddress() public view returns (address _repoFactory) {
-        string memory _json = _getOsxConfigs(network);
+        _repoFactory = vm.envAddress("PLUGIN_FACTORY_ADDRESS");
 
-        string memory _repoFactoryKey = _buildKey(protocolVersion, PLUGIN_FACTORY_ADDRESS_KEY);
-
-        if (!vm.keyExists(_json, _repoFactoryKey)) {
-            revert UnsupportedNetwork(network);
-        }
-        _repoFactory = vm.parseJsonAddress(_json, _repoFactoryKey);
     }
 
     function getManagementDaoAddress() public view returns (address _managementDao) {
-        string memory _json = _getOsxConfigs(network);
+        _managementDao = vm.envAddress("MANAGEMENT_DAO_ADDRESS");
 
-        string memory _managementDaoKey = _buildKey(protocolVersion, MANAGEMENT_DAO_ADDRESS_KEY);
-
-        if (!vm.keyExists(_json, _managementDaoKey)) {
-            revert UnsupportedNetwork(network);
-        }
-        _managementDao = vm.parseJsonAddress(_json, _managementDaoKey);
     }
 
     function getPluginRepoAddress() public view returns (address _sppRepo) {
-        string memory _json = _getOsxConfigs(network);
-
-        string memory _sppRepoKey = _buildKey(protocolVersion, SPP_PLUGIN_REPO_KEY);
-
-        if (!vm.keyExists(_json, _sppRepoKey)) {
-            revert UnsupportedNetwork(network);
-        }
-        _sppRepo = vm.parseJsonAddress(_json, _sppRepoKey);
+        // from env variable
+        _sppRepo = vm.envAddress("SPP_PLUGIN_REPO_ADDRESS");
+        // todo: if is not set return address(0)
     }
 
     function getBasePluginRepoAddress() public view returns (address _sppRepo) {
