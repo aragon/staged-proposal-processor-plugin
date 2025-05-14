@@ -21,7 +21,7 @@
   "scripts": {
     "build": "yarn prepare-abi && rm -Rf dist && tsc -p tsconfig.json",
     "prepare-abi": "bash ./prepare-abi.sh",
-    "sync-addresses": "bash ./sync-addresses.sh ../../osx-commons/configs/src/deployments/json ./src/addresses.json"
+    "sync-from-commons": "bash ./sync-from-commons.sh ../../osx-commons/configs/src/deployments/json ./src/addresses.json"
   },
   "devDependencies": {
     "typescript": "^5.5.4"

@@ -46,7 +46,7 @@ Clone [OSx Commons](https://github.com/aragon/osx-commons) in a folder next to t
 
 ```sh
 # cd npm-artifacts
-yarn sync-addresses
+yarn sync-from-commons
 ```
 
 ### Publishing
