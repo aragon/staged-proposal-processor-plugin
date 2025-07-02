@@ -1,7 +1,7 @@
 {
   "name": "@aragon/staged-proposal-processor-plugin-artifacts",
   "author": "Aragon X",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "repository": {
     "type": "git",
     "url": "https://github.com/aragon/staged-proposal-processor-plugin",
