@@ -11,7 +11,7 @@ TARGET_ABI_FILE="./src/abi.ts"
 # Move into contracts package and install dependencies
 cd $CONTRACTS_FOLDER
 
-yarn --ignore-scripts && yarn build
+yarn install --ignore-scripts && yarn build
 
 # Move back to artifacts package
 cd - > /dev/null
@@ -32,7 +32,7 @@ do
       SRC_FILE_PATH=${SRC_FILE_PATH%"ZkSync.json"}.json
     fi
 
-    ABI=$(node -e "console.log(JSON.stringify(JSON.parse(fs.readFileSync(\"$SRC_FILE_PATH\").toString()).abi))")
+    ABI=$(node -p "JSON.stringify(JSON.parse(fs.readFileSync(\"$SRC_FILE_PATH\").toString()).abi)")
 
     echo "const ${CONTRACT_NAME}ABI = $ABI as const;" >> $TARGET_ABI_FILE
     echo "export {${CONTRACT_NAME}ABI};" >> $TARGET_ABI_FILE

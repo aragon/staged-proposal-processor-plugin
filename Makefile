@@ -10,14 +10,21 @@ FORGE_ZKSYNC:=forge-zksync
 
 ##
 
+ACCENT := \e[33m
+LIGHTER := \e[37m
+NORMAL := \e[0m
+COLUMN_START := 20
+
 .PHONY: help
-help: ## Display the current message
-	@echo "Available targets:"
+help: ## Show the main recipes
+	@echo -e "Available recipes:\n"
 	@cat Makefile | while IFS= read -r line; do \
-	   if [[ "$$line" == "##" ]]; then \
+		if [[ "$$line" == "##" ]]; then \
 			echo "" ; \
-		elif [[ "$$line" =~ ^([^:]+):(.*)##\ (.*)$$ ]]; then \
-			echo -e " - make $${BASH_REMATCH[1]} \t\t$${BASH_REMATCH[3]}" ; \
+		elif [[ "$$line" =~ ^##\ (.*)$$ ]]; then \
+			printf "\n$${BASH_REMATCH[1]}\n\n" ; \
+		elif [[ "$$line" =~ ^([^:#]+):(.*)##\ (.*)$$ ]]; then \
+			printf "  make $(ACCENT)%-*s$(LIGHTER) %s$(NORMAL)\n" $(COLUMN_START) "$${BASH_REMATCH[1]}" "$${BASH_REMATCH[3]}" ; \
 		fi ; \
 	done
 
