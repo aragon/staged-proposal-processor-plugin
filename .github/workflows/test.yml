@@ -4,16 +4,16 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - "lib/**"
-      - "script/**"
-      - "src/**"
-      - "test/**"
-      - "*.sh"
-      - ".github/workflows/*.yml"
-      - ".gitignore"
-      - "remappings.txt"
-      - "foundry.toml"
-      - "Makefile"
+      - 'lib/**'
+      - 'script/**'
+      - 'src/**'
+      - 'test/**'
+      - '*.sh'
+      - '.github/workflows/*.yml'
+      - '.gitignore'
+      - 'remappings.txt'
+      - 'foundry.toml'
+      - 'Makefile'
 
 env:
   FOUNDRY_PROFILE: ci
@@ -35,10 +35,13 @@ jobs:
         with:
           version: stable
 
-      - name: Install dependencies
-        uses: borales/actions-yarn@v4
+      - uses: pnpm/action-setup@v4
         with:
-          cmd: install --ignore-scripts
+          version: 10
+
+      - name: Install dependencies
+        run: |
+          pnpm install --ignore-scripts
 
       - name: Run Forge build
         run: |
