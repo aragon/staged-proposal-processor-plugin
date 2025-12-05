@@ -60,17 +60,20 @@ jobs:
           git tag $VERSION
           git push origin $VERSION
 
-      - name: Install Dependencies
+      - uses: pnpm/action-setup@v4
+
+      - name: Install dependencies
         run: |
-          cd npm-artifacts
-          yarn install --frozen-lockfile --ignore-scripts
+          pnpm install --ignore-scripts
+          cd npm-artifacts && pnpm install --ignore-scripts
 
       - name: Build Package
         env:
           ALCHEMY_API_KEY: ${{ secrets.ALCHEMY_API_KEY }}
         run: |
           cd npm-artifacts
-          yarn build
+          pnpm run prepare-abi
+          pnpm run build
 
       - name: Publish to NPM
         env:

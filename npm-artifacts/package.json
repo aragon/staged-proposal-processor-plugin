@@ -19,7 +19,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "yarn prepare-abi && rm -Rf dist && tsc -p tsconfig.json",
+    "build": "pnpm run prepare-abi && rm -Rf dist && ./node_modules/.bin/tsc -p tsconfig.json",
     "prepare-abi": "bash ./prepare-abi.sh",
     "sync-addresses": "bash ./sync-addresses.sh ../../osx-commons/configs/src/deployments/json ./src/addresses.json"
   },
