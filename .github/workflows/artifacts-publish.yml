@@ -61,6 +61,8 @@ jobs:
           git push origin $VERSION
 
       - uses: pnpm/action-setup@v4
+        with:
+          version: 10
 
       - name: Install dependencies
         run: |
