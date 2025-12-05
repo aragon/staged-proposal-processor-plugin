@@ -3,7 +3,7 @@
 This package contains the ABI of the Staged Proposal Processor plugin for OSx, as well as the address of its plugin repository on each supported network. Install it with:
 
 ```sh
-yarn add @aragon/staged-proposal-processor-plugin-artifacts
+pnpm install @aragon/staged-proposal-processor-plugin-artifacts
 ```
 
 ## Usage
@@ -29,8 +29,8 @@ You can also open [addresses.json](https://github.com/aragon/staged-proposal-pro
 Install the dependencies and generate the local ABI definitions.
 
 ```sh
-yarn --ignore-scripts
-yarn build
+pnpm install --ignore-scripts
+pnpm run build
 ```
 
 The `build` script will:
@@ -46,7 +46,7 @@ Clone [OSx Commons](https://github.com/aragon/osx-commons) in a folder next to t
 
 ```sh
 # cd npm-artifacts
-yarn sync-addresses
+pnpm run sync-addresses
 ```
 
 ### Publishing
