@@ -33,7 +33,7 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
     /// @notice Constructs the `PluginUpgradeableSetup` by storing the `SPP` implementation address.
     /// @dev The implementation address is used to deploy UUPS proxies referencing it and
     /// to verify the plugin on the respective block explorers.
-    constructor() PluginUpgradeableSetup(address(new SPP())) {
+    constructor(SPP _spp) PluginUpgradeableSetup(address(_spp)) {
         CONDITION_IMPLEMENTATION = address(
             new SPPRuleCondition(address(0), new RuledCondition.Rule[](0))
         );
