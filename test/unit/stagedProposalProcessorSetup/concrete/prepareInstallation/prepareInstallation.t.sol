@@ -22,7 +22,7 @@ contract PrepareInstallation_SPPSetup_UnitTest is BaseTest {
         super.setUp();
 
         // deploy SPPSetup contract.
-        sppSetup = new SPPSetup();
+        sppSetup = new SPPSetup(new SPP());
     }
 
     modifier whenPreparingInstallation() {

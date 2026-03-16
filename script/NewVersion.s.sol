@@ -3,6 +3,7 @@ pragma solidity ^0.8.18;
 
 import {BaseScript} from "./Base.sol";
 import {PluginSettings} from "../src/utils/PluginSettings.sol";
+import {StagedProposalProcessor as SPP} from "../src/StagedProposalProcessor.sol";
 import {StagedProposalProcessorSetup as SPPSetup} from "../src/StagedProposalProcessorSetup.sol";
 
 import {PluginRepo} from "@aragon/osx/framework/plugin/repo/PluginRepo.sol";
@@ -37,7 +38,7 @@ contract NewVersion is BaseScript {
             // if deployer has permission create new version
             _createAndCheckNewVersion();
         } else {
-            sppSetup = new SPPSetup();
+            sppSetup = new SPPSetup(new SPP());
             string memory json = _serializeToJson(_buildProposalData(address(sppSetup)));
 
             // Write the serialized JSON data to a file

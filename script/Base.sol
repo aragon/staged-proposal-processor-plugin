@@ -6,6 +6,7 @@ import {console} from "forge-std/console.sol";
 
 import {Constants} from "./utils/Constants.sol";
 import {PluginSettings} from "../src/utils/PluginSettings.sol";
+import {StagedProposalProcessor as SPP} from "../src/StagedProposalProcessor.sol";
 import {StagedProposalProcessorSetup as SPPSetup} from "../src/StagedProposalProcessorSetup.sol";
 import {StagedProposalProcessorSetup as SPPSetupZkSync} from "../src/StagedProposalProcessorSetupZkSync.sol";
 
@@ -84,9 +85,9 @@ contract BaseScript is Script, Constants {
     function _createAndCheckNewVersion() internal returns (SPPSetup _sppSetup) {
         bytes32 networkHash = keccak256(abi.encodePacked(network));
         if(networkHash == keccak256(abi.encodePacked("zksyncSepolia")) || networkHash == keccak256(abi.encodePacked("zksyncMainnet"))) {
-            _sppSetup = SPPSetup(address(new SPPSetupZkSync()));
+            _sppSetup = SPPSetup(address(new SPPSetupZkSync(new SPP())));
         } else {
-            _sppSetup = new SPPSetup();
+            _sppSetup = new SPPSetup(new SPP());
         }
         
         // Check release number

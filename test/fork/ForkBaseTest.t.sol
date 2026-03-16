@@ -77,7 +77,7 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, ScriptConstants
         trustedForwarder = new TrustedForwarder();
 
         // publish new spp version
-        sppSetup = new SPPSetup();
+        sppSetup = new SPPSetup(new SPP());
         // Check release number
         uint256 latestRelease = sppRepo.latestRelease();
 

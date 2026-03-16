@@ -2,6 +2,7 @@
 pragma solidity ^0.8.18;
 
 import {BaseTest} from "../../../../BaseTest.t.sol";
+import {StagedProposalProcessor as SPP} from "../../../../../src/StagedProposalProcessor.sol";
 import {
     StagedProposalProcessorSetup as SPPSetup
 } from "../../../../../src/StagedProposalProcessorSetup.sol";
@@ -18,7 +19,7 @@ contract PrepareUpdate_SPPSetup_UnitTest is BaseTest {
         super.setUp();
 
         // deploy SPPSetup contract.
-        sppSetup = new SPPSetup();
+        sppSetup = new SPPSetup(new SPP());
     }
 
     function test_RevertWhen_PreparingUpdate() external {
