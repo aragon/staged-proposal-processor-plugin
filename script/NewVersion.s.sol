@@ -14,7 +14,7 @@ import {PluginRepo} from "@aragon/osx/framework/plugin/repo/PluginRepo.sol";
 /// Submit the printed calldata as a management DAO proposal to publish the new version.
 contract NewVersion is BaseScript {
     function run() external {
-        sppRepo = PluginRepo(getPluginRepoAddress());
+        sppRepo = PluginRepo(vm.envAddress("SPP_PLUGIN_REPO_ADDRESS"));
 
         vm.startBroadcast(deployerPrivateKey);
         sppSetup = new SPPSetup(new SPP(), block.chainid != 324 && block.chainid != 300);

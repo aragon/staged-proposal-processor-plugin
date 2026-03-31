@@ -16,17 +16,15 @@ import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.s
 contract Deploy is BaseScript {
     error InvalidVersionRelease(uint8 release, uint8 latestRelease);
     error InvalidVersionBuild(uint8 build, uint8 latestBuild);
-    error SomethingWentWrong();
+    error VersionPublishFailed();
 
     function run() external {
-        // get deployed contracts
-        pluginRepoFactory = getRepoFactoryAddress();
-        managementDao = getManagementDaoAddress();
+        address pluginRepoFactory = vm.envAddress("PLUGIN_REPO_FACTORY_ADDRESS");
+        address managementDao = vm.envAddress("MANAGEMENT_DAO_ADDRESS");
 
         vm.startBroadcast(deployerPrivateKey);
 
-        // crete plugin repo and version
-        sppRepo = _createPluginRepo();
+        sppRepo = _createPluginRepo(pluginRepoFactory);
 
         sppSetup = new SPPSetup(new SPP(), block.chainid != 324 && block.chainid != 300);
 
@@ -47,14 +45,14 @@ contract Deploy is BaseScript {
         );
 
         if (PluginSettings.VERSION_RELEASE != sppRepo.latestRelease()) {
-            revert SomethingWentWrong();
+            revert VersionPublishFailed();
         }
 
         // Deploy a dummy proxy to force its verification
         new ERC1967Proxy(address(sppRepo), bytes(""));
 
         // transfer ownership of the plugin to the management DAO and revoke from deployer
-        _transferOwnershipToManagementDao();
+        _transferOwnershipToManagementDao(managementDao);
 
         vm.stopBroadcast();
 
@@ -64,23 +62,23 @@ contract Deploy is BaseScript {
         console.log("- Version:          ", _versionString(PluginSettings.VERSION_RELEASE, PluginSettings.VERSION_BUILD));
     }
 
-    function _createPluginRepo() internal returns (PluginRepo _sppRepo) {
+    function _createPluginRepo(address _factory) internal returns (PluginRepo _sppRepo) {
         string memory subdomain = vm.envOr("SPP_ENS_SUBDOMAIN", string(""));
         if (bytes(subdomain).length == 0) {
             subdomain = string.concat("spp-", vm.toString(block.timestamp));
         }
         console.log("- ENS subdomain:    ", subdomain);
-        _sppRepo = PluginRepoFactory(pluginRepoFactory).createPluginRepo(subdomain, deployer);
+        _sppRepo = PluginRepoFactory(_factory).createPluginRepo(subdomain, deployer);
     }
 
-    function _transferOwnershipToManagementDao() internal {
+    function _transferOwnershipToManagementDao(address _managementDao) internal {
         PermissionLib.MultiTargetPermission[]
             memory permissions = new PermissionLib.MultiTargetPermission[](6);
 
         permissions[0] = PermissionLib.MultiTargetPermission({
             operation: PermissionLib.Operation.Grant,
             where: address(sppRepo),
-            who: managementDao,
+            who: _managementDao,
             condition: PermissionLib.NO_CONDITION,
             permissionId: sppRepo.MAINTAINER_PERMISSION_ID()
         });
@@ -88,7 +86,7 @@ contract Deploy is BaseScript {
         permissions[1] = PermissionLib.MultiTargetPermission({
             operation: PermissionLib.Operation.Grant,
             where: address(sppRepo),
-            who: managementDao,
+            who: _managementDao,
             condition: PermissionLib.NO_CONDITION,
             permissionId: sppRepo.UPGRADE_REPO_PERMISSION_ID()
         });
@@ -96,7 +94,7 @@ contract Deploy is BaseScript {
         permissions[2] = PermissionLib.MultiTargetPermission({
             operation: PermissionLib.Operation.Grant,
             where: address(sppRepo),
-            who: managementDao,
+            who: _managementDao,
             condition: PermissionLib.NO_CONDITION,
             permissionId: sppRepo.ROOT_PERMISSION_ID()
         });
