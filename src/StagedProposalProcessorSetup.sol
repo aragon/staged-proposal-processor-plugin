@@ -30,13 +30,19 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
     /// @notice The address of the condition implementation contract.
     address public immutable CONDITION_IMPLEMENTATION;
 
+    /// @notice Whether the network supports EIP-1167 minimal proxies (clones).
+    /// @dev False on networks like ZkSync that lack CREATE2 clone support; falls back to UUPS.
+    bool public immutable CLONES_SUPPORTED;
+
     /// @notice Constructs the `PluginUpgradeableSetup` by storing the `SPP` implementation address.
     /// @dev The implementation address is used to deploy UUPS proxies referencing it and
     /// to verify the plugin on the respective block explorers.
-    constructor(SPP _spp) PluginUpgradeableSetup(address(_spp)) {
+    /// @param _clonesSupported False on networks that do not support EIP-1167 clones (e.g. ZkSync).
+    constructor(SPP _spp, bool _clonesSupported) PluginUpgradeableSetup(address(_spp)) {
         CONDITION_IMPLEMENTATION = address(
             new SPPRuleCondition(address(0), new RuledCondition.Rule[](0))
         );
+        CLONES_SUPPORTED = _clonesSupported;
     }
 
     /// @inheritdoc IPluginSetup
@@ -66,9 +72,12 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
             )
         );
 
-        // Clone and initialize the plugin contract.
+        // Clone and initialize the condition contract.
+        // On networks without EIP-1167 clone support (e.g. ZkSync), fall back to UUPS.
         bytes memory initData = abi.encodeCall(SPPRuleCondition.initialize, (_dao, rules));
-        address sppCondition = CONDITION_IMPLEMENTATION.deployMinimalProxy(initData);
+        address sppCondition = CLONES_SUPPORTED
+            ? CONDITION_IMPLEMENTATION.deployMinimalProxy(initData)
+            : CONDITION_IMPLEMENTATION.deployUUPSProxy(initData);
 
         preparedSetupData.permissions = _getPermissions(
             _dao,

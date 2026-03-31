@@ -9,7 +9,6 @@ import {Fuzzers} from "../utils/Fuzzers.sol";
 import {Constants} from "../utils/Constants.sol";
 import {Assertions} from "../utils/Assertions.sol";
 import {TrustedForwarder} from "../utils/TrustedForwarder.sol";
-import {Constants as ScriptConstants} from "../../script/utils/Constants.sol";
 import {StagedProposalProcessor as SPP} from "../../src/StagedProposalProcessor.sol";
 import {StagedProposalProcessorSetup as SPPSetup} from "../../src/StagedProposalProcessorSetup.sol";
 
@@ -29,11 +28,9 @@ import {PermissionLib} from "@aragon/osx-commons-contracts/src/permission/Permis
 import {IPluginSetup} from "@aragon/osx-commons-contracts/src/plugin/setup/IPluginSetup.sol";
 import {PluginSetupProcessor} from "@aragon/osx/framework/plugin/setup/PluginSetupProcessor.sol";
 
-contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, ScriptConstants, Test {
+contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, Test {
     uint256 internal deployerPrivateKey = vm.envOr("DEPLOYER_KEY", uint256(0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80));
-    string internal network = vm.envOr("NETWORK_NAME", string("devSepolia"));
     string internal networkRpcUrl = vm.envString("NETWORK_RPC_URL");
-    string internal protocolVersion = vm.envOr("PROTOCOL_VERSION", string("v1.4.0"));
 
     // solhint-disable immutable-vars-naming
     address internal immutable deployer = vm.addr(deployerPrivateKey);
@@ -65,19 +62,25 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, ScriptConstants
         vm.createSelectFork({urlOrAlias: networkRpcUrl});
 
         // get needed contract addresses
-        sppRepo = PluginRepo(getContractAddress(SPP_PLUGIN_REPO_KEY));
-        adminRepo = PluginRepo(getContractAddress(ADMIN_PLUGIN_REPO_KEY));
-        multisigRepo = PluginRepo(getContractAddress(MULTISIG_PLUGIN_REPO_KEY));
-        managementDao = getContractAddress(MANAGEMENT_DAO_ADDRESS_KEY);
-        psp = PluginSetupProcessor(getContractAddress(PLUGIN_SETUP_PROCESSOR_KEY));
-        daoFactory = DAOFactory(getContractAddress(DAO_FACTORY_ADDRESS_KEY));
-        multisigSetup = PluginUpgradeableSetup(getContractAddress(MULTISIG_PLUGIN_SETUP_KEY));
+        sppRepo = PluginRepo(vm.envAddress("SPP_PLUGIN_REPO_ADDRESS"));
+        adminRepo = PluginRepo(vm.envAddress("ADMIN_PLUGIN_REPO_ADDRESS"));
+        multisigRepo = PluginRepo(vm.envAddress("MULTISIG_PLUGIN_REPO_ADDRESS"));
+        managementDao = vm.envAddress("MANAGEMENT_DAO_ADDRESS");
+        psp = PluginSetupProcessor(vm.envAddress("PLUGIN_SETUP_PROCESSOR_ADDRESS"));
+        daoFactory = DAOFactory(vm.envAddress("DAO_FACTORY_ADDRESS"));
+
+        // derive multisigSetup from the latest version in the repo
+        PluginRepo.Tag memory latestTag = PluginRepo.Tag({
+            release: multisigRepo.latestRelease(),
+            build: uint16(multisigRepo.buildCount(multisigRepo.latestRelease()))
+        });
+        multisigSetup = PluginUpgradeableSetup(multisigRepo.getVersion(latestTag).pluginSetup);
 
         target = new Target();
         trustedForwarder = new TrustedForwarder();
 
         // publish new spp version
-        sppSetup = new SPPSetup(new SPP());
+        sppSetup = new SPPSetup(new SPP(), true);
         // Check release number
         uint256 latestRelease = sppRepo.latestRelease();
 
@@ -110,40 +113,6 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, ScriptConstants
         vm.label(address(multisigSetup), "Multisig_Setup");
         vm.label(address(target), "Target");
         vm.label(address(trustedForwarder), "TrustedForwarder");
-    }
-
-    function getContractAddress(string memory _baseKey) public view returns (address) {
-        string memory _json = _getOsxDeployments(network);
-        if (bytes(_json).length == 0) {
-            revert UnsupportedNetwork(network);
-        }
-
-        string memory _contractKey = _buildDeploymentCtrKey(protocolVersion, _baseKey);
-
-        if (!vm.keyExistsJson(_json, _contractKey)) {
-            revert ContractKeyNotfoundInNetwork(network, _contractKey);
-        }
-        return vm.parseJsonAddress(_json, _contractKey);
-    }
-
-    function _getOsxDeployments(string memory _network) internal view returns (string memory) {
-        string memory osxDeploymentsPath = string.concat(
-            vm.projectRoot(),
-            "/",
-            DEPLOYMENTS_PATH,
-            "/",
-            _network,
-            ".json"
-        );
-
-        return vm.readFile(osxDeploymentsPath);
-    }
-
-    function _buildDeploymentCtrKey(
-        string memory _protocolVersion,
-        string memory _contractKey
-    ) internal pure returns (string memory) {
-        return string.concat(".['", _protocolVersion, "'].", _contractKey);
     }
 
     function _createDummyDaoAdmin()

@@ -5,6 +5,8 @@ import {console} from "forge-std/console.sol";
 
 import {BaseScript} from "./Base.sol";
 import {PluginSettings} from "../src/utils/PluginSettings.sol";
+import {StagedProposalProcessor as SPP} from "../src/StagedProposalProcessor.sol";
+import {StagedProposalProcessorSetup as SPPSetup} from "../src/StagedProposalProcessorSetup.sol";
 
 import {PluginRepo} from "@aragon/osx/framework/plugin/repo/PluginRepo.sol";
 import {PluginRepoFactory} from "@aragon/osx/framework/plugin/repo/PluginRepoFactory.sol";
@@ -12,8 +14,11 @@ import {PermissionLib} from "@aragon/osx-commons-contracts/src/permission/Permis
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 contract Deploy is BaseScript {
+    error InvalidVersionRelease(uint8 release, uint8 latestRelease);
+    error InvalidVersionBuild(uint8 build, uint8 latestBuild);
+    error SomethingWentWrong();
+
     function run() external {
-        _printAragonArt();
         // get deployed contracts
         pluginRepoFactory = getRepoFactoryAddress();
         managementDao = getManagementDaoAddress();
@@ -22,7 +27,28 @@ contract Deploy is BaseScript {
 
         // crete plugin repo and version
         sppRepo = _createPluginRepo();
-        sppSetup = _createAndCheckNewVersion();
+
+        sppSetup = new SPPSetup(new SPP(), block.chainid != 324 && block.chainid != 300);
+
+        uint256 latestRelease = sppRepo.latestRelease();
+        if (PluginSettings.VERSION_RELEASE > latestRelease + 1) {
+            revert InvalidVersionRelease(PluginSettings.VERSION_RELEASE, uint8(latestRelease));
+        }
+        uint256 latestBuild = sppRepo.buildCount(uint8(latestRelease));
+        if (PluginSettings.VERSION_BUILD < latestBuild + 1) {
+            revert InvalidVersionBuild(PluginSettings.VERSION_BUILD, uint8(latestBuild));
+        }
+
+        sppRepo.createVersion(
+            PluginSettings.VERSION_RELEASE,
+            address(sppSetup),
+            bytes(PluginSettings.BUILD_METADATA),
+            bytes(PluginSettings.RELEASE_METADATA)
+        );
+
+        if (PluginSettings.VERSION_RELEASE != sppRepo.latestRelease()) {
+            revert SomethingWentWrong();
+        }
 
         // Deploy a dummy proxy to force its verification
         new ERC1967Proxy(address(sppRepo), bytes(""));
@@ -31,23 +57,20 @@ contract Deploy is BaseScript {
         _transferOwnershipToManagementDao();
 
         vm.stopBroadcast();
+
+        console.log("- SPP PluginRepo:   ", address(sppRepo));
+        console.log("- SPP PluginSetup:  ", address(sppSetup));
+        console.log("- Implementation:   ", sppSetup.implementation());
+        console.log("- Version:          ", _versionString(PluginSettings.VERSION_RELEASE, PluginSettings.VERSION_BUILD));
     }
 
     function _createPluginRepo() internal returns (PluginRepo _sppRepo) {
-        // create plugin repo
-        _sppRepo = PluginRepoFactory(pluginRepoFactory).createPluginRepo(
-            PluginSettings.PLUGIN_REPO_ENS_SUBDOMAIN_NAME,
-            deployer
-        );
-
-        console.log(
-            "- SPP PluginRepo: ",
-            address(_sppRepo)
-        );
-        console.log(
-            "- ENS subdomain",
-            PluginSettings.PLUGIN_REPO_ENS_SUBDOMAIN_NAME
-        );
+        string memory subdomain = vm.envOr("SPP_ENS_SUBDOMAIN", string(""));
+        if (bytes(subdomain).length == 0) {
+            subdomain = string.concat("spp-", vm.toString(block.timestamp));
+        }
+        console.log("- ENS subdomain:    ", subdomain);
+        _sppRepo = PluginRepoFactory(pluginRepoFactory).createPluginRepo(subdomain, deployer);
     }
 
     function _transferOwnershipToManagementDao() internal {
@@ -86,6 +109,7 @@ contract Deploy is BaseScript {
             condition: PermissionLib.NO_CONDITION,
             permissionId: sppRepo.MAINTAINER_PERMISSION_ID()
         });
+
         permissions[4] = PermissionLib.MultiTargetPermission({
             operation: PermissionLib.Operation.Revoke,
             where: address(sppRepo),
@@ -93,6 +117,7 @@ contract Deploy is BaseScript {
             condition: PermissionLib.NO_CONDITION,
             permissionId: sppRepo.UPGRADE_REPO_PERMISSION_ID()
         });
+
         permissions[5] = PermissionLib.MultiTargetPermission({
             operation: PermissionLib.Operation.Revoke,
             where: address(sppRepo),
