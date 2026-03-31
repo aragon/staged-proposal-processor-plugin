@@ -22,6 +22,3 @@
 [submodule "lib/just-foundry"]
         path = lib/just-foundry
         url = https://github.com/aragon/just-foundry.git
-[submodule "lib/openzeppelin-foundry-upgrades"]
-	path = lib/openzeppelin-foundry-upgrades
-	url = https://github.com/OpenZeppelin/openzeppelin-foundry-upgrades

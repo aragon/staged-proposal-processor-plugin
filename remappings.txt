@@ -1,7 +1,5 @@
 @openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/
 @openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/
-@openzeppelin/openzeppelin-foundry-upgrades/=lib/openzeppelin-foundry-upgrades/src/
-solidity-stringutils/=lib/openzeppelin-foundry-upgrades/lib/solidity-stringutils/
 
 @ensdomains/ens-contracts/=lib/ens-contracts/
 

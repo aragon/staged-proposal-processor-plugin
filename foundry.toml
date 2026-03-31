@@ -6,19 +6,11 @@ solc = "0.8.28"
 fs_permissions = [{ access = "read", path = "./node_modules/@aragon/osx-commons-configs/dist/deployments/json"}, {access = "write", path = "./"}, { access = "read", path = "out" }]
 gas_limit = 50073741824
 optimizer-runs = 200
-# evm_version = "london"  ## Uncomment for Peaq and Agung
 
-# openzeppelin-foundry-upgrades related configurations
-ffi = true
-ast = true
-build_info = true
 extra_output = ["storageLayout"]
 
 gas_reports = ["StagedProposalProcessor", "StagedProposalProcessorSetup"]
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
-
-[rpc_endpoints]
-local = "http://127.0.0.1:8545"
 
 [doc]
 out = "./foundry-docs"

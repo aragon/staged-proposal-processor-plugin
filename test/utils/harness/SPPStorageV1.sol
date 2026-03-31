@@ -16,7 +16,9 @@ import {
     ProposalUpgradeable
 } from "@aragon/osx-commons-contracts/src/plugin/extensions/proposal/ProposalUpgradeable.sol";
 
-contract DummySPP is ProposalUpgradeable, MetadataExtensionUpgradeable, PluginUUPSUpgradeable {
+/// @dev Snapshot of the StagedProposalProcessor storage layout as it was at v1 (initial deployment).
+/// Used as the reference contract for storage layout compatibility checks: `just validate-upgrade`.
+contract SPPStorageV1 is ProposalUpgradeable, MetadataExtensionUpgradeable, PluginUUPSUpgradeable {
     function supportsInterface(
         bytes4 _interfaceId
     )

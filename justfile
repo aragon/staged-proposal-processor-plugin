@@ -39,7 +39,7 @@ deploy-zksync:
         2>&1 | tee -a "$LOG_FILE"
 
 # Publish a new SPP version (ZkSync)
-[group('script')]
+[group('upgrade')]
 new-version-zksync:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -52,7 +52,7 @@ new-version-zksync:
         2>&1 | tee -a "$LOG_FILE"
 
 # Deploy and upgrade the SPP plugin repo (ZkSync)
-[group('script')]
+[group('upgrade')]
 upgrade-repo-zksync:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -63,6 +63,32 @@ upgrade-repo-zksync:
     forge-zksync script script/UpgradeRepo.s.sol:UpgradeRepo --chain "$CHAIN_ID" --rpc-url "$RPC_URL" \
         --broadcast --zksync $VERIFIER_PARAMS \
         2>&1 | tee -a "$LOG_FILE"
+
+# Check storage layout upgrade compatibility between two contracts (requires jq)
+# Run before deploying any upgrade to detect storage collisions
+# Example: just validate-upgrade SPPStorageV1 StagedProposalProcessor
+[group('upgrade')]
+validate-upgrade from to:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    command -v jq &>/dev/null || { echo "Error: jq is required (sudo apt install jq / brew install jq)"; exit 1; }
+    forge build --quiet
+    REF=$(forge inspect {{from}} storage-layout --json)
+    NEW=$(forge inspect {{to}} storage-layout --json)
+    ERRORS=0
+    while IFS=$'\t' read -r slot offset label; do
+        match=$(echo "$NEW" | jq -r --arg s "$slot" --argjson o "$offset" --arg l "$label" \
+            '.storage[] | select(.slot==$s and .offset==$o and .label==$l) | .label')
+        if [ -z "$match" ]; then
+            echo "  INCOMPATIBLE: '$label' at slot $slot offset $offset — missing or moved in {{to}}"
+            ERRORS=$((ERRORS + 1))
+        fi
+    done < <(echo "$REF" | jq -r '.storage[] | select(.label != "__gap") | [.slot, .offset, .label] | @tsv')
+    if [ "$ERRORS" -gt 0 ]; then
+        echo "Storage layout check FAILED ($ERRORS incompatible slot(s)): {{from}} → {{to}}"
+        exit 1
+    fi
+    echo "Storage layout check passed: {{from}} → {{to}} is safe to upgrade"
 
 # Verify the plugin implementation on ZkSync (usage: just verify-zksync address=0x1234...)
 [group('verification')]
