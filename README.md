@@ -1,4 +1,4 @@
-## Stage Proposal Processor [![Foundry][foundry-badge]][foundry]
+## Staged Proposal Processor [![Foundry][foundry-badge]][foundry]
 
 [foundry]: https://getfoundry.sh/
 [foundry-badge]: https://img.shields.io/badge/Built%20with-Foundry-FFDB1C.svg
@@ -15,48 +15,46 @@
 
 ## ABI and artifacts
 
-Check out the [npm-artifacts folder](./npm-artifacts/README.md) to get the deployed addresses and the contract ABI's.
+Check out the [npm-artifacts folder](./npm-artifacts/README.md) to get the deployed addresses and the contract ABIs.
 
-## Project
+## Setup
 
-The root folder of the repo includes `src` subfolder with the plugin contracts.
-
-The root-level `package.json` file contains global `dev-dependencies` for formatting and linting.
-
-### Targetting ZkSync
-
-If you desire to deploy or run tests against zksync network, make sure to install `foundry-zksync`:
-
-* First, you need a stable foundry-zksync. We recommend the zip extention from foundry zksync's official [release](https://github.com/matter-labs/foundry-zksync/releases/tag/nightly-420660c5243e06af1f12febb1765a9abc9c77461)
-* Build the binary by running: `foundryup-zksync --path path-to-foundryup-zksync`
-* Run `foundryup-zksync --version nightly-420660c5243e06af1f12febb1765a9abc9c77461` to install this specific version.
-
-### Targetting Peaq and Agung testnet
-
-Edit `foundry.toml` and uncomment the `evm_version` setting:
-
-```toml
-evm_version = "london"
-```
-
-### Build
+Requires [Foundry](https://getfoundry.sh/) and [just](https://just.systems).
 
 ```shell
-yarn --ignore-scripts
-forge build or forge build --zksync
+just help                  # lists all commands
+just init                  # installs submodules and selects mainnet
+just switch sepolia        # switch to a different network
 ```
 
-### Test
+Copy `.env.example` to `.env` and fill in your secrets. Network configuration (RPC URLs, contract addresses) is managed automatically by `just switch`. For transparent secret management, [vars](https://github.com/vars-cli/vars) is supported out of the box (`just install-vars`).
 
-To run the tests against evm based network, run `yarn test`. For zksync, run `yarn test:zksync`. See above how to install foundry zksync toolchain.
+## Build
 
-If the tests fail with `The application panicked` error on zksync, remove `cache` folder and run `yarn test:zksync` again.
+```shell
+forge build
+```
 
-Due to some limitations, fork tests will not be able to run on zksync network.
+## Test
 
+```shell
+just test                  # unit tests
+just test-fork             # fork tests (requires RPC_URL)
+just validate-upgrade SPPStorageV1 StagedProposalProcessor  # storage layout check
+```
 
-### Deploy
+## Deploy
 
-To deploy the plugin with new plugin repo, you can run: `make deploy` on EVM based networks and `make deploy-zksync` on zksync.
+```shell
+just deploy                # initial deployment (creates plugin repo, publishes v1)
+just new-version           # deploy new setup + print DAO proposal calldata
+```
 
-To upgrade the repo with a new version, run `make upgrade-repo` on EVM based networks and `make upgrade-repo-zksync` on zksync.
+Set `SPP_ENS_SUBDOMAIN=spp` in `.env` for production deployments. Omitting it generates a unique name (`spp-<timestamp>`), which is useful for testing.
+
+ZkSync networks are also supported:
+
+```shell
+just setup-zksync          # installs forge-zksync alongside standard Foundry
+just switch zksync-sepolia
+```

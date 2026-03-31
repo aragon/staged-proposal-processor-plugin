@@ -30,7 +30,7 @@ import {PluginSetupProcessor} from "@aragon/osx/framework/plugin/setup/PluginSet
 
 contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, Test {
     uint256 internal deployerPrivateKey = vm.envOr("DEPLOYER_KEY", uint256(0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80));
-    string internal networkRpcUrl = vm.envString("NETWORK_RPC_URL");
+    string internal networkRpcUrl = vm.envString("RPC_URL");
 
     // solhint-disable immutable-vars-naming
     address internal immutable deployer = vm.addr(deployerPrivateKey);
