@@ -17,7 +17,7 @@ import {
     RuledCondition
 } from "@aragon/osx-commons-contracts/src/permission/condition/extensions/RuledCondition.sol";
 
-/// @title MyPluginSetup
+/// @title StagedProposalProcessorSetup
 /// @author Aragon X - 2024
 /// @notice The setup contract of the `StagedProposalProcessor` plugin.
 /// @dev Release 1, Build 1

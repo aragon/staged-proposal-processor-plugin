@@ -12,8 +12,7 @@ pnpm install @aragon/staged-proposal-processor-plugin-artifacts
 // ABI definitions
 import {
     StagedProposalProcessor,
-    StagedProposalProcessorSetup,
-    StagedProposalProcessorSetupZkSync
+    StagedProposalProcessorSetup
 } from "@aragon/staged-proposal-processor-plugin-artifacts";
 
 // Plugin Repository addresses per-network

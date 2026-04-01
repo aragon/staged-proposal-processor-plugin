@@ -52,6 +52,79 @@ just new-version           # deploy new setup + print DAO proposal calldata
 
 Set `SPP_ENS_SUBDOMAIN=spp` in `.env` for production deployments. Omitting it generates a unique name (`spp-<timestamp>`), which is useful for testing.
 
+### Deployment Checklist
+
+- [ ] I have cloned the official repository on my computer and I have checked out the `main` branch
+- [ ] I am using the latest official docker engine, running a Debian Linux (stable) image
+  - [ ] I have run `docker run --rm -it -v .:/deployment --env-file  <(vars resolve --partial --dotenv 2>/dev/null) debian:trixie-slim`
+  - [ ] I have run `apt update && apt install -y just curl git vim neovim bc jq`
+  - [ ] I have run `curl -L https://foundry.paradigm.xyz | bash && source /root/.bashrc && foundryup`
+  - [ ] I have run `cd /deployment`
+  - [ ] I have run `just init <network>`
+- [ ] I am opening an editor on the `/deployment` folder, within the Docker container
+- [ ] I have run `just env` and verified that all parameters are correct
+  - [ ] `DEPLOYER_KEY` is set (via `vars set DEPLOYER_KEY` or in root `.env`)
+  - [ ] `ETHERSCAN_API_KEY` is set (via `vars set ETHERSCAN_API_KEY` or in root `.env`)
+  - [ ] I have set the deployment parameters in the root `.env` file:
+    - [ ] `MANAGEMENT_DAO_MIN_APPROVALS` has the right value
+    - [ ] `MANAGEMENT_DAO_MEMBERS_FILE_NAME` points to a file containing the correct multisig addresses
+    - [ ] `MANAGEMENT_DAO_METADATA_URI` is set to the correct IPFS URI
+    - [ ] Plugin metadata URIs are set (if overriding the defaults)
+  - [ ] I have created a new burner wallet with `cast wallet new` and used its private key as `DEPLOYER_KEY`
+  - [ ] I am the only person of the ceremony that will operate the deployment wallet
+- [ ] All the tests run clean (`just test`)
+- My computer:
+  - [ ] Is running in a safe location and using a trusted network
+  - [ ] It exposes no services or ports
+    - MacOS: `sudo lsof -iTCP -sTCP:LISTEN -nP`
+    - Linux: `netstat -tulpn`
+    - Windows: `netstat -nao -p tcp`
+  - [ ] The wifi or wired network in use does not expose any ports to a WAN
+- [ ] I have run `just predeploy` and the simulation completes with no errors
+- [ ] I have run `just balance` and the deployment wallet has sufficient funds
+  - At least, 15% more than the amount estimated during the simulation
+- [ ] `just test` still runs clean
+- [ ] I have run `git status` and it reports no local changes
+- [ ] The current local git branch (`main`) corresponds to its counterpart on `origin`
+  - [ ] I confirm that the rest of members of the ceremony pulled the last git commit on `main` and reported the same commit hash as my output for `git log -n 1`
+- [ ] I have initiated the production deployment with `just deploy`
+
+### Post deployment checklist
+
+- [ ] The deployment process completed with no errors
+- [ ] The factory contract was deployed by the deployment address
+- [ ] All the project's smart contracts are correctly verified on the reference block explorer of the target network.
+- [ ] The output of the latest `logs/deployment-<network>-<date>.log` file corresponds to the console output
+- [ ] A file called `artifacts/addresses-<network>-<timestamp>.json` has been created, and the addresses match those logged to the screen
+- [ ] I have uploaded the following files to a shared location:
+  - `logs/deployment-<network>.log` (the last one)
+  - `artifacts/addresses-<network>-<timestamp>.json`  (the last one)
+  - `broadcast/Deploy.s.sol/<chain-id>/run-<timestamp>.json` (the last one)
+- [ ] The rest of members confirm that the values are correct
+- [ ] I have transferred the remaining funds of the deployment wallet to the address that originally funded it
+  - `just refund`
+- [ ] I have cloned https://github.com/aragon/diffyscan-workspace/
+  - [ ] I have copied the deployed addresses to a new config file for the network
+  - [ ] I have run the source code verification and the code matches the [audited commits](https://github.com/aragon/osx/tree/main/audits)
+
+This concludes the deployment ceremony.
+
+### Post deployment (external packages)
+
+This is optional if you are deploying to a custom network.
+
+- [ ] I have followed [these instructions](https://github.com/aragon/osx-commons/tree/main/configs#generating-the-json-files) to generate the JSON file with the addresses for the new network
+  - [ ] If needed, I have added the new network settings
+- [ ] I have followed [these instructions](https://github.com/aragon/osx/tree/main/packages/artifacts#syncing-the-deployment-addresses) for OSx
+- [ ] For each plugin, I have followed the equivalent instructions
+  - https://github.com/aragon/admin-plugin/tree/main/packages/artifacts#syncing-the-deployment-addresses
+  - https://github.com/aragon/multisig-plugin/tree/main/packages/artifacts#syncing-the-deployment-addresses
+  - https://github.com/aragon/token-voting-plugin/tree/main/packages/artifacts#syncing-the-deployment-addresses
+  - https://github.com/aragon/staged-proposal-processor-plugin/tree/main/packages/artifacts#syncing-the-deployment-addresses
+- [ ] I have created a pull request with the updated addresses files on every repository
+
+## Other
+
 ZkSync networks are also supported:
 
 ```shell

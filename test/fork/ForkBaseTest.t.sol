@@ -79,8 +79,8 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, Test {
         target = new Target();
         trustedForwarder = new TrustedForwarder();
 
-        // publish new spp version
-        sppSetup = new SPPSetup(new SPP(), true);
+        // publish new spp version (clones not supported on ZkSync: chainid 324=mainnet, 300=sepolia)
+        sppSetup = new SPPSetup(new SPP(), block.chainid != 324 && block.chainid != 300);
         // Check release number
         uint256 latestRelease = sppRepo.latestRelease();
 
