@@ -19,4 +19,4 @@ gas_reports = ["StagedProposalProcessor", "StagedProposalProcessorSetup"]
 out = "./foundry-docs"
 
 [fuzz]
-runs = 2
+runs = 256
