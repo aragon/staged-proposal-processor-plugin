@@ -49,5 +49,6 @@ jobs:
           RPC_URL: ${{ secrets.NETWORK_RPC_URL }}
           DEPLOYER_KEY: ${{ secrets.DEPLOYER_KEY }}
         run: |
+          just switch mainnet
           just test
         id: test
