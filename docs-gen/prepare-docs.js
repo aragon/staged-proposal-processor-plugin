@@ -5,7 +5,8 @@ const { join } = require("node:path");
 const path = require("path");
 const fs = require("fs-extra");
 const solc = require("solc");
-const { execSync } = require("child_process");
+const glob = require("glob");
+const startCase = require("lodash.startcase");
 const { version, repository } = require("./package.json");
 
 const ROOT_DIR = path.resolve(__dirname, "..");
@@ -59,6 +60,26 @@ const compile = async (filePaths) => {
     };
 };
 
+function generateNav(pagesDir) {
+    const files = glob
+        .sync(pagesDir + "/**/*.adoc")
+        .map((f) => path.relative(pagesDir, f));
+
+    function getPageTitle(name) {
+        switch (name) {
+            case "metatx": return "Meta Transactions";
+            case "common": return "Common (Tokens)";
+            default: return startCase(name);
+        }
+    }
+
+    const links = files
+        .map((file) => ({ xref: `* xref:${file}[${getPageTitle(path.parse(file).name)}]`, title: path.parse(file).name }))
+        .sort((a, b) => a.title.toLowerCase().localeCompare(b.title.toLowerCase(), undefined, { numeric: true }));
+
+    return [".API", ...links.map((l) => l.xref)].join("\n") + "\n";
+}
+
 async function main() {
     const contractPath = path.resolve(ROOT_DIR, "src");
     const allFiles = await walk(contractPath);
@@ -92,12 +113,7 @@ async function main() {
 
     await docgen.main([{ input: input, output: await output }], config);
 
-    const navOutput = execSync(`bun gen-nav.js ${apiPath}/pages`, {
-        encoding: "utf8",
-    });
-
-    const targetFilePath = `${apiPath}/nav.adoc`;
-    fs.writeFileSync(targetFilePath, navOutput, "utf8");
+    fs.writeFileSync(`${apiPath}/nav.adoc`, generateNav(`${apiPath}/pages`), "utf8");
 
     fs.rm(templatesPath, { recursive: true, force: true }, () => {});
 }
