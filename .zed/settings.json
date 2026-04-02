@@ -1,0 +1,13 @@
+{
+  "languages": {
+    "Solidity": {
+      "format_on_save": "on",
+      "formatter": {
+        "external": {
+          "command": "forge",
+          "arguments": ["fmt", "-", "--raw"]
+        }
+      }
+    }
+  }
+}

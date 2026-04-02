@@ -16,6 +16,7 @@ foundry-docs/
 
 # Node modules
 node_modules/
+docs-gen/bun.lock
 .DS_Store
 src/.DS_Store
 

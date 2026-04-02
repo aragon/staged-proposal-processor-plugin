@@ -1,5 +1,11 @@
 default: help
+
 import 'lib/just-foundry/justfile'
+
+# Generate Solidity documentation (requires bun)
+[group('docs')]
+docs:
+    cd docs-gen && bun install && bash prepare-docs.sh && bun prepare-docs.js
 
 DEPLOY_SCRIPT := "script/Deploy.s.sol:Deploy"
 
@@ -8,10 +14,10 @@ DEPLOY_SCRIPT := "script/Deploy.s.sol:Deploy"
 new-version *args:
     #!/usr/bin/env bash
     set -euo pipefail
-    source {{ENV_RESOLVE_LIB}} && env_load_network
+    source {{ ENV_RESOLVE_LIB }} && env_load_network
     mkdir -p logs
     LOG_FILE="logs/new-version-$NETWORK_NAME-$(date +"%y-%m-%d-%H-%M").log"
     just test 2>&1 | tee -a "$LOG_FILE"
-    just run script/NewVersion.s.sol:NewVersion {{args}} 2>&1 | tee -a "$LOG_FILE"
+    just run script/NewVersion.s.sol:NewVersion {{ args }} 2>&1 | tee -a "$LOG_FILE"
     echo "Logs saved in $LOG_FILE"
 
