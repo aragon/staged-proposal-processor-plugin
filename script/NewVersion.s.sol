@@ -17,20 +17,25 @@ contract NewVersion is BaseScript {
         sppRepo = PluginRepo(vm.envAddress("SPP_PLUGIN_REPO_ADDRESS"));
 
         vm.startBroadcast(deployerPrivateKey);
-        sppSetup = new SPPSetup(new SPP(), block.chainid != 324 && block.chainid != 300);
+        sppSetup = new SPPSetup(new SPP());
         vm.stopBroadcast();
 
         console.log("- SPP PluginSetup:  ", address(sppSetup));
-        console.log("- Version:          ", _versionString(PluginSettings.VERSION_RELEASE, PluginSettings.VERSION_BUILD));
+        console.log(
+            "- Version:          ",
+            _versionString(PluginSettings.VERSION_RELEASE, PluginSettings.VERSION_BUILD)
+        );
         console.log("\nDAO proposal to publish this version:");
         console.log("  to:    ", address(sppRepo));
         console.log("  value: ", uint256(0));
-        console.logBytes(abi.encodeWithSelector(
-            sppRepo.createVersion.selector,
-            PluginSettings.VERSION_RELEASE,
-            address(sppSetup),
-            PluginSettings.BUILD_METADATA,
-            PluginSettings.RELEASE_METADATA
-        ));
+        console.logBytes(
+            abi.encodeWithSelector(
+                sppRepo.createVersion.selector,
+                PluginSettings.VERSION_RELEASE,
+                address(sppSetup),
+                PluginSettings.BUILD_METADATA,
+                PluginSettings.RELEASE_METADATA
+            )
+        );
     }
 }

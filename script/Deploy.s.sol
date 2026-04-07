@@ -26,7 +26,7 @@ contract Deploy is BaseScript {
 
         sppRepo = _createPluginRepo(pluginRepoFactory);
 
-        sppSetup = new SPPSetup(new SPP(), block.chainid != 324 && block.chainid != 300);
+        sppSetup = new SPPSetup(new SPP());
 
         uint256 latestRelease = sppRepo.latestRelease();
         if (PluginSettings.VERSION_RELEASE > latestRelease + 1) {
@@ -59,7 +59,10 @@ contract Deploy is BaseScript {
         console.log("- SPP PluginRepo:   ", address(sppRepo));
         console.log("- SPP PluginSetup:  ", address(sppSetup));
         console.log("- Implementation:   ", sppSetup.implementation());
-        console.log("- Version:          ", _versionString(PluginSettings.VERSION_RELEASE, PluginSettings.VERSION_BUILD));
+        console.log(
+            "- Version:          ",
+            _versionString(PluginSettings.VERSION_RELEASE, PluginSettings.VERSION_BUILD)
+        );
     }
 
     function _createPluginRepo(address _factory) internal returns (PluginRepo _sppRepo) {

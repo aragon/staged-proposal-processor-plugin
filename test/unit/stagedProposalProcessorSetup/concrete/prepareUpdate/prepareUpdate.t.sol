@@ -19,7 +19,7 @@ contract PrepareUpdate_SPPSetup_UnitTest is BaseTest {
         super.setUp();
 
         // deploy SPPSetup contract.
-        sppSetup = new SPPSetup(new SPP(), true);
+        sppSetup = new SPPSetup(new SPP());
     }
 
     function test_RevertWhen_PreparingUpdate() external {

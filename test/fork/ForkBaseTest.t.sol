@@ -29,7 +29,11 @@ import {IPluginSetup} from "@aragon/osx-commons-contracts/src/plugin/setup/IPlug
 import {PluginSetupProcessor} from "@aragon/osx/framework/plugin/setup/PluginSetupProcessor.sol";
 
 contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, Test {
-    uint256 internal deployerPrivateKey = vm.envOr("DEPLOYER_KEY", uint256(0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80));
+    uint256 internal deployerPrivateKey =
+        vm.envOr(
+            "DEPLOYER_KEY",
+            uint256(0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80)
+        );
     string internal networkRpcUrl = vm.envString("RPC_URL");
 
     // solhint-disable immutable-vars-naming
@@ -79,8 +83,8 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, Test {
         target = new Target();
         trustedForwarder = new TrustedForwarder();
 
-        // publish new spp version (clones not supported on ZkSync: chainid 324=mainnet, 300=sepolia)
-        sppSetup = new SPPSetup(new SPP(), block.chainid != 324 && block.chainid != 300);
+        // publish new spp version
+        sppSetup = new SPPSetup(new SPP());
         // Check release number
         uint256 latestRelease = sppRepo.latestRelease();
 

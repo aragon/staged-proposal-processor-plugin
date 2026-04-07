@@ -37,12 +37,12 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
     /// @notice Constructs the `PluginUpgradeableSetup` by storing the `SPP` implementation address.
     /// @dev The implementation address is used to deploy UUPS proxies referencing it and
     /// to verify the plugin on the respective block explorers.
-    /// @param _clonesSupported False on networks that do not support EIP-1167 clones (e.g. ZkSync).
-    constructor(SPP _spp, bool _clonesSupported) PluginUpgradeableSetup(address(_spp)) {
+    constructor(SPP _spp) PluginUpgradeableSetup(address(_spp)) {
         CONDITION_IMPLEMENTATION = address(
             new SPPRuleCondition(address(0), new RuledCondition.Rule[](0))
         );
-        CLONES_SUPPORTED = _clonesSupported;
+        // Clones not supported on ZkSync
+        CLONES_SUPPORTED = block.chainid != 324 && block.chainid != 300;
     }
 
     /// @inheritdoc IPluginSetup

@@ -17,7 +17,7 @@ contract PrepareUninstallation_SPPSetup_UnitTest is BaseTest {
         super.setUp();
 
         // deploy SPPSetup contract.
-        sppSetup = new SPPSetup(new SPP(), true);
+        sppSetup = new SPPSetup(new SPP());
     }
 
     function test_WhenPreparingUninstallation() external {
