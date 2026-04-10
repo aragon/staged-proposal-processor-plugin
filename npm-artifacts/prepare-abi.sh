@@ -21,7 +21,7 @@ do
     CONTRACT_NAME=${SRC_FILE_NAME%".sol"}
     SRC_FILE_PATH=$BUILD_OUT_FOLDER/$SRC_FILE_NAME/${SRC_FILE_NAME%".sol"}.json
 
-    ABI=$(node -p "JSON.stringify(JSON.parse(fs.readFileSync(\"$SRC_FILE_PATH\").toString()).abi)")
+    ABI=$(bun -p "JSON.stringify(JSON.parse(fs.readFileSync(\"$SRC_FILE_PATH\").toString()).abi)")
 
     echo "const ${CONTRACT_NAME}ABI = $ABI as const;" >> $TARGET_ABI_FILE
     echo "export {${CONTRACT_NAME}ABI};" >> $TARGET_ABI_FILE
