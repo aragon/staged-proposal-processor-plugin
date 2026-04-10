@@ -10,10 +10,10 @@ on:
       - 'test/**'
       - '*.sh'
       - '.github/workflows/*.yml'
-      - '.gitignore'
+      - '.gitmodules'
       - 'remappings.txt'
       - 'foundry.toml'
-      - 'Makefile'
+      - 'justfile'
 
 env:
   FOUNDRY_PROFILE: ci
@@ -27,21 +27,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        # with:
-        #   submodules: recursive
+        with:
+          submodules: recursive
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
           version: stable
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
-
-      - name: Install dependencies
-        run: |
-          pnpm install --ignore-scripts
+      - name: Install just
+        uses: extractions/setup-just@v2
 
       - name: Run Forge build
         run: |
@@ -51,8 +46,9 @@ jobs:
 
       - name: Run unit tests
         env:
-          NETWORK_RPC_URL: ${{ secrets.NETWORK_RPC_URL }}
+          RPC_URL: ${{ secrets.NETWORK_RPC_URL }}
           DEPLOYER_KEY: ${{ secrets.DEPLOYER_KEY }}
         run: |
-          make test
+          just switch mainnet
+          just test
         id: test

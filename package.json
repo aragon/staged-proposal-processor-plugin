@@ -21,40 +21,19 @@
     "daobox"
   ],
   "scripts": {
-    "clean": "rm -rf cache out",
-    "build": "forge build",
     "lint": "yarn lint:sol && yarn prettier:check",
     "lint:sol": "solhint --max-warnings 0 \"{script,src,test}/**/*.sol\"",
     "prettier:check": "prettier --check --plugin=prettier-plugin-solidity  \"**/*.{js,json,md,sol,ts,yml}\"",
     "prettier:write": "prettier --write --plugin=prettier-plugin-solidity  \"**/*.{js,json,md,sol,ts,yml}\"",
-    "test": "make test",
-    "test:zksync": "make test-zksync",
-    "test:coverage": "forge coverage",
-    "docs": "script/prepare-docs.sh && node ./script/prepare-docs.js",
-    "test:coverage:report": "forge coverage --report lcov && genhtml lcov.info --branch-coverage --output-dir coverage",
-    "deploy": "dotenv forge script Deploy --chain $CHAIN --rpc-url $NETWORK_RPC_URL --etherscan-api-key $ETHERSCAN_API_KEY --verifier $VERIFIER --verify --broadcast",
-    "new-version": "dotenv forge script NewVersion --chain $CHAIN --rpc-url $NETWORK_RPC_URL --etherscan-api-key $ETHERSCAN_API_KEY --verifier $VERIFIER --verify --broadcast",
-    "upgrade-repo": "dotenv forge script UpgradeRepo --chain $CHAIN --rpc-url $NETWORK_RPC_URL --etherscan-api-key $ETHERSCAN_API_KEY --verifier $VERIFIER --verify --broadcast"
+    "docs": "script/prepare-docs.sh && node ./script/prepare-docs.js"
   },
   "devDependencies": {
-    "@openzeppelin/openzeppelin-foundry-upgrades": "github:openzeppelin/openzeppelin-foundry-upgrades",
-    "dotenv-cli": "^7.4.2",
-    "forge-std": "github:foundry-rs/forge-std#v1.12.0",
     "lodash.startcase": "^4.4.0",
     "prettier": "^2.8.8",
     "prettier-plugin-solidity": "^1.1.3",
     "solc": "^0.8.28",
     "solhint": "^3.6.2",
     "solhint-plugin-prettier": "^0.0.5",
-    "solidity-docgen": "^0.6.0-beta.36",
-    "solidity-stringutils": "github:Arachnid/solidity-stringutils"
-  },
-  "dependencies": {
-    "@aragon/osx": "^1.4.0",
-    "@aragon/osx-commons-configs": "^0.8.0",
-    "@aragon/osx-commons-contracts": "^1.4.0",
-    "@ensdomains/ens-contracts": "0.0.11",
-    "@openzeppelin/contracts": "^4.9.6",
-    "@openzeppelin/contracts-upgradeable": "^4.9.6"
+    "solidity-docgen": "^0.6.0-beta.36"
   }
 }

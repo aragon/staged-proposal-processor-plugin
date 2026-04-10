@@ -17,7 +17,7 @@ import {
     RuledCondition
 } from "@aragon/osx-commons-contracts/src/permission/condition/extensions/RuledCondition.sol";
 
-/// @title MyPluginSetup
+/// @title StagedProposalProcessorSetup
 /// @author Aragon X - 2024
 /// @notice The setup contract of the `StagedProposalProcessor` plugin.
 /// @dev Release 1, Build 1
@@ -30,6 +30,10 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
     /// @notice The address of the condition implementation contract.
     address public immutable CONDITION_IMPLEMENTATION;
 
+    /// @notice Whether the network supports EIP-1167 minimal proxies (clones).
+    /// @dev False on networks like ZkSync that lack CREATE2 clone support; falls back to UUPS.
+    bool public immutable CLONES_SUPPORTED;
+
     /// @notice Constructs the `PluginUpgradeableSetup` by storing the `SPP` implementation address.
     /// @dev The implementation address is used to deploy UUPS proxies referencing it and
     /// to verify the plugin on the respective block explorers.
@@ -37,6 +41,8 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
         CONDITION_IMPLEMENTATION = address(
             new SPPRuleCondition(address(0), new RuledCondition.Rule[](0))
         );
+        // Clones not supported on ZkSync
+        CLONES_SUPPORTED = block.chainid != 324 && block.chainid != 300;
     }
 
     /// @inheritdoc IPluginSetup
@@ -66,9 +72,12 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
             )
         );
 
-        // Clone and initialize the plugin contract.
+        // Clone and initialize the condition contract.
+        // On networks without EIP-1167 clone support (e.g. ZkSync), fall back to UUPS.
         bytes memory initData = abi.encodeCall(SPPRuleCondition.initialize, (_dao, rules));
-        address sppCondition = CONDITION_IMPLEMENTATION.deployMinimalProxy(initData);
+        address sppCondition = CLONES_SUPPORTED
+            ? CONDITION_IMPLEMENTATION.deployMinimalProxy(initData)
+            : CONDITION_IMPLEMENTATION.deployUUPSProxy(initData);
 
         preparedSetupData.permissions = _getPermissions(
             _dao,

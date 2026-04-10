@@ -1,4 +1,4 @@
-## Stage Proposal Processor [![Foundry][foundry-badge]][foundry]
+## Staged Proposal Processor [![Foundry][foundry-badge]][foundry]
 
 [foundry]: https://getfoundry.sh/
 [foundry-badge]: https://img.shields.io/badge/Built%20with-Foundry-FFDB1C.svg
@@ -15,48 +15,119 @@
 
 ## ABI and artifacts
 
-Check out the [npm-artifacts folder](./npm-artifacts/README.md) to get the deployed addresses and the contract ABI's.
+Check out the [npm-artifacts folder](./npm-artifacts/README.md) to get the deployed addresses and the contract ABIs.
 
-## Project
+## Setup
 
-The root folder of the repo includes `src` subfolder with the plugin contracts.
-
-The root-level `package.json` file contains global `dev-dependencies` for formatting and linting.
-
-### Targetting ZkSync
-
-If you desire to deploy or run tests against zksync network, make sure to install `foundry-zksync`:
-
-* First, you need a stable foundry-zksync. We recommend the zip extention from foundry zksync's official [release](https://github.com/matter-labs/foundry-zksync/releases/tag/nightly-420660c5243e06af1f12febb1765a9abc9c77461)
-* Build the binary by running: `foundryup-zksync --path path-to-foundryup-zksync`
-* Run `foundryup-zksync --version nightly-420660c5243e06af1f12febb1765a9abc9c77461` to install this specific version.
-
-### Targetting Peaq and Agung testnet
-
-Edit `foundry.toml` and uncomment the `evm_version` setting:
-
-```toml
-evm_version = "london"
-```
-
-### Build
+Requires [Foundry](https://getfoundry.sh/) and [just](https://just.systems).
 
 ```shell
-yarn --ignore-scripts
-forge build or forge build --zksync
+just help                  # lists all commands
+just init                  # installs submodules and selects mainnet
+just switch sepolia        # switch to a different network
 ```
 
-### Test
+Copy `.env.example` to `.env` and fill in your secrets. Network configuration (RPC URLs, contract addresses) is managed automatically by `just switch`. For transparent secret management, [vars](https://github.com/vars-cli/vars) is supported out of the box (`just install-vars`).
 
-To run the tests against evm based network, run `yarn test`. For zksync, run `yarn test:zksync`. See above how to install foundry zksync toolchain.
+## Build
 
-If the tests fail with `The application panicked` error on zksync, remove `cache` folder and run `yarn test:zksync` again.
+```shell
+forge build
+```
 
-Due to some limitations, fork tests will not be able to run on zksync network.
+## Test
 
+```shell
+just test                  # unit tests
+just test-fork             # fork tests (requires RPC_URL)
+just validate-upgrade SPPStorageV1 StagedProposalProcessor  # storage layout check
+```
 
-### Deploy
+## Deploy
 
-To deploy the plugin with new plugin repo, you can run: `make deploy` on EVM based networks and `make deploy-zksync` on zksync.
+```shell
+just deploy                # initial deployment (creates plugin repo, publishes v1)
+just new-version           # deploy new setup + print DAO proposal calldata
+```
 
-To upgrade the repo with a new version, run `make upgrade-repo` on EVM based networks and `make upgrade-repo-zksync` on zksync.
+Set `SPP_ENS_SUBDOMAIN=spp` in `.env` for production deployments. Omitting it generates a unique name (`spp-<timestamp>`), which is useful for testing.
+
+### Deployment Checklist
+
+- [ ] I have cloned the official repository on my computer and I have checked out the `main` branch
+- [ ] I am using the latest official docker engine, running a Debian Linux (stable) image
+  - [ ] I have run `docker run --rm -it -v .:/deployment --env-file  <(vars resolve --partial --dotenv 2>/dev/null) debian:trixie-slim`
+  - [ ] I have run `apt update && apt install -y just curl git vim neovim bc jq`
+  - [ ] I have run `curl -L https://foundry.paradigm.xyz | bash && source /root/.bashrc && foundryup`
+  - [ ] I have run `cd /deployment`
+  - [ ] I have run `just init <network>`
+- [ ] I am opening an editor on the `/deployment` folder, within the Docker container
+- [ ] I have run `just env` and verified that all parameters are correct
+  - [ ] `DEPLOYER_KEY` is set (via `vars set DEPLOYER_KEY` or in root `.env`)
+  - [ ] `ETHERSCAN_API_KEY` is set (via `vars set ETHERSCAN_API_KEY` or in root `.env`)
+  - [ ] I have set the deployment parameters in the root `.env` file:
+    - [ ] `MANAGEMENT_DAO_MIN_APPROVALS` has the right value
+    - [ ] `MANAGEMENT_DAO_MEMBERS_FILE_NAME` points to a file containing the correct multisig addresses
+    - [ ] `MANAGEMENT_DAO_METADATA_URI` is set to the correct IPFS URI
+    - [ ] Plugin metadata URIs are set (if overriding the defaults)
+  - [ ] I have created a new burner wallet with `cast wallet new` and used its private key as `DEPLOYER_KEY`
+  - [ ] I am the only person of the ceremony that will operate the deployment wallet
+- [ ] All the tests run clean (`just test`)
+- My computer:
+  - [ ] Is running in a safe location and using a trusted network
+  - [ ] It exposes no services or ports
+    - MacOS: `sudo lsof -iTCP -sTCP:LISTEN -nP`
+    - Linux: `netstat -tulpn`
+    - Windows: `netstat -nao -p tcp`
+  - [ ] The wifi or wired network in use does not expose any ports to a WAN
+- [ ] I have run `just predeploy` and the simulation completes with no errors
+- [ ] I have run `just balance` and the deployment wallet has sufficient funds
+  - At least, 15% more than the amount estimated during the simulation
+- [ ] `just test` still runs clean
+- [ ] I have run `git status` and it reports no local changes
+- [ ] The current local git branch (`main`) corresponds to its counterpart on `origin`
+  - [ ] I confirm that the rest of members of the ceremony pulled the last git commit on `main` and reported the same commit hash as my output for `git log -n 1`
+- [ ] I have initiated the production deployment with `just deploy`
+
+### Post deployment checklist
+
+- [ ] The deployment process completed with no errors
+- [ ] The factory contract was deployed by the deployment address
+- [ ] All the project's smart contracts are correctly verified on the reference block explorer of the target network.
+- [ ] The output of the latest `logs/deployment-<network>-<date>.log` file corresponds to the console output
+- [ ] A file called `artifacts/addresses-<network>-<timestamp>.json` has been created, and the addresses match those logged to the screen
+- [ ] I have uploaded the following files to a shared location:
+  - `logs/deployment-<network>.log` (the last one)
+  - `artifacts/addresses-<network>-<timestamp>.json`  (the last one)
+  - `broadcast/Deploy.s.sol/<chain-id>/run-<timestamp>.json` (the last one)
+- [ ] The rest of members confirm that the values are correct
+- [ ] I have transferred the remaining funds of the deployment wallet to the address that originally funded it
+  - `just refund`
+- [ ] I have cloned https://github.com/aragon/diffyscan-workspace/
+  - [ ] I have copied the deployed addresses to a new config file for the network
+  - [ ] I have run the source code verification and the code matches the [audited commits](https://github.com/aragon/osx/tree/main/audits)
+
+This concludes the deployment ceremony.
+
+### Post deployment (external packages)
+
+This is optional if you are deploying to a custom network.
+
+- [ ] I have followed [these instructions](https://github.com/aragon/osx-commons/tree/main/configs#generating-the-json-files) to generate the JSON file with the addresses for the new network
+  - [ ] If needed, I have added the new network settings
+- [ ] I have followed [these instructions](https://github.com/aragon/osx/tree/main/packages/artifacts#syncing-the-deployment-addresses) for OSx
+- [ ] For each plugin, I have followed the equivalent instructions
+  - https://github.com/aragon/admin-plugin/tree/main/packages/artifacts#syncing-the-deployment-addresses
+  - https://github.com/aragon/multisig-plugin/tree/main/packages/artifacts#syncing-the-deployment-addresses
+  - https://github.com/aragon/token-voting-plugin/tree/main/packages/artifacts#syncing-the-deployment-addresses
+  - https://github.com/aragon/staged-proposal-processor-plugin/tree/main/packages/artifacts#syncing-the-deployment-addresses
+- [ ] I have created a pull request with the updated addresses files on every repository
+
+## Other
+
+ZkSync networks are also supported:
+
+```shell
+just setup-zksync          # installs forge-zksync alongside standard Foundry
+just switch zksync-sepolia
+```

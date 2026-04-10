@@ -2,11 +2,7 @@
 pragma solidity ^0.8.18;
 
 import {BaseTest} from "../../../BaseTest.t.sol";
-import {Errors} from "../../../../src/libraries/Errors.sol";
 import {StagedProposalProcessor as SPP} from "../../../../src/StagedProposalProcessor.sol";
-
-import {Options} from "@openzeppelin/openzeppelin-foundry-upgrades/Options.sol";
-import {Upgrades} from "@openzeppelin/openzeppelin-foundry-upgrades/LegacyUpgrades.sol";
 
 contract Upgradeability_SPP_IntegrationTest is BaseTest {
     address implementation;
@@ -87,16 +83,6 @@ contract Upgradeability_SPP_IntegrationTest is BaseTest {
         assertEq(proxySlotAfter, bytes32(uint256(uint160(address(implementation)))));
     }
 
-    /**
-     * since package is not allowing verification on deployment of legacy upgrades
-     * dummy contract was used to validate upgrade to real implementation,
-     * to validate storage layout and gaps
-     */
-    function test_validateUpgrade() external {
-        Options memory ops;
-        ops.referenceContract = "DummySPP.sol:DummySPP";
-        ops.unsafeAllow = "delegatecall";
-
-        Upgrades.validateUpgrade("StagedProposalProcessor.sol", ops);
-    }
+    // Storage layout compatibility (SPPStorageV1 → StagedProposalProcessor) is
+    // validated separately: just validate-upgrade SPPStorageV1 StagedProposalProcessor
 }

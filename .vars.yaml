@@ -1,0 +1,10 @@
+keys:
+  - DEPLOYER_KEY
+  - ETHERSCAN_API_KEY
+  - RPC_URL
+
+profiles:
+  sepolia:
+    DEPLOYER_KEY: dev/DEPLOYER_KEY
+  zksync-sepolia:
+    DEPLOYER_KEY: dev/DEPLOYER_KEY
