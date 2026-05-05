@@ -40,17 +40,43 @@ forge build
 ```shell
 just test                  # unit tests
 just test-fork             # fork tests (requires RPC_URL)
-just validate-upgrade SPPStorageV1 StagedProposalProcessor  # storage layout check
+just check-upgrade SPPStorageV1 StagedProposalProcessor    # storage layout compatibility check
 ```
 
 ## Deploy
 
 ```shell
 just deploy                # initial deployment (creates plugin repo, publishes v1)
-just new-version           # deploy new setup + print DAO proposal calldata
+just new-version           # deploy new setup + print management DAO multisig proposal calldata
 ```
 
 Set `SPP_ENS_SUBDOMAIN=spp` in `.env` for production deployments. Omitting it generates a unique name (`spp-<timestamp>`), which is useful for testing.
+
+### Publishing a new build
+
+1. Bump `VERSION_BUILD` in `src/utils/PluginSettings.sol`.
+2. Edit `src/build-metadata.json` and `script/new-version-proposal-metadata.json` for this build (and `src/release-metadata.json` if shipping a new release).
+3. Pin and update the matching constants in `PluginSettings.sol`:
+   ```shell
+   just ipfs-pin src/build-metadata.json                   # → BUILD_METADATA
+   just ipfs-pin script/new-version-proposal-metadata.json # → PROPOSAL_METADATA
+   just ipfs-pin src/release-metadata.json                 # → RELEASE_METADATA (only on a new release)
+   ```
+4. Run `just new-version`. The script deploys the new `SPPSetup` and prints two calldata blobs:
+   - the inner `createVersion` action (`to = SPP_PLUGIN_REPO_ADDRESS`), and
+   - the outer management DAO multisig `createProposal` call (`to = MANAGEMENT_DAO_MULTISIG_ADDRESS`) including the pinned `PROPOSAL_METADATA` URI — submit it from any listed multisig member to publish the version.
+
+On a brand-new network, `just deploy` automatically publishes `PlaceholderSetup` builds for any build numbers below `VERSION_BUILD` before publishing the real one, so build numbers stay aligned with networks where prior builds shipped.
+
+### Upgrading existing installations
+
+Publishing a new build does not upgrade installed plugins. Each DAO running an older build needs a proposal with three actions, in order:
+
+1. `dao.grant(plugin, psp, UPGRADE_PLUGIN_PERMISSION_ID)`
+2. `psp.applyUpdate(...)`
+3. `dao.revoke(plugin, psp, UPGRADE_PLUGIN_PERMISSION_ID)`
+
+The grant/revoke bracket is required because the SPP install does not pre-grant the upgrade permission. See `test/fork/upgradeV1_1ToV1_2.t.sol` for a reference flow.
 
 ### Deployment Checklist
 
@@ -73,6 +99,7 @@ Set `SPP_ENS_SUBDOMAIN=spp` in `.env` for production deployments. Omitting it ge
   - [ ] I have created a new burner wallet with `cast wallet new` and used its private key as `DEPLOYER_KEY`
   - [ ] I am the only person of the ceremony that will operate the deployment wallet
 - [ ] All the tests run clean (`just test`)
+- [ ] `just check-upgrade OldContract NewContract` reports the storage layout check passed
 - My computer:
   - [ ] Is running in a safe location and using a trusted network
   - [ ] It exposes no services or ports
