@@ -14,7 +14,7 @@ DEPLOY_SCRIPT := "script/Deploy.s.sol:Deploy"
 new-version *args:
     #!/usr/bin/env bash
     set -euo pipefail
-    source {{ ENV_RESOLVE_LIB }} && env_load_network
+    source {{ JUST_LIB }} && env_load_network
     mkdir -p logs
     LOG_FILE="logs/new-version-$NETWORK_NAME-$(date +"%y-%m-%d-%H-%M").log"
     just test 2>&1 | tee -a "$LOG_FILE"
