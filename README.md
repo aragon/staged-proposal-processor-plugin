@@ -70,13 +70,9 @@ On a brand-new network, `just deploy` automatically publishes `PlaceholderSetup`
 
 ### Upgrading existing installations
 
-Publishing a new build does not upgrade installed plugins. Each DAO running an older build needs a proposal with three actions, in order:
+Publishing a new build does not upgrade installed plugins. Each DAO running an older build needs a proposal that calls `psp.applyUpdate(...)`. 
 
-1. `dao.grant(plugin, psp, UPGRADE_PLUGIN_PERMISSION_ID)`
-2. `psp.applyUpdate(...)`
-3. `dao.revoke(plugin, psp, UPGRADE_PLUGIN_PERMISSION_ID)`
-
-The grant/revoke bracket is required because the SPP install does not pre-grant the upgrade permission. See `test/fork/upgradeV1_1ToV1_2.t.sol` for a reference flow.
+Version 1.2 is published with the same `IMPLEMENTATION` as 1.1 (bytecode is identical), so `applyUpdate` skips the proxy upgrade — no `UPGRADE_PLUGIN_PERMISSION` grant/revoke bracket is required.
 
 ### Deployment Checklist
 

@@ -83,12 +83,19 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, Test {
         target = new Target();
         trustedForwarder = new TrustedForwarder();
 
-        // publish new spp version
-        sppSetup = new SPPSetup(new SPP());
         // Check release number
         uint256 latestRelease = sppRepo.latestRelease();
 
         uint256 latestBuild = sppRepo.buildCount(uint8(latestRelease));
+
+        // Publish a test build that reuses the latest published SPP implementation. Mirrors
+        // NewVersion.s.sol so that PSP.applyUpdate sees `currentImpl == newImpl` and skips
+        // the proxy upgrade — i.e., per-DAO upgrades work without UPGRADE_PLUGIN_PERMISSION.
+        address latestSetup = sppRepo
+            .getVersion(PluginRepo.Tag({release: uint8(latestRelease), build: uint16(latestBuild)}))
+            .pluginSetup;
+        SPP existingImpl = SPP(IPluginSetup(latestSetup).implementation());
+        sppSetup = new SPPSetup(existingImpl);
 
         // create plugin version
         resetPrank(managementDao);

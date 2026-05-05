@@ -10,6 +10,7 @@ import {StagedProposalProcessorSetup as SPPSetup} from "../src/StagedProposalPro
 
 import {PluginRepo} from "@aragon/osx/framework/plugin/repo/PluginRepo.sol";
 import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
+import {IPluginSetup} from "@aragon/osx-commons-contracts/src/plugin/setup/IPluginSetup.sol";
 
 /// @dev Minimal subset of the management DAO Multisig plugin ABI used by this script.
 /// Mirrors the 7-arg `createProposal` overload (selector `0xfbd56e41`); using this typed
@@ -36,8 +37,11 @@ contract NewVersion is BaseScript {
         sppRepo = PluginRepo(vm.envAddress("SPP_PLUGIN_REPO_ADDRESS"));
         address managementDaoMultisig = vm.envAddress("MANAGEMENT_DAO_MULTISIG_ADDRESS");
 
+        // Reuse the previous build's plugin implementation. v1.2's bytecode is identical to v1.1's
+        SPP existingImpl = _readLatestImplementation();
+
         vm.startBroadcast(deployerPrivateKey);
-        sppSetup = new SPPSetup(new SPP());
+        sppSetup = new SPPSetup(existingImpl);
         vm.stopBroadcast();
 
         console.log("- SPP PluginSetup:           ", address(sppSetup));
@@ -70,6 +74,7 @@ contract NewVersion is BaseScript {
         actions[0] = Action({to: address(sppRepo), value: 0, data: createVersionData});
 
         bytes memory metadata = bytes(PluginSettings.PROPOSAL_METADATA);
+        uint64 endDate = uint64(vm.envOr("PROPOSAL_END_DATE", block.timestamp + 30 days));
         bytes memory multisigCalldata = abi.encodeCall(
             IManagementDaoMultisig.createProposal,
             (
@@ -79,7 +84,7 @@ contract NewVersion is BaseScript {
                 true, // _approveProposal
                 false, // _tryExecution
                 uint64(0), // _startDate (0 = now, evaluated at submission time)
-                uint64(0) // _endDate  (0 = let the multisig fall back to its default duration)
+                endDate
             )
         );
 
@@ -97,10 +102,19 @@ contract NewVersion is BaseScript {
         console.log("  data:  ");
         console.logBytes(multisigCalldata);
         console.log("\n  proposal metadata: ", PluginSettings.PROPOSAL_METADATA);
-        console.log("  defaults: allowFailureMap=0, approveProposal=true, tryExecution=false, startDate=0, endDate=0");
+        console.log("  defaults: allowFailureMap=0, approveProposal=true, tryExecution=false, startDate=0");
+        console.log("  endDate (unix):    ", uint256(endDate));
         console.log("\n  proposal id (deterministic salt):");
         console.logBytes32(proposalSalt);
         console.log("  full id = keccak256(abi.encode(chainid, block.number @ submission, multisig, salt))");
         console.log("  or read it from the `ProposalCreated` event on the submission tx receipt.");
+    }
+
+    function _readLatestImplementation() internal view returns (SPP) {
+        uint8 latestRelease = sppRepo.latestRelease();
+        uint16 latestBuild = uint16(sppRepo.buildCount(latestRelease));
+        PluginRepo.Tag memory latestTag = PluginRepo.Tag({release: latestRelease, build: latestBuild});
+        address latestSetup = sppRepo.getVersion(latestTag).pluginSetup;
+        return SPP(IPluginSetup(latestSetup).implementation());
     }
 }

@@ -17,9 +17,6 @@ import {IPlugin} from "@aragon/osx-commons-contracts/src/plugin/IPlugin.sol";
 import {IPluginSetup} from "@aragon/osx-commons-contracts/src/plugin/setup/IPluginSetup.sol";
 import {PluginSetupProcessor} from "@aragon/osx/framework/plugin/setup/PluginSetupProcessor.sol";
 import {
-    PluginUUPSUpgradeable
-} from "@aragon/osx-commons-contracts/src/plugin/PluginUUPSUpgradeable.sol";
-import {
     RuledCondition
 } from "@aragon/osx-commons-contracts/src/permission/condition/extensions/RuledCondition.sol";
 import {
@@ -146,12 +143,13 @@ contract UpgradeV1_1ToV1_2_ForkTest is ForkBaseTest {
         assertEq(initData.length, 0, "initData empty (no reinitializer)");
         assertEq(preparedSetupData.permissions.length, 4, "four permission migrations");
 
-        // ---- 4. applyUpdate. Production proposals wrap this in `grant -> applyUpdate -> revoke`
-        //         around `UPGRADE_PLUGIN_PERMISSION`; we replicate that here so the proxy-impl
-        //         swap goes through. ----
+        // ---- 4. applyUpdate. NewVersion.s.sol publishes v1.2 with the same `IMPLEMENTATION`
+        //         as v1.1 (bytecode is identical), so PSP.applyUpdate sees the proxy already
+        //         points at the right impl and skips the upgrade — no UPGRADE_PLUGIN_PERMISSION
+        //         bracket needed. The PSP only needs ROOT temporarily to apply the helper-swap
+        //         permissions. ----
         resetPrank(address(dao));
         dao.grant(address(dao), address(psp), dao.ROOT_PERMISSION_ID());
-        dao.grant(plugin, address(psp), PluginUUPSUpgradeable(plugin).UPGRADE_PLUGIN_PERMISSION_ID());
 
         psp.applyUpdate(
             address(dao),
@@ -164,7 +162,6 @@ contract UpgradeV1_1ToV1_2_ForkTest is ForkBaseTest {
             })
         );
 
-        dao.revoke(plugin, address(psp), PluginUUPSUpgradeable(plugin).UPGRADE_PLUGIN_PERMISSION_ID());
         dao.revoke(address(dao), address(psp), dao.ROOT_PERMISSION_ID());
         resetPrank(deployer);
 
