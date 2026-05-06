@@ -1,115 +1,91 @@
 #!/usr/bin/env bash
+# Generate src/addresses.json from protocol-factory's deployment artifacts.
+#
+# protocol-factory/artifacts/ contains files of the form
+#   addresses-<network>-<unix_timestamp>.json
+# We pick the file with the highest timestamp suffix per network and extract
+# `corePlugins.stagedProposalProcessorPluginRepo` from it.
 
-# Sync the addresses from osx-commons/configs
+set -euo pipefail
 
 usage() {
-  echo "Usage: $(basename "$0") <source_directory> <destination_file>" >&2
-  echo "  <source_directory>: Path to the directory containing the source JSON files." >&2
-  echo "  <destination_file>: Path to the addresses.json file to be created/overwritten." >&2
+    echo "Usage: $(basename "$0") <protocol_factory_artifacts_dir> <destination_file>" >&2
+    echo "  e.g. $(basename "$0") ../../protocol-factory/artifacts ./src/addresses.json" >&2
 }
 
 if [[ $# -ne 2 ]]; then
-  echo "Error: Expected 2 arguments." >&2
-  usage
-  exit 1
+    echo "Error: expected 2 arguments." >&2
+    usage
+    exit 1
 fi
 
 SOURCE_DIR="$1"
 DEST_FILE="$2"
 
-UNSUPPORTED_NETWORKS=(
-    "goerli"
-    "baseGoerli"
-    "devSepolia"
-)
-
-# Checks
-
 if [[ ! -d "$SOURCE_DIR" ]]; then
-    echo "Error: Source directory '$SOURCE_DIR' not found." >&2
+    echo "Error: source directory '$SOURCE_DIR' not found." >&2
     exit 1
 fi
 
-if ! command -v jq &> /dev/null; then
-    echo "Error: 'jq' command not found. Please install jq." >&2
+if ! command -v jq &>/dev/null; then
+    echo "Error: 'jq' is required (sudo apt install jq / brew install jq)." >&2
     exit 1
 fi
 
-if [ "$SOURCE_DIR" == "$(dirname $DEST_FILE)" ]; then
-    echo "Error: The destination file cannot be in the same path as the destination file" >&2
-    exit 1
+cd "$(dirname "$0")"
+
+# Start from whatever's currently in DEST_FILE so we don't drop networks that
+# aren't represented in protocol-factory's artifacts. Overlay the freshly
+# resolved entries on top — same-network keys win the latest value.
+if [[ -f "$DEST_FILE" ]]; then
+    BASE=$(cat "$DEST_FILE")
+else
+    BASE='{"pluginRepo":{}}'
 fi
 
-# Helpers
+# Group `addresses-<network>-<ts>.json` files by network, pick the highest ts per network.
+declare -A LATEST
+for path in "$SOURCE_DIR"/addresses-*-*.json; do
+    [[ -f "$path" ]] || continue
+    fname=$(basename "$path")
+    # strip `addresses-` prefix and `.json` suffix → `<network>-<ts>`
+    rest=${fname#addresses-}
+    rest=${rest%.json}
+    network=${rest%-*}
+    ts=${rest##*-}
+    [[ "$ts" =~ ^[0-9]+$ ]] || { echo "Skipping malformed name: $fname" >&2; continue; }
 
-containsElement () {
-  local seeking=$1; shift
-  local in=1 # Not found
-  for element; do
-    if [[ "$element" == "$seeking" ]]; then
-      in=0 # Found
-      break
+    if [[ -z "${LATEST[$network]+x}" ]] || (( ts > ${LATEST[$network]##*|} )); then
+        LATEST[$network]="$path|$ts"
     fi
-  done
-  return $in
-}
-
-networkAlias () {
-    local network="$1"
-
-    if [[ "$network" == "baseMainnet" ]]; then printf "base"
-    elif [[ "$network" == "bscMainnet" ]]; then printf "bsc"
-    elif [[ "$network" == "modeMainnet" ]]; then printf "mode"
-    elif [[ "$network" == "zksyncMainnet" ]]; then printf "zksync"
-    else printf "$network"
-    fi
-}
-
-# Ready
-
-echo "Processing $SOURCE_DIR"
-
-# Create a temporary file to store intermediate JSON structures
-# Each line in this file will be a JSON object like: {"pluginRepo": {"network_name": "value"}}
-TEMP_MERGE_FILE=$(mktemp)
-
-# Clean the temp file when the script exits
-trap 'rm -f "$TEMP_MERGE_FILE"' EXIT
-
-# List source address files
-find "$SOURCE_DIR" -maxdepth 1 -name '*.json' | sort | while read source_file; do
-    filename=$(basename "$source_file")
-    network="${filename%.json}"
-
-    if containsElement "$network" "${UNSUPPORTED_NETWORKS[@]}"; then
-        echo "Skipping deprecated network: $network"
-        continue
-    fi
-
-    echo "Processing $filename:"
-
-    # Extract the address
-    value=$(jq -er '.["v1.4.0"].StagedProposalProcessorRepoProxy.address // .["v1.3.0"].StagedProposalProcessorRepoProxy.address // empty' "$source_file")
-    jq_exit_code=$?
-
-    if [[ $jq_exit_code -ne 0 || "$value" == "null" ]]; then
-        echo "  Warning: Could not find 'StagedProposalProcessorRepoProxy' under 'v1.4.0' or 'v1.3.0' in '$filename'. Skipping." >&2
-        continue
-    fi
-
-    echo "  Found $value"
-    jq -n --arg network "$(networkAlias $network)" --arg value "$value" \
-        '{pluginRepo: {($network): $value}}' >> "$TEMP_MERGE_FILE"
 done
 
-echo "Merging addresses..."
-jq -s 'map(.pluginRepo) | add | {pluginRepo: .}' "$TEMP_MERGE_FILE" > "$DEST_FILE"
-
-
-if [[ $? -ne 0 ]]; then
-    echo "Error: Failed to merge the values into '$DEST_FILE'" >&2
-    exit 1
+if [[ ${#LATEST[@]} -eq 0 ]]; then
+    echo "Warning: no addresses-*-*.json files in '$SOURCE_DIR'; leaving $DEST_FILE untouched." >&2
+    exit 0
 fi
 
-echo "Addresses written to '$DEST_FILE'"
-exit 0
+# Build the overlay object as `{pluginRepo: {<network>: <addr>, ...}}`.
+OVERLAY='{"pluginRepo":{}}'
+for network in "${!LATEST[@]}"; do
+    entry=${LATEST[$network]}
+    file=${entry%|*}
+    echo "Using $(basename "$file") for $network"
+
+    addr=$(jq -er '.corePlugins.stagedProposalProcessorPluginRepo // empty' "$file") || {
+        echo "  Warning: corePlugins.stagedProposalProcessorPluginRepo missing in $(basename "$file"); skipping." >&2
+        continue
+    }
+    if [[ -z "$addr" || "$addr" == "null" ]]; then
+        echo "  Warning: empty SPP plugin repo address in $(basename "$file"); skipping." >&2
+        continue
+    fi
+
+    OVERLAY=$(jq --arg network "$network" --arg value "$addr" '.pluginRepo[$network] = $value' <<<"$OVERLAY")
+done
+
+# Merge: BASE overlaid by OVERLAY, with deterministic alphabetical key order.
+jq --sort-keys -n --argjson base "$BASE" --argjson overlay "$OVERLAY" \
+    '{pluginRepo: ($base.pluginRepo + $overlay.pluginRepo)}' > "$DEST_FILE"
+
+echo "Addresses merged into '$DEST_FILE'"
