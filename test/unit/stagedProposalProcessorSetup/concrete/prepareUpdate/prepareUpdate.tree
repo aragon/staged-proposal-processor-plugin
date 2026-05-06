@@ -1,3 +1,11 @@
 PrepareUpdate_SPPSetup_UnitTest
-└── when preparing update
-    └── it should revert.
+├── when fromBuild is not 1
+│   └── it should revert with InvalidUpdatePath(fromBuild, 2).
+└── when fromBuild is 1
+    ├── it should deploy a new condition seeded with the existing rules
+    │   and return it as the single helper, with empty initData.
+    ├── it should migrate CREATE_PROPOSAL and UPDATE_RULES permissions
+    │   from the old condition to the new one (4 entries, in order:
+    │   Revoke create, GrantWithCondition create, Revoke update-rules, Grant update-rules).
+    └── when the old condition has no rules
+        └── it should still succeed and emit an empty rules set on the new helper.

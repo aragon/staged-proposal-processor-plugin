@@ -84,5 +84,5 @@ contract Upgradeability_SPP_IntegrationTest is BaseTest {
     }
 
     // Storage layout compatibility (SPPStorageV1 → StagedProposalProcessor) is
-    // validated separately: just validate-upgrade SPPStorageV1 StagedProposalProcessor
+    // validated separately: just check-upgrade SPPStorageV1 StagedProposalProcessor
 }
