@@ -10,6 +10,9 @@ import {StagedProposalProcessorSetup as SPPSetup} from "../src/StagedProposalPro
 
 import {PluginRepo} from "@aragon/osx/framework/plugin/repo/PluginRepo.sol";
 import {PluginRepoFactory} from "@aragon/osx/framework/plugin/repo/PluginRepoFactory.sol";
+import {
+    PlaceholderSetup
+} from "@aragon/osx/framework/plugin/repo/placeholder/PlaceholderSetup.sol";
 import {PermissionLib} from "@aragon/osx-commons-contracts/src/permission/PermissionLib.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
@@ -17,6 +20,8 @@ contract Deploy is BaseScript {
     error InvalidVersionRelease(uint8 release, uint8 latestRelease);
     error InvalidVersionBuild(uint8 build, uint8 latestBuild);
     error VersionPublishFailed();
+
+    PlaceholderSetup public placeholderSetup;
 
     function run() external {
         address pluginRepoFactory = vm.envAddress("PLUGIN_REPO_FACTORY_ADDRESS");
@@ -35,6 +40,20 @@ contract Deploy is BaseScript {
         uint256 latestBuild = sppRepo.buildCount(uint8(latestRelease));
         if (PluginSettings.VERSION_BUILD < latestBuild + 1) {
             revert InvalidVersionBuild(PluginSettings.VERSION_BUILD, uint8(latestBuild));
+        }
+
+        // Fill builds 1..VERSION_BUILD-1 with PlaceholderSetup so build numbers stay
+        // aligned across networks (a fresh chain still ends up with build N == VERSION_BUILD).
+        if (PluginSettings.VERSION_BUILD > latestBuild + 1) {
+            placeholderSetup = new PlaceholderSetup();
+            for (uint8 i = uint8(latestBuild) + 1; i < PluginSettings.VERSION_BUILD; ++i) {
+                sppRepo.createVersion(
+                    PluginSettings.VERSION_RELEASE,
+                    address(placeholderSetup),
+                    bytes(PluginSettings.PLACEHOLDER_BUILD_METADATA),
+                    bytes(PluginSettings.RELEASE_METADATA)
+                );
+            }
         }
 
         sppRepo.createVersion(
@@ -59,6 +78,9 @@ contract Deploy is BaseScript {
         console.log("- SPP PluginRepo:   ", address(sppRepo));
         console.log("- SPP PluginSetup:  ", address(sppSetup));
         console.log("- Implementation:   ", sppSetup.implementation());
+        if (address(placeholderSetup) != address(0)) {
+            console.log("- PlaceholderSetup: ", address(placeholderSetup));
+        }
         console.log(
             "- Version:          ",
             _versionString(PluginSettings.VERSION_RELEASE, PluginSettings.VERSION_BUILD)

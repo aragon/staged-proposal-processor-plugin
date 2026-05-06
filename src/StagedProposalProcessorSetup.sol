@@ -20,7 +20,7 @@ import {
 /// @title StagedProposalProcessorSetup
 /// @author Aragon X - 2024
 /// @notice The setup contract of the `StagedProposalProcessor` plugin.
-/// @dev Release 1, Build 1
+/// @dev Release 1, Build 2
 contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
     using ProxyLib for address;
 
@@ -91,14 +91,71 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
     }
 
     /// @inheritdoc IPluginSetup
-    /// @dev The default implementation for the initial build 1 that reverts because no earlier build exists.
+    /// @dev v1.1 → v1.2: deploys a fresh `SPPRuleCondition` seeded with the existing rules and migrates
+    /// `CREATE_PROPOSAL_PERMISSION` (on the plugin) and `UPDATE_RULES_PERMISSION` (on the helper) from
+    /// the old condition to the new one. The plugin proxy itself is upgraded to the new implementation
+    /// by the `PluginSetupProcessor` automatically; no reinitializer is required because no new storage
+    /// is introduced in build 2. Existing rules are read from the old helper, so no caller-supplied data
+    /// is required — `_payload.data` is ignored.
     function prepareUpdate(
         address _dao,
         uint16 _fromBuild,
         SetupPayload calldata _payload
-    ) external pure virtual returns (bytes memory, PreparedSetupData memory) {
-        (_dao, _fromBuild, _payload);
-        revert InvalidUpdatePath({fromBuild: 0, thisBuild: 1});
+    ) external virtual override returns (bytes memory initData, PreparedSetupData memory preparedSetupData) {
+        if (_fromBuild != 1) {
+            revert InvalidUpdatePath({fromBuild: _fromBuild, thisBuild: 2});
+        }
+
+        address oldCondition = _payload.currentHelpers[0];
+        RuledCondition.Rule[] memory rules = SPPRuleCondition(oldCondition).getRules();
+
+        bytes memory conditionInitData = abi.encodeCall(
+            SPPRuleCondition.initialize,
+            (_dao, rules)
+        );
+        address newCondition = CLONES_SUPPORTED
+            ? CONDITION_IMPLEMENTATION.deployMinimalProxy(conditionInitData)
+            : CONDITION_IMPLEMENTATION.deployUUPSProxy(conditionInitData);
+
+        preparedSetupData.helpers = new address[](1);
+        preparedSetupData.helpers[0] = newCondition;
+
+        preparedSetupData.permissions = new PermissionLib.MultiTargetPermission[](4);
+
+        // Move CREATE_PROPOSAL_PERMISSION on the plugin from the old condition to the new one.
+        preparedSetupData.permissions[0] = PermissionLib.MultiTargetPermission({
+            operation: PermissionLib.Operation.Revoke,
+            where: _payload.plugin,
+            who: ANY_ADDR,
+            condition: oldCondition,
+            permissionId: Permissions.CREATE_PROPOSAL_PERMISSION_ID
+        });
+        preparedSetupData.permissions[1] = PermissionLib.MultiTargetPermission({
+            operation: PermissionLib.Operation.GrantWithCondition,
+            where: _payload.plugin,
+            who: ANY_ADDR,
+            condition: newCondition,
+            permissionId: Permissions.CREATE_PROPOSAL_PERMISSION_ID
+        });
+
+        // Move UPDATE_RULES_PERMISSION (DAO is the rule manager) from the old condition to the new one.
+        preparedSetupData.permissions[2] = PermissionLib.MultiTargetPermission({
+            operation: PermissionLib.Operation.Revoke,
+            where: oldCondition,
+            who: _dao,
+            condition: PermissionLib.NO_CONDITION,
+            permissionId: Permissions.UPDATE_RULES_PERMISSION_ID
+        });
+        preparedSetupData.permissions[3] = PermissionLib.MultiTargetPermission({
+            operation: PermissionLib.Operation.Grant,
+            where: newCondition,
+            who: _dao,
+            condition: PermissionLib.NO_CONDITION,
+            permissionId: Permissions.UPDATE_RULES_PERMISSION_ID
+        });
+
+        // initData stays empty — applyUpdate triggers the proxy implementation upgrade on its own.
+        initData = "";
     }
 
     /// @inheritdoc IPluginSetup
