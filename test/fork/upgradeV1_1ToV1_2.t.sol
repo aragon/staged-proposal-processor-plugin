@@ -19,9 +19,7 @@ import {PluginSetupProcessor} from "@aragon/osx/framework/plugin/setup/PluginSet
 import {
     RuledCondition
 } from "@aragon/osx-commons-contracts/src/permission/condition/extensions/RuledCondition.sol";
-import {
-    AddressCheckConditionMock
-} from "@aragon/osx-commons-contracts/src/mocks/permission/condition/AddressCheckConditionMock.sol";
+import {AddressCheckConditionMock} from "../utils/AddressCheckConditionMock.sol";
 
 /// @notice Forks a network where v1.1 is deployed (set RPC_URL accordingly), installs the SPP at
 /// build 1, exercises the v1.1 → v1.2 upgrade through the PSP, and asserts that the helper has

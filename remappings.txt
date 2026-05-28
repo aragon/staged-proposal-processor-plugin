@@ -3,7 +3,7 @@
 
 @ensdomains/ens-contracts/=lib/ens-contracts/
 
-@aragon/osx/=lib/osx/packages/contracts/src/
-@aragon/osx-commons-contracts/=lib/osx-commons/contracts/
+@aragon/osx/=lib/osx/src/
+@aragon/osx-commons-contracts/src/=lib/osx/src/common/
 
 forge-std/=lib/forge-std/src/
