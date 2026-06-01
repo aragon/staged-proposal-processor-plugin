@@ -4,9 +4,6 @@
 [submodule "lib/osx"]
 	path = lib/osx
 	url = https://github.com/aragon/osx
-[submodule "lib/osx-commons"]
-	path = lib/osx-commons
-	url = https://github.com/aragon/osx-commons
 [submodule "lib/ens-contracts"]
 	path = lib/ens-contracts
 	url = https://github.com/ensdomains/ens-contracts
