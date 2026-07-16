@@ -1,0 +1,15 @@
+{
+    "title": "Publish StagedProposalProcessor v1.2",
+    "summary": "Publishes build 2 of the StagedProposalProcessor (release 1) on the SPP repo.",
+    "description": "Calls `createVersion` on the SPP plugin repo to publish v1.2 (release 1, build 2).\n\nBuild 2 is recompiled against an amended `osx-commons` `RuledCondition`. The installation parameters are unchanged versus build 1.\n\nExisting v1.1 installations can update in place via the setup's `prepareUpdate` flow, which deploys a fresh `SPPRuleCondition` seeded with the existing rules and migrates the `CREATE_PROPOSAL` and `UPDATE_RULES` permissions from the old helper to the new one.",
+    "resources": [
+        {
+            "name": "changelog",
+            "url": "https://github.com/aragon/staged-proposal-processor-plugin/blob/main/CHANGELOG.md"
+        },
+        {
+            "name": "audit report",
+            "url": "https://github.com/aragon/osx/tree/main/audits"
+        }
+    ]
+}

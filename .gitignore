@@ -20,7 +20,7 @@ docs-gen/bun.lock
 .DS_Store
 src/.DS_Store
 
-npm-artifacts/src/abi.ts
 npm-artifacts/dist
+npm-artifacts/node_modules
 report/
 lcov.info

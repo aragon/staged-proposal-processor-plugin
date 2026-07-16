@@ -14,13 +14,29 @@ library PluginSettings {
     // Specify the version of your plugin that you are currently working on. The first version is v1.1.
     // For more details, visit https://devs.aragon.org/docs/osx/how-it-works/framework/plugin-management/plugin-repo.
     uint8 public constant VERSION_RELEASE = 1;
-    uint8 public constant VERSION_BUILD = 1;
+    uint8 public constant VERSION_BUILD = 2;
 
-    // 1. upload build-metadata and release-metadata jsons to the IPFS.
-    // 2. use ethers to convert it to utf8 bytes:
-    // ethers.utils.hexlify(ethers.utils.toUtf8Bytes(`ipfs://${cid}`))
-    // 3. Copy/paste the bytes into BUILD_METADATA and RELEASE_METADATA
-    
-    string public constant BUILD_METADATA = "ipfs://bafkreifia6hhz7klfbaqawd4vcplkoiesycbmrf5c2x24zfuivyn35mfsu";
-    string public constant RELEASE_METADATA = "ipfs://bafkreif23p6yw325rkwwlhgkudiasvq64lonqmfnt7ls5ksfam5hedcb4m";
+    // Per-build flow when bumping VERSION_BUILD (or VERSION_RELEASE):
+    // 1. Edit the matching JSON file:
+    //      - `src/build-metadata.json`                       → BUILD_METADATA
+    //      - `script/new-version-proposal-metadata.json`     → PROPOSAL_METADATA
+    //      - `src/release-metadata.json` (only on a new release) → RELEASE_METADATA
+    // 2. Pin via `just ipfs-pin <path>`.
+    // 3. Paste the returned `ipfs://<cid>` into the matching constant below.
+
+    string public constant BUILD_METADATA =
+        "ipfs://QmaxGSvvnTAZcDLYz2BMtaXmcx3i1GcaKGaxNEpfQe3Vyv";
+    string public constant RELEASE_METADATA =
+        "ipfs://bafkreif23p6yw325rkwwlhgkudiasvq64lonqmfnt7ls5ksfam5hedcb4m";
+
+    /// @notice Title/summary/description/resources JSON pinned for this version's management DAO proposal.
+    /// @dev Re-pin and update on every VERSION_BUILD bump. Source: `script/new-version-proposal-metadata.json`.
+    string public constant PROPOSAL_METADATA =
+        "ipfs://QmTS3Nrjrs8nuMeqUqSRjBxbGUhZB4nW6N1GiK8vFmfDcD";
+
+    /// @notice Aragon's canonical empty-schema placeholder build metadata, used when filling skipped builds
+    /// on a fresh-network deploy so on-chain build numbers stay aligned across networks.
+    /// @dev Content-addressed; the file at `lib/osx/.../placeholder/placeholder-build-metadata.json` always pins to this CID.
+    string public constant PLACEHOLDER_BUILD_METADATA =
+        "ipfs://QmZDx8G5xuF9vqVbFGZ3KhF5nioL8gXwV3JbsEsSHvNMiz";
 }

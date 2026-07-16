@@ -1,6 +1,6 @@
 {
   "ui": {},
-  "change": "Initial build.",
+  "change": "Recompiled against an amended osx-commons RuledCondition. Adds an in-place v1.1 -> v1.2 update path: the setup's prepareUpdate deploys a fresh SPPRuleCondition seeded with the existing rules and migrates CREATE_PROPOSAL / UPDATE_RULES permissions from the old helper to the new one. The setup interface for new installations is unchanged versus build 1.",
   "pluginSetup": {
     "prepareInstallation": {
       "description": "The information required for the installation of build 1.",
