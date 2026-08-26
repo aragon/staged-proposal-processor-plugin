@@ -6,5 +6,6 @@ keys:
 profiles:
   sepolia:
     DEPLOYER_KEY: dev/DEPLOYER_KEY
+    RPC_URL: =https://ethereum-sepolia-rpc.publicnode.com
   zksync-sepolia:
     DEPLOYER_KEY: dev/DEPLOYER_KEY
