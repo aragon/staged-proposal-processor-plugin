@@ -36,7 +36,6 @@ jobs:
         with:
           version: stable
       - uses: extractions/setup-just@dd310ad5a97d8e7b41793f8ef055398d51ad4de6 # v2
-      - run: sudo apt-get update && sudo apt-get install -y jq
 
       - name: Verify ABI is in sync with contracts
         run: |
