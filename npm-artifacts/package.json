@@ -18,12 +18,8 @@
   "publishConfig": {
     "access": "public"
   },
-  "scripts": {
-    "build": "pnpm run prepare-abi && rm -Rf dist && ./node_modules/.bin/tsc -p tsconfig.json",
-    "prepare-abi": "bash ./prepare-abi.sh",
-    "sync-addresses": "bash ./sync-addresses.sh ../../osx-commons/configs/src/deployments/json ./src/addresses.json"
-  },
+  "scripts": {},
   "devDependencies": {
-    "typescript": "^5.5.4"
+    "typescript": "^5.7.3"
   }
 }
