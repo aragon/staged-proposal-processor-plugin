@@ -5,6 +5,15 @@
 
 ## Audit
 
+### v1.2.0
+
+**Halborn**: [audit report](https://github.com/aragon/osx/blob/main/audits/Halborn_AragonOSx_v1_4_Smart_Contract_Security_Assessment_Report_2026_06_01.pdf)
+
+- Commit ID: [c751b1c3df916eb549653c7d7ae4683a849d9713](https://github.com/aragon/staged-proposal-processor-plugin/commit/c751b1c3df916eb549653c7d7ae4683a849d9713)
+- Identical plugin code, only upstream updated
+- Started: 2026-06-01
+- Finished: 2025-06-01
+
 ### v1.1.0
 
 **Halborn**: [audit report](https://github.com/aragon/osx/tree/main/audits/Halborn_AragonOSx_v1_4_Smart_Contract_Security_Assessment_Report_2025_01_03.pdf)

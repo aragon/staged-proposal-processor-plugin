@@ -17,6 +17,7 @@ import {IPluginSetup} from "@aragon/osx-commons-contracts/src/plugin/setup/IPlug
 import {
     RuledCondition
 } from "@aragon/osx-commons-contracts/src/permission/condition/extensions/RuledCondition.sol";
+import {AddressCheckConditionMock} from "../../../../utils/AddressCheckConditionMock.sol";
 
 contract PrepareUpdate_SPPSetup_UnitTest is BaseTest {
     SPPSetup sppSetup;
@@ -164,6 +165,77 @@ contract PrepareUpdate_SPPSetup_UnitTest is BaseTest {
         );
     }
 
+    function test_WhenFromBuildIsOne_ItPreservesAsymmetricIfElseRulesAcrossMigration()
+        external
+    {
+        // it should preserve an IF_ELSE rule that routes through an external
+        // CONDITION_RULE_ID predicate across the migration:
+        //   (a) the `_updateRules` staticcall probe on the CONDITION rule must
+        //       not trip when the new helper is constructed with the seeded
+        //       rules — the other prepareUpdate tests only exercise VALUE /
+        //       BLOCK_NUMBER rules and would miss a regression there;
+        //   (b) the resulting helper's `isGranted` must evaluate the asymmetric
+        //       predicate with (_where, _who) in the correct order.
+        //
+        // NOTE: both endpoints here are v1.2 — there is no dual OSx/SPP import,
+        // so this cannot witness the v1.1 → v1.2 swap-bug cure directly. That
+        // property lives in the fork test, which installs a real v1.1 build via
+        // the plugin repo. What this test pins is the post-migration invariant
+        // on v1.2, cheaply and without an RPC.
+
+        address fakePlugin = makeAddr("fakePlugin");
+        address alice = makeAddr("alice");
+
+        // Asymmetric predicate: true only for the exact pair (fakePlugin, alice).
+        // Swapping the arguments would compare (alice, fakePlugin) and return
+        // false, so the IF_ELSE branch taken is a direct readout of argument
+        // order — a regression that swapped `(_where, _who)` post-migration
+        // would flip both assertions below.
+        AddressCheckConditionMock asymCondition = new AddressCheckConditionMock();
+        asymCondition.setExpected(fakePlugin, alice);
+
+        SPPRuleCondition oldCondition = _deployOldConditionWithIfElseCondRule(
+            address(asymCondition)
+        );
+
+        address[] memory currentHelpers = new address[](1);
+        currentHelpers[0] = address(oldCondition);
+        IPluginSetup.SetupPayload memory payload = IPluginSetup.SetupPayload({
+            plugin: fakePlugin,
+            currentHelpers: currentHelpers,
+            data: ""
+        });
+
+        (, IPluginSetup.PreparedSetupData memory setupData) = sppSetup.prepareUpdate(
+            address(dao),
+            1,
+            payload
+        );
+        SPPRuleCondition newCondition = SPPRuleCondition(setupData.helpers[0]);
+
+        // Correct order — predicate matches, IF_ELSE routes to the success branch.
+        assertTrue(
+            newCondition.isGranted(
+                fakePlugin,
+                alice,
+                Permissions.CREATE_PROPOSAL_PERMISSION_ID,
+                bytes("")
+            ),
+            "migrated condition must evaluate (_where, _who) in the correct order"
+        );
+
+        // Swapped inputs — predicate must not match.
+        assertFalse(
+            newCondition.isGranted(
+                alice,
+                fakePlugin,
+                Permissions.CREATE_PROPOSAL_PERMISSION_ID,
+                bytes("")
+            ),
+            "migrated condition must not silently swap _where and _who"
+        );
+    }
+
     function test_WhenFromBuildIsOneAndRulesAreEmpty() external {
         // it should still produce a valid update with an empty rules set on the new helper.
 
@@ -187,6 +259,51 @@ contract PrepareUpdate_SPPSetup_UnitTest is BaseTest {
         );
 
         assertEq(SPPRuleCondition(setupData.helpers[0]).getRules().length, 0, "rules empty");
+    }
+
+    function _deployOldConditionWithIfElseCondRule(
+        address _asymPredicate
+    ) private returns (SPPRuleCondition oldCondition) {
+        // encodeIfElse is pure — pull it off the setup's stored implementation
+        // to avoid deploying a throwaway condition just for the encoding.
+        uint240 ifElseValue = SPPRuleCondition(sppSetup.CONDITION_IMPLEMENTATION())
+            .encodeIfElse(1, 2, 3);
+
+        RuledCondition.Rule[] memory rules = new RuledCondition.Rule[](4);
+
+        // rule 0: IF_ELSE(predicate=1, success=2, failure=3) — entry point.
+        rules[0] = RuledCondition.Rule({
+            id: 203, // LOGIC_OP_RULE_ID
+            op: 12, // IF_ELSE
+            value: ifElseValue,
+            permissionId: Permissions.CREATE_PROPOSAL_PERMISSION_ID
+        });
+
+        // rule 1: predicate — asymmetric condition sensitive to (_where, _who) order.
+        rules[1] = RuledCondition.Rule({
+            id: 202, // CONDITION_RULE_ID
+            op: 1, // EQ
+            value: uint160(_asymPredicate),
+            permissionId: Permissions.CREATE_PROPOSAL_PERMISSION_ID
+        });
+
+        // rule 2: success branch — RET 1.
+        rules[2] = RuledCondition.Rule({
+            id: 204, // VALUE_RULE_ID
+            op: 7, // RET
+            value: 1,
+            permissionId: Permissions.CREATE_PROPOSAL_PERMISSION_ID
+        });
+
+        // rule 3: failure branch — RET 0.
+        rules[3] = RuledCondition.Rule({
+            id: 204, // VALUE_RULE_ID
+            op: 7, // RET
+            value: 0,
+            permissionId: Permissions.CREATE_PROPOSAL_PERMISSION_ID
+        });
+
+        oldCondition = new SPPRuleCondition(address(dao), rules);
     }
 
     function _deployOldConditionWithRules() private returns (SPPRuleCondition oldCondition) {
