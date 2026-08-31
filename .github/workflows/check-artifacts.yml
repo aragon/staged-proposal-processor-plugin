@@ -32,10 +32,11 @@ jobs:
           submodules: recursive
           persist-credentials: false
 
-      - uses: foundry-rs/foundry-toolchain@908c540300062bd5a7e473851cdb4282204cee09 # v1
+      - uses: foundry-rs/foundry-toolchain@v1
         with:
           version: stable
-      - uses: extractions/setup-just@dd310ad5a97d8e7b41793f8ef055398d51ad4de6 # v2
+      - uses: extractions/setup-just@v2
+      - run: sudo apt-get update && sudo apt-get install -y jq
 
       - name: Verify ABI is in sync with contracts
         run: |
