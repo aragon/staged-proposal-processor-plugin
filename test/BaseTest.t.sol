@@ -50,6 +50,17 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
     bytes[][] internal defaultCreationParams;
 
     function setUp() public virtual {
+        // Honour a CHAIN_ID env override so tests running under a ZkSync-aware
+        // harness (foundry-zksync's `--zksync` mode, sourced from
+        // lib/just-foundry/networks/zksync-*.env) see the same `block.chainid`
+        // the deployment scripts do. That makes chainid-gated logic — notably
+        // `StagedProposalProcessorSetup.CLONES_SUPPORTED` (324/300 → UUPS
+        // fallback) — evaluate identically in test and in prod.
+        uint256 chainIdOverride = vm.envOr("CHAIN_ID", uint256(0));
+        if (chainIdOverride == 324 || chainIdOverride == 300) {
+            vm.chainId(chainIdOverride);
+        }
+
         // deploy external needed contracts
         trustedForwarder = new TrustedForwarder();
         target = new Target();

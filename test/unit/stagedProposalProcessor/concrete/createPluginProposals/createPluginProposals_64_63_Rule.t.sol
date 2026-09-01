@@ -38,6 +38,18 @@ contract CreatePluginProposals_64_63_Rule is BaseTest {
     function test_RevertWhen_CreatingPluginProposalAnd_6364_Rule() external {
         // it should revert.
 
+        // The `InsufficientGas` guard being asserted here is a defence against the
+        // EVM's 63/64 gas-forwarding rule — when a caller under-funds a sub-call,
+        // 1/64 of its gas is kept behind and the sub-call still completes without
+        // an OOG, letting the parent silently proceed with a "failed" sub-body.
+        // ZkSync uses a completely different gas model (native ergs, no 63/64
+        // rule), so the SPP's guard cannot and does not trip there. This assertion
+        // is EVM-only by construction; skip cleanly on ZkSync-flavoured chains.
+        if (block.chainid == 300 || block.chainid == 324) {
+            vm.skip(true);
+            return;
+        }
+
         uint256 gasBefore = gasleft();
         sppHarness.exposed_createBodyProposals({
             _proposalId: proposalId,
