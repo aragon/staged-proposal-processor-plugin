@@ -19,9 +19,7 @@ import {PluginSetupProcessor} from "@aragon/osx/framework/plugin/setup/PluginSet
 import {
     RuledCondition
 } from "@aragon/osx-commons-contracts/src/permission/condition/extensions/RuledCondition.sol";
-import {
-    AddressCheckConditionMock
-} from "@aragon/osx-commons-contracts/src/mocks/permission/condition/AddressCheckConditionMock.sol";
+import {AddressCheckConditionMock} from "../utils/AddressCheckConditionMock.sol";
 
 /// @notice Forks a network where v1.1 is deployed (set RPC_URL accordingly), installs the SPP at
 /// build 1, exercises the v1.1 → v1.2 upgrade through the PSP, and asserts that the helper has
@@ -47,6 +45,22 @@ contract UpgradeV1_1ToV1_2_ForkTest is ForkBaseTest {
     }
 
     function test_upgradeFromBuild1_replacesHelper_preservesRules_andFixesIfElseSwap() external {
+        // This test is a pre-publication check for the v1.1 → v1.2 migration path.
+        // Once v1.2 is officially published, `build2Ref` resolves to the on-chain
+        // setup instead of the throwaway one `ForkBaseTest.setUp` publishes, and the
+        // test starts depending on the on-chain deployment strategy (in particular
+        // the same-impl trick documented below). Skip cleanly at that point so the
+        // suite stays green without silently drifting into re-validating whatever
+        // ended up on-chain.
+        //
+        // `ForkBaseTest.setUp` always publishes one throwaway build, so buildCount
+        // here is always `preExistingLatestBuild + 1`. `> 2` means preExisting > 1,
+        // i.e. v1.2 (or later) is already at build 2 on the fork.
+        if (sppRepo.buildCount(1) > 2) {
+            vm.skip(true);
+            return;
+        }
+
         // ---- 1. Install the SPP at build 1 (the v1.1 setup that lives on the fork). ----
         PluginSetupRef memory build1Ref = PluginSetupRef({
             versionTag: PluginRepo.Tag({release: 1, build: 1}),

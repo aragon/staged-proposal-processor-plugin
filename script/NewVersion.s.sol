@@ -108,6 +108,20 @@ contract NewVersion is BaseScript {
         console.logBytes32(proposalSalt);
         console.log("  full id = keccak256(abi.encode(chainid, block.number @ submission, multisig, salt))");
         console.log("  or read it from the `ProposalCreated` event on the submission tx receipt.");
+
+        console.log("\nThe new plugin setup is deployed and the publish proposal is ready.");
+        console.log("The management DAO needs to approve (and execute) it");
+        console.log("for the new version to become available.");
+
+        // Copy-pasteable recipe.
+        console.log("\nSubmit it via `cast send` with a Ledger:");
+        console.log("  cast send \\");
+        console.log(string.concat("      ", vm.toString(managementDaoMultisig), " \\"));
+        console.log("      <the `data` bytes above> \\");
+        console.log("      --rpc-url <RPC_URL> \\");
+        console.log("      --ledger # or --trezor");
+        console.log("  # Add --mnemonic-index N to pick a non-default Ledger derivation path.");
+        console.log("  # Ledger's Ethereum app must have 'Blind signing / contract data' enabled.");
     }
 
     function _readLatestImplementation() internal view returns (SPP) {

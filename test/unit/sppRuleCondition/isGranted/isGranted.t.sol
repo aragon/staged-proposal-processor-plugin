@@ -9,9 +9,7 @@ import {PluginACondition} from "../../../utils/dummy-plugins/PluginA/PluginACond
 import {
     RuledCondition
 } from "@aragon/osx-commons-contracts/src/permission/condition/extensions/RuledCondition.sol";
-import {
-    AddressCheckConditionMock
-} from "@aragon/osx-commons-contracts/src/mocks/permission/condition/AddressCheckConditionMock.sol";
+import {AddressCheckConditionMock} from "../../../utils/AddressCheckConditionMock.sol";
 
 contract IsGranted_SPPRuleCondition_UnitTest is RuleConditionConfiguredTest {
     // Rule IDs not exposed via the SPP test Constants
