@@ -35,12 +35,15 @@ contract PluginA is IERC165, Proposal {
 
     event ProposalCreated(uint256 proposalId, uint64 startDate, uint64 endDate);
 
-    function supportsInterface(
-        bytes4 _interfaceId
-    ) public view virtual override(Proposal, IERC165) returns (bool) {
-        return
-            _interfaceId == type(IProposal).interfaceId ||
-            _interfaceId == type(IERC165).interfaceId;
+    function supportsInterface(bytes4 _interfaceId)
+        public
+        view
+        virtual
+        override(Proposal, IERC165)
+        returns (bool)
+    {
+        return _interfaceId == type(IProposal).interfaceId
+            || _interfaceId == type(IERC165).interfaceId;
     }
 
     function createProposal(
@@ -101,9 +104,10 @@ contract PluginA is IERC165, Proposal {
         if (targetConfig.operation == IPlugin.Operation.DelegateCall) {
             bool success;
             bytes memory data;
-            (success, data) = targetConfig.target.delegatecall(
-                abi.encodeCall(IExecutor.execute, (bytes32(_proposalId), mainActions, 1))
-            );
+            (success, data) = targetConfig.target
+                .delegatecall(
+                    abi.encodeCall(IExecutor.execute, (bytes32(_proposalId), mainActions, 1))
+                );
             abi.decode(data, (bytes[], uint256));
 
             // (execResults, failureMap) = targetConfig.target.execute(

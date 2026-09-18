@@ -58,7 +58,9 @@ contract CreatePluginProposals_64_63_Rule is BaseTest {
         // The sub-body is called directly, so running it out of gas reverts the whole call.
         vm.expectRevert();
 
-        sppHarness.exposed_createBodyProposals{gas: expectedGas - 190000}({
+        sppHarness.exposed_createBodyProposals{
+            gas: expectedGas - 190000
+        }({
             _proposalId: proposalId,
             _stageId: 1,
             _startDate: uint64(block.timestamp),
@@ -85,7 +87,7 @@ contract CreatePluginProposals_64_63_Rule is BaseTest {
         body2[0] = _createBodyStruct({_bodyAddr: body2Addr, _isManual: false});
 
         stages = new SPP.Stage[](2);
-        for (uint i; i < 2; ++i) {
+        for (uint256 i; i < 2; ++i) {
             if (i == 0) stages[i] = _createStageStruct(body1);
             else stages[i] = _createStageStruct(body2);
         }

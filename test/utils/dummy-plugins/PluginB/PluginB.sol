@@ -12,10 +12,10 @@ contract PluginB {
         trustedForwarder = TrustedForwarder(_trustedForwarder);
     }
 
-    function execute(
-        uint256 proposalId,
-        Action[] memory actions
-    ) external returns (bytes[] memory execResults, uint256 failureMap) {
+    function execute(uint256 proposalId, Action[] memory actions)
+        external
+        returns (bytes[] memory execResults, uint256 failureMap)
+    {
         (execResults, failureMap) = trustedForwarder.execute(bytes32(proposalId), actions, 0);
     }
 

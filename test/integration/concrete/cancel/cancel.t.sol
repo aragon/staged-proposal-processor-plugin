@@ -14,8 +14,8 @@ import {DaoUnauthorized} from "@aragon/osx-commons-contracts/src/permission/auth
 contract Cancel_SPP_IntegrationTest is BaseTest {
     uint256 proposalId;
     bytes32 validStageBitmap =
-        _encodeStateBitmap(SPP.ProposalState.Active) |
-            _encodeStateBitmap(SPP.ProposalState.Advanceable);
+        _encodeStateBitmap(SPP.ProposalState.Active)
+        | _encodeStateBitmap(SPP.ProposalState.Advanceable);
 
     modifier whenProposalExists() {
         proposalId = _configureStagesAndCreateDummyProposal(DUMMY_METADATA);
@@ -120,9 +120,7 @@ contract Cancel_SPP_IntegrationTest is BaseTest {
         // check event emitted
         vm.expectEmit({emitter: address(sppPlugin)});
         emit ProposalCanceled(
-            proposalId,
-            sppPlugin.getProposal(proposalId).currentStage,
-            users.manager
+            proposalId, sppPlugin.getProposal(proposalId).currentStage, users.manager
         );
 
         sppPlugin.cancel(proposalId);

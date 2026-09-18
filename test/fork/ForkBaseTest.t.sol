@@ -29,11 +29,9 @@ import {IPluginSetup} from "@aragon/osx-commons-contracts/src/plugin/setup/IPlug
 import {PluginSetupProcessor} from "@aragon/osx/framework/plugin/setup/PluginSetupProcessor.sol";
 
 contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, Test {
-    uint256 internal deployerPrivateKey =
-        vm.envOr(
-            "DEPLOYER_KEY",
-            uint256(0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80)
-        );
+    uint256 internal deployerPrivateKey = vm.envOr(
+        "DEPLOYER_KEY", uint256(0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80)
+    );
     string internal networkRpcUrl = vm.envString("RPC_URL");
 
     // solhint-disable immutable-vars-naming
@@ -91,9 +89,10 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, Test {
         // Publish a test build that reuses the latest published SPP implementation. Mirrors
         // NewVersion.s.sol so that PSP.applyUpdate sees `currentImpl == newImpl` and skips
         // the proxy upgrade — i.e., per-DAO upgrades work without UPGRADE_PLUGIN_PERMISSION.
-        address latestSetup = sppRepo
-            .getVersion(PluginRepo.Tag({release: uint8(latestRelease), build: uint16(latestBuild)}))
-            .pluginSetup;
+        address latestSetup =
+            sppRepo.getVersion(
+            PluginRepo.Tag({release: uint8(latestRelease), build: uint16(latestBuild)})
+        ).pluginSetup;
         SPP existingImpl = SPP(IPluginSetup(latestSetup).implementation());
         sppSetup = new SPPSetup(existingImpl);
 
@@ -139,15 +138,13 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, Test {
 
         // admin plugin data
         bytes memory adminData = abi.encode(
-            deployer,
-            IPlugin.TargetConfig({target: address(0), operation: IPlugin.Operation.Call})
+            deployer, IPlugin.TargetConfig({target: address(0), operation: IPlugin.Operation.Call})
         );
 
         DAOFactory.PluginSettings[] memory pluginSettings = new DAOFactory.PluginSettings[](1);
 
         pluginSettings[0] = DAOFactory.PluginSettings({
-            pluginSetupRef: getPluginSetupRef(adminRepo),
-            data: adminData
+            pluginSetupRef: getPluginSetupRef(adminRepo), data: adminData
         });
 
         (dao, installedPlugins) = daoFactory.createDao(daoSettings, pluginSettings);
@@ -162,8 +159,7 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, Test {
             members,
             MultisigSettings({onlyListed: true, minApprovals: 2}),
             IPlugin.TargetConfig({
-                target: address(trustedForwarder),
-                operation: IPlugin.Operation.Call
+                target: address(trustedForwarder), operation: IPlugin.Operation.Call
             }),
             "dummy multisig metadata"
         );
@@ -202,17 +198,16 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, Test {
         vm.label(plugin, "MultisigPlugin");
     }
 
-    function _installSPP(
-        DAO dao,
-        bytes memory sppData
-    ) internal returns (address plugin, address[] memory helpers) {
+    function _installSPP(DAO dao, bytes memory sppData)
+        internal
+        returns (address plugin, address[] memory helpers)
+    {
         resetPrank(address(dao));
         PluginSetupRef memory sppSetupRef = getPluginSetupRef(sppRepo);
 
         IPluginSetup.PreparedSetupData memory preparedSetupData;
         (plugin, preparedSetupData) = psp.prepareInstallation(
-            address(dao),
-            PluginSetupProcessor.PrepareInstallationParams(sppSetupRef, sppData)
+            address(dao), PluginSetupProcessor.PrepareInstallationParams(sppSetupRef, sppData)
         );
 
         helpers = preparedSetupData.helpers;
@@ -248,8 +243,7 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, Test {
         PermissionLib.MultiTargetPermission[] memory permissions = psp.prepareUninstallation(
             address(dao),
             PluginSetupProcessor.PrepareUninstallationParams(
-                sppSetupRef,
-                IPluginSetup.SetupPayload(plugin, currentHelpers, bytes(""))
+                sppSetupRef, IPluginSetup.SetupPayload(plugin, currentHelpers, bytes(""))
             )
         );
 
@@ -267,24 +261,24 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, Test {
         resetPrank(deployer);
     }
 
-    function getPluginSetupRef(
-        PluginRepo _pluginRepo
-    ) internal view returns (PluginSetupRef memory) {
+    function getPluginSetupRef(PluginRepo _pluginRepo)
+        internal
+        view
+        returns (PluginSetupRef memory)
+    {
         uint8 latestRelease = _pluginRepo.latestRelease();
         uint256 latestBuild = _pluginRepo.buildCount(latestRelease);
 
-        return
-            PluginSetupRef({
-                versionTag: PluginRepo.Tag({release: latestRelease, build: uint16(latestBuild)}),
-                pluginSetupRepo: _pluginRepo
-            });
+        return PluginSetupRef({
+            versionTag: PluginRepo.Tag({release: latestRelease, build: uint16(latestBuild)}),
+            pluginSetupRepo: _pluginRepo
+        });
     }
 
-    function multisigCallApprove(
-        address _multisig,
-        uint256 _proposalId,
-        bool _tryExecute
-    ) internal returns (bool success, bytes memory data) {
+    function multisigCallApprove(address _multisig, uint256 _proposalId, bool _tryExecute)
+        internal
+        returns (bool success, bytes memory data)
+    {
         (success, data) = _multisig.call(
             abi.encodeWithSignature("approve(uint256,bool)", _proposalId, _tryExecute)
         );

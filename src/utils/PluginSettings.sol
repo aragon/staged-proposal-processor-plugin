@@ -24,8 +24,7 @@ library PluginSettings {
     // 2. Pin via `just ipfs-pin <path>`.
     // 3. Paste the returned `ipfs://<cid>` into the matching constant below.
 
-    string public constant BUILD_METADATA =
-        "ipfs://QmaxGSvvnTAZcDLYz2BMtaXmcx3i1GcaKGaxNEpfQe3Vyv";
+    string public constant BUILD_METADATA = "ipfs://QmaxGSvvnTAZcDLYz2BMtaXmcx3i1GcaKGaxNEpfQe3Vyv";
     string public constant RELEASE_METADATA =
         "ipfs://bafkreif23p6yw325rkwwlhgkudiasvq64lonqmfnt7ls5ksfam5hedcb4m";
 

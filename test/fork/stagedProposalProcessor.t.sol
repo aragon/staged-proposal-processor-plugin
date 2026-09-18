@@ -133,8 +133,7 @@ contract StagedProposalProcessor_ForkTest is ForkBaseTest {
                 executed: false,
                 canceled: false,
                 targetConfig: IPlugin.TargetConfig({
-                    target: address(dao),
-                    operation: IPlugin.Operation.Call
+                    target: address(dao), operation: IPlugin.Operation.Call
                 }),
                 creator: deployer
             }),
@@ -175,11 +174,8 @@ contract StagedProposalProcessor_ForkTest is ForkBaseTest {
 
         // stage 1 has no bodies so no subroposal was created successfully
         if (_stageId != 1) {
-            uint256 subproposalId = sppPlugin.getBodyProposalId(
-                proposalId,
-                _stageId,
-                multisigPlugin
-            );
+            uint256 subproposalId =
+                sppPlugin.getBodyProposalId(proposalId, _stageId, multisigPlugin);
             assertNotEq(subproposalId, 0, "subproposalId");
             assertNotEq(subproposalId, type(uint256).max, "subproposalId");
         }
@@ -197,7 +193,7 @@ contract StagedProposalProcessor_ForkTest is ForkBaseTest {
 
         // approve proposal on multisig by address(1)
         resetPrank(address(1));
-        (bool succeed, ) = multisigCallApprove(multisigPlugin, subproposalId, false);
+        (bool succeed,) = multisigCallApprove(multisigPlugin, subproposalId, false);
         assertTrue(succeed, "multisigApprove succeeded");
 
         // approve proposal on multisig by address(2).
@@ -206,7 +202,7 @@ contract StagedProposalProcessor_ForkTest is ForkBaseTest {
         resetPrank(address(2));
         vm.expectEmit({emitter: address(sppPlugin)});
         emit ProposalResultReported(proposalId, 2, multisigPlugin);
-        (succeed, ) = multisigCallApprove(multisigPlugin, subproposalId, true);
+        (succeed,) = multisigCallApprove(multisigPlugin, subproposalId, true);
         assertTrue(succeed, "multisigApprove succeeded");
 
         // reset back prank/caller to default deployer.
@@ -256,14 +252,14 @@ contract StagedProposalProcessor_ForkTest is ForkBaseTest {
 
         // approve proposal on multisig by address(1)
         resetPrank(address(1));
-        (bool succeed, ) = multisigCallApprove(multisigPlugin, subproposalId, false);
+        (bool succeed,) = multisigCallApprove(multisigPlugin, subproposalId, false);
         assertTrue(succeed, "multisigApprove succeeded");
 
         // approve proposal on multisig by address(2).
         // This must cause the execution of proposal on multisig
         // which must report results on SPP.
         resetPrank(address(2));
-        (succeed, ) = multisigCallApprove(multisigPlugin, subproposalId, false);
+        (succeed,) = multisigCallApprove(multisigPlugin, subproposalId, false);
         assertTrue(succeed, "multisigApprove succeeded");
 
         // reset back the prank/caller to default deployer.
@@ -372,7 +368,7 @@ contract StagedProposalProcessor_ForkTest is ForkBaseTest {
         );
 
         // install spp
-        (address sppPluginAdr, ) = _installSPP(dao, sppData);
+        (address sppPluginAdr,) = _installSPP(dao, sppData);
         sppPlugin = SPP(sppPluginAdr);
 
         resetPrank(address(dao));

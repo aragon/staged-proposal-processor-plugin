@@ -47,7 +47,9 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         // it should revert.
         resetPrank(users.unauthorized);
         vm.warp(sppPlugin.getProposal(proposalId).lastStageTransition + VOTE_DURATION + START_DATE);
-        vm.expectRevert(abi.encodeWithSelector(Errors.ProposalExecutionForbidden.selector, proposalId));
+        vm.expectRevert(
+            abi.encodeWithSelector(Errors.ProposalExecutionForbidden.selector, proposalId)
+        );
         sppPlugin.advanceProposal(proposalId);
     }
 
@@ -91,7 +93,8 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
 
     modifier whenSomeSubProposalNeedExtraParams() {
         // configure in the plugin that extra params are needed.
-        PluginA(sppPlugin.getStages(sppPlugin.getCurrentConfigIndex())[1].bodies[0].addr).setNeedExtraParams(true);
+        PluginA(sppPlugin.getStages(sppPlugin.getCurrentConfigIndex())[1].bodies[0].addr)
+            .setNeedExtraParams(true);
 
         _;
     }
@@ -136,7 +139,9 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         assertEq(proposal.currentStage, initialStage, "currentStage");
 
         // check sub proposal was not created
-        assertEq(PluginA(stages[initialStage + 1].bodies[0].addr).proposalCount(), 0, "proposalsCount");
+        assertEq(
+            PluginA(stages[initialStage + 1].bodies[0].addr).proposalCount(), 0, "proposalsCount"
+        );
     }
 
     function test_WhenExtraParamsAreProvided()
@@ -189,11 +194,15 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         SPP.Stage[] memory stages = sppPlugin.getStages(sppPlugin.getCurrentConfigIndex());
 
         // check sub proposal created
-        assertEq(PluginA(stages[initialStage + 1].bodies[0].addr).proposalCount(), 1, "proposalsCount");
+        assertEq(
+            PluginA(stages[initialStage + 1].bodies[0].addr).proposalCount(), 1, "proposalsCount"
+        );
 
         // should set the extra params on sub proposals
         assertEq(
-            PluginA(stages[initialStage + 1].bodies[0].addr).extraParams(0), customCreationParam[1][0], "extraParams"
+            PluginA(stages[initialStage + 1].bodies[0].addr).extraParams(0),
+            customCreationParam[1][0],
+            "extraParams"
         );
     }
 
@@ -253,11 +262,15 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         SPP.Stage[] memory stages = sppPlugin.getStages(sppPlugin.getCurrentConfigIndex());
 
         // check sub proposal created
-        assertEq(PluginA(stages[initialStage + 1].bodies[0].addr).proposalCount(), 1, "proposalsCount");
+        assertEq(
+            PluginA(stages[initialStage + 1].bodies[0].addr).proposalCount(), 1, "proposalsCount"
+        );
 
         // should set the extra params on sub proposals
         assertEq(
-            PluginA(stages[initialStage + 1].bodies[0].addr).extraParams(0), customCreationParam[1][0], "extraParams"
+            PluginA(stages[initialStage + 1].bodies[0].addr).extraParams(0),
+            customCreationParam[1][0],
+            "extraParams"
         );
     }
 
@@ -310,7 +323,9 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         SPP.Stage[] memory stages = sppPlugin.getStages(sppPlugin.getCurrentConfigIndex());
 
         // check sub proposal was not created
-        assertEq(PluginA(stages[initialStage + 1].bodies[0].addr).proposalCount(), 0, "proposalsCount");
+        assertEq(
+            PluginA(stages[initialStage + 1].bodies[0].addr).proposalCount(), 0, "proposalsCount"
+        );
     }
 
     function test_WhenNoneSubProposalNeedExtraParams()
@@ -353,7 +368,9 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         assertEq(proposal.currentStage, initialStage + 1, "currentStage");
 
         // check sub proposal created
-        assertEq(PluginA(stages[initialStage + 1].bodies[0].addr).proposalCount(), 1, "proposalsCount");
+        assertEq(
+            PluginA(stages[initialStage + 1].bodies[0].addr).proposalCount(), 1, "proposalsCount"
+        );
     }
 
     function test_WhenCallerHasNoExecutePermission()
@@ -407,7 +424,9 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         assertEq(proposal.currentStage, initialStage + 1, "currentStage");
 
         // check sub proposal created
-        assertEq(PluginA(stages[initialStage + 1].bodies[0].addr).proposalCount(), 1, "proposalsCount");
+        assertEq(
+            PluginA(stages[initialStage + 1].bodies[0].addr).proposalCount(), 1, "proposalsCount"
+        );
     }
 
     function test_RevertWhen_CallerHasNoAdvancePermission()
@@ -436,7 +455,9 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
 
         resetPrank(users.unauthorized);
         vm.warp(sppPlugin.getProposal(proposalId).lastStageTransition + VOTE_DURATION + START_DATE);
-        vm.expectRevert(abi.encodeWithSelector(Errors.ProposalAdvanceForbidden.selector, proposalId));
+        vm.expectRevert(
+            abi.encodeWithSelector(Errors.ProposalAdvanceForbidden.selector, proposalId)
+        );
         sppPlugin.advanceProposal(proposalId);
     }
 
@@ -481,7 +502,9 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         assertEq(proposal.currentStage, initialStage + 1, "currentStage");
 
         // check sub proposal not created
-        assertEq(PluginA(stages[initialStage + 1].bodies[0].addr).proposalCount(), 0, "proposalsCount");
+        assertEq(
+            PluginA(stages[initialStage + 1].bodies[0].addr).proposalCount(), 0, "proposalsCount"
+        );
     }
 
     function test_WhenThereAreNoPluginsOnNextStage()
@@ -614,7 +637,9 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
     function test_RevertGiven_ProposalDoesNotExist() external {
         // it should revert.
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.NonexistentProposal.selector, NON_EXISTENT_PROPOSAL_ID));
+        vm.expectRevert(
+            abi.encodeWithSelector(Errors.NonexistentProposal.selector, NON_EXISTENT_PROPOSAL_ID)
+        );
         sppPlugin.advanceProposal(NON_EXISTENT_PROPOSAL_ID);
     }
 }

@@ -15,11 +15,7 @@ contract Initialize_SPP_UnitTest is BaseTest {
 
     modifier whenInitialized() {
         newSppPlugin.initialize(
-            dao,
-            address(trustedForwarder),
-            new SPP.Stage[](0),
-            DUMMY_METADATA,
-            defaultTargetConfig
+            dao, address(trustedForwarder), new SPP.Stage[](0), DUMMY_METADATA, defaultTargetConfig
         );
         _;
     }
@@ -29,11 +25,7 @@ contract Initialize_SPP_UnitTest is BaseTest {
 
         vm.expectRevert("Initializable: contract is already initialized");
         newSppPlugin.initialize(
-            dao,
-            address(trustedForwarder),
-            new SPP.Stage[](0),
-            EMPTY_METADATA,
-            defaultTargetConfig
+            dao, address(trustedForwarder), new SPP.Stage[](0), EMPTY_METADATA, defaultTargetConfig
         );
     }
 
@@ -54,11 +46,7 @@ contract Initialize_SPP_UnitTest is BaseTest {
         emit Initialized(1);
 
         newSppPlugin.initialize(
-            dao,
-            address(trustedForwarder),
-            new SPP.Stage[](0),
-            DUMMY_METADATA,
-            defaultTargetConfig
+            dao, address(trustedForwarder), new SPP.Stage[](0), DUMMY_METADATA, defaultTargetConfig
         );
 
         // check initialization values are correct

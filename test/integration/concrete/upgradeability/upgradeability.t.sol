@@ -36,18 +36,19 @@ contract Upgradeability_SPP_IntegrationTest is BaseTest {
         assertEq(SPP(implementation).getMetadata(), (new bytes(0)));
 
         // proxy already initialized
-        (bool success, ) = address(proxy).call(
-            abi.encodeCall(
-                SPP.initialize,
-                (
-                    dao,
-                    address(trustedForwarder),
-                    new SPP.Stage[](0),
-                    DUMMY_METADATA,
-                    defaultTargetConfig
+        (bool success,) = address(proxy)
+            .call(
+                abi.encodeCall(
+                    SPP.initialize,
+                    (
+                        dao,
+                        address(trustedForwarder),
+                        new SPP.Stage[](0),
+                        DUMMY_METADATA,
+                        defaultTargetConfig
+                    )
                 )
-            )
-        );
+            );
         assertFalse(success);
     }
 
@@ -63,9 +64,8 @@ contract Upgradeability_SPP_IntegrationTest is BaseTest {
         SPP implementation2 = new SPP();
 
         vm.expectRevert();
-        (bool succeed, ) = address(proxy).delegatecall(
-            abi.encodeWithSignature("upgradeTo(address)", address(implementation2))
-        );
+        (bool succeed,) = address(proxy)
+            .delegatecall(abi.encodeWithSignature("upgradeTo(address)", address(implementation2)));
         assertFalse(succeed);
 
         resetPrank(users.manager);
@@ -74,9 +74,8 @@ contract Upgradeability_SPP_IntegrationTest is BaseTest {
         bytes32 proxySlotBefore = vm.load(address(proxy), IMPL_SLOT);
         assertEq(proxySlotBefore, bytes32(uint256(uint160(address(implementation)))));
 
-        (bool success, ) = address(proxy).delegatecall(
-            abi.encodeWithSignature("upgradeTo(address)", address(implementation2))
-        );
+        (bool success,) = address(proxy)
+            .delegatecall(abi.encodeWithSignature("upgradeTo(address)", address(implementation2)));
         assertTrue(success);
 
         bytes32 proxySlotAfter = vm.load(address(proxy), IMPL_SLOT);

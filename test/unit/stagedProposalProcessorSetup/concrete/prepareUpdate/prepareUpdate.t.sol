@@ -32,18 +32,14 @@ contract PrepareUpdate_SPPSetup_UnitTest is BaseTest {
         // it should revert for any build other than 1 — there is only one supported update path.
 
         IPluginSetup.SetupPayload memory payload = IPluginSetup.SetupPayload({
-            plugin: address(0),
-            currentHelpers: new address[](0),
-            data: ""
+            plugin: address(0), currentHelpers: new address[](0), data: ""
         });
 
         uint16[3] memory invalidFromBuilds = [uint16(0), uint16(2), uint16(3)];
         for (uint256 i = 0; i < invalidFromBuilds.length; i++) {
             vm.expectRevert(
                 abi.encodeWithSelector(
-                    PluginUpgradeableSetup.InvalidUpdatePath.selector,
-                    invalidFromBuilds[i],
-                    2
+                    PluginUpgradeableSetup.InvalidUpdatePath.selector, invalidFromBuilds[i], 2
                 )
             );
             sppSetup.prepareUpdate(address(dao), invalidFromBuilds[i], payload);
@@ -60,13 +56,11 @@ contract PrepareUpdate_SPPSetup_UnitTest is BaseTest {
         address[] memory currentHelpers = new address[](1);
         currentHelpers[0] = address(oldCondition);
         IPluginSetup.SetupPayload memory payload = IPluginSetup.SetupPayload({
-            plugin: fakePlugin,
-            currentHelpers: currentHelpers,
-            data: ""
+            plugin: fakePlugin, currentHelpers: currentHelpers, data: ""
         });
 
-        (bytes memory initData, IPluginSetup.PreparedSetupData memory setupData) = sppSetup
-            .prepareUpdate(address(dao), 1, payload);
+        (bytes memory initData, IPluginSetup.PreparedSetupData memory setupData) =
+            sppSetup.prepareUpdate(address(dao), 1, payload);
 
         // initData stays empty: no reinitializer needed.
         assertEq(initData.length, 0, "initData should be empty");
@@ -92,16 +86,11 @@ contract PrepareUpdate_SPPSetup_UnitTest is BaseTest {
         address[] memory currentHelpers = new address[](1);
         currentHelpers[0] = address(oldCondition);
         IPluginSetup.SetupPayload memory payload = IPluginSetup.SetupPayload({
-            plugin: fakePlugin,
-            currentHelpers: currentHelpers,
-            data: ""
+            plugin: fakePlugin, currentHelpers: currentHelpers, data: ""
         });
 
-        (, IPluginSetup.PreparedSetupData memory setupData) = sppSetup.prepareUpdate(
-            address(dao),
-            1,
-            payload
-        );
+        (, IPluginSetup.PreparedSetupData memory setupData) =
+            sppSetup.prepareUpdate(address(dao), 1, payload);
         address newCondition = setupData.helpers[0];
 
         assertEq(setupData.permissions.length, 4, "four permission migrations expected");
@@ -116,9 +105,7 @@ contract PrepareUpdate_SPPSetup_UnitTest is BaseTest {
         assertEq(revokeCreate.who, ANY_ADDR, "[0] who");
         assertEq(revokeCreate.condition, address(oldCondition), "[0] condition");
         assertEq(
-            revokeCreate.permissionId,
-            Permissions.CREATE_PROPOSAL_PERMISSION_ID,
-            "[0] permissionId"
+            revokeCreate.permissionId, Permissions.CREATE_PROPOSAL_PERMISSION_ID, "[0] permissionId"
         );
 
         PermissionLib.MultiTargetPermission memory grantCreate = setupData.permissions[1];
@@ -131,9 +118,7 @@ contract PrepareUpdate_SPPSetup_UnitTest is BaseTest {
         assertEq(grantCreate.who, ANY_ADDR, "[1] who");
         assertEq(grantCreate.condition, newCondition, "[1] condition");
         assertEq(
-            grantCreate.permissionId,
-            Permissions.CREATE_PROPOSAL_PERMISSION_ID,
-            "[1] permissionId"
+            grantCreate.permissionId, Permissions.CREATE_PROPOSAL_PERMISSION_ID, "[1] permissionId"
         );
 
         PermissionLib.MultiTargetPermission memory revokeUpdateRules = setupData.permissions[2];
@@ -165,9 +150,7 @@ contract PrepareUpdate_SPPSetup_UnitTest is BaseTest {
         );
     }
 
-    function test_WhenFromBuildIsOne_ItPreservesAsymmetricIfElseRulesAcrossMigration()
-        external
-    {
+    function test_WhenFromBuildIsOne_ItPreservesAsymmetricIfElseRulesAcrossMigration() external {
         // it should preserve an IF_ELSE rule that routes through an external
         // CONDITION_RULE_ID predicate across the migration:
         //   (a) the `_updateRules` staticcall probe on the CONDITION rule must
@@ -194,32 +177,23 @@ contract PrepareUpdate_SPPSetup_UnitTest is BaseTest {
         AddressCheckConditionMock asymCondition = new AddressCheckConditionMock();
         asymCondition.setExpected(fakePlugin, alice);
 
-        SPPRuleCondition oldCondition = _deployOldConditionWithIfElseCondRule(
-            address(asymCondition)
-        );
+        SPPRuleCondition oldCondition =
+            _deployOldConditionWithIfElseCondRule(address(asymCondition));
 
         address[] memory currentHelpers = new address[](1);
         currentHelpers[0] = address(oldCondition);
         IPluginSetup.SetupPayload memory payload = IPluginSetup.SetupPayload({
-            plugin: fakePlugin,
-            currentHelpers: currentHelpers,
-            data: ""
+            plugin: fakePlugin, currentHelpers: currentHelpers, data: ""
         });
 
-        (, IPluginSetup.PreparedSetupData memory setupData) = sppSetup.prepareUpdate(
-            address(dao),
-            1,
-            payload
-        );
+        (, IPluginSetup.PreparedSetupData memory setupData) =
+            sppSetup.prepareUpdate(address(dao), 1, payload);
         SPPRuleCondition newCondition = SPPRuleCondition(setupData.helpers[0]);
 
         // Correct order — predicate matches, IF_ELSE routes to the success branch.
         assertTrue(
             newCondition.isGranted(
-                fakePlugin,
-                alice,
-                Permissions.CREATE_PROPOSAL_PERMISSION_ID,
-                bytes("")
+                fakePlugin, alice, Permissions.CREATE_PROPOSAL_PERMISSION_ID, bytes("")
             ),
             "migrated condition must evaluate (_where, _who) in the correct order"
         );
@@ -227,10 +201,7 @@ contract PrepareUpdate_SPPSetup_UnitTest is BaseTest {
         // Swapped inputs — predicate must not match.
         assertFalse(
             newCondition.isGranted(
-                alice,
-                fakePlugin,
-                Permissions.CREATE_PROPOSAL_PERMISSION_ID,
-                bytes("")
+                alice, fakePlugin, Permissions.CREATE_PROPOSAL_PERMISSION_ID, bytes("")
             ),
             "migrated condition must not silently swap _where and _who"
         );
@@ -239,35 +210,29 @@ contract PrepareUpdate_SPPSetup_UnitTest is BaseTest {
     function test_WhenFromBuildIsOneAndRulesAreEmpty() external {
         // it should still produce a valid update with an empty rules set on the new helper.
 
-        SPPRuleCondition oldCondition = new SPPRuleCondition(
-            address(dao),
-            new RuledCondition.Rule[](0)
-        );
+        SPPRuleCondition oldCondition =
+            new SPPRuleCondition(address(dao), new RuledCondition.Rule[](0));
 
         address[] memory currentHelpers = new address[](1);
         currentHelpers[0] = address(oldCondition);
         IPluginSetup.SetupPayload memory payload = IPluginSetup.SetupPayload({
-            plugin: makeAddr("fakePlugin"),
-            currentHelpers: currentHelpers,
-            data: ""
+            plugin: makeAddr("fakePlugin"), currentHelpers: currentHelpers, data: ""
         });
 
-        (, IPluginSetup.PreparedSetupData memory setupData) = sppSetup.prepareUpdate(
-            address(dao),
-            1,
-            payload
-        );
+        (, IPluginSetup.PreparedSetupData memory setupData) =
+            sppSetup.prepareUpdate(address(dao), 1, payload);
 
         assertEq(SPPRuleCondition(setupData.helpers[0]).getRules().length, 0, "rules empty");
     }
 
-    function _deployOldConditionWithIfElseCondRule(
-        address _asymPredicate
-    ) private returns (SPPRuleCondition oldCondition) {
+    function _deployOldConditionWithIfElseCondRule(address _asymPredicate)
+        private
+        returns (SPPRuleCondition oldCondition)
+    {
         // encodeIfElse is pure — pull it off the setup's stored implementation
         // to avoid deploying a throwaway condition just for the encoding.
-        uint240 ifElseValue = SPPRuleCondition(sppSetup.CONDITION_IMPLEMENTATION())
-            .encodeIfElse(1, 2, 3);
+        uint240 ifElseValue =
+            SPPRuleCondition(sppSetup.CONDITION_IMPLEMENTATION()).encodeIfElse(1, 2, 3);
 
         RuledCondition.Rule[] memory rules = new RuledCondition.Rule[](4);
 

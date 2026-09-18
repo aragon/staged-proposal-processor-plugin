@@ -10,9 +10,7 @@ import {StagedProposalProcessorSetup as SPPSetup} from "../src/StagedProposalPro
 
 import {PluginRepo} from "@aragon/osx/framework/plugin/repo/PluginRepo.sol";
 import {PluginRepoFactory} from "@aragon/osx/framework/plugin/repo/PluginRepoFactory.sol";
-import {
-    PlaceholderSetup
-} from "@aragon/osx/framework/plugin/repo/placeholder/PlaceholderSetup.sol";
+import {PlaceholderSetup} from "@aragon/osx/framework/plugin/repo/placeholder/PlaceholderSetup.sol";
 import {PermissionLib} from "@aragon/osx-commons-contracts/src/permission/PermissionLib.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
@@ -97,8 +95,8 @@ contract Deploy is BaseScript {
     }
 
     function _transferOwnershipToManagementDao(address _managementDao) internal {
-        PermissionLib.MultiTargetPermission[]
-            memory permissions = new PermissionLib.MultiTargetPermission[](6);
+        PermissionLib.MultiTargetPermission[] memory permissions =
+            new PermissionLib.MultiTargetPermission[](6);
 
         permissions[0] = PermissionLib.MultiTargetPermission({
             operation: PermissionLib.Operation.Grant,

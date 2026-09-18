@@ -157,7 +157,7 @@ contract IsGranted_SPPRuleCondition_UnitTest is RuleConditionConfiguredTest {
         external
         whenRuleIsIfElseWithAsymmetricPredicate
     {
-        // If the caller passes the addresses in the opposite order, the predicate 
+        // If the caller passes the addresses in the opposite order, the predicate
         // sees (_where=alice, _who=sppPlugin), which must not match the expected
         // (sppPlugin, alice) pair. With the bug present, _evalLogic would
         // swap them back internally and the predicate would incorrectly

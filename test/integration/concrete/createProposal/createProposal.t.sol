@@ -5,9 +5,7 @@ import {BaseTest} from "../../../BaseTest.t.sol";
 import {Errors} from "../../../../src/libraries/Errors.sol";
 import {PluginA} from "../../../utils/dummy-plugins/PluginA/PluginA.sol";
 import {PluginC} from "../../../utils/dummy-plugins/PluginC/PluginC.sol";
-import {
-    MalformedReturnPlugin
-} from "../../../utils/dummy-plugins/MalformedReturnPlugin.sol";
+import {MalformedReturnPlugin} from "../../../utils/dummy-plugins/MalformedReturnPlugin.sol";
 import {StagedProposalProcessor as SPP} from "../../../../src/StagedProposalProcessor.sol";
 import {Permissions} from "../../../../src/libraries/Permissions.sol";
 
@@ -48,10 +46,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
 
         // configure stages
         SPP.Stage[] memory stages = _createDummyStages({
-            _stageCount: 2,
-            _body1Manual: false,
-            _body2Manual: false,
-            _body3Manual: false
+            _stageCount: 2, _body1Manual: false, _body2Manual: false, _body3Manual: false
         });
         sppPlugin.updateStages(stages);
 
@@ -80,10 +75,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
 
     modifier givenAllPluginsOnStageZeroAreNonManual() {
         SPP.Stage[] memory stages = _createDummyStages({
-            _stageCount: 2,
-            _body1Manual: false,
-            _body2Manual: false,
-            _body3Manual: false
+            _stageCount: 2, _body1Manual: false, _body2Manual: false, _body3Manual: false
         });
         sppPlugin.updateStages(stages);
         _;
@@ -128,8 +120,8 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         sppPlugin.updateStages(stages);
 
         // make the second body on stage zero revert when creating the sub proposal
-        address secondBody = sppPlugin
-        .getStages(sppPlugin.getCurrentConfigIndex())[0].bodies[1].addr;
+        address secondBody =
+            sppPlugin.getStages(sppPlugin.getCurrentConfigIndex())[0].bodies[1].addr;
         PluginA(secondBody).setRevertOnCreateProposal(true);
 
         vm.expectRevert("revertOnCreateProposal");
@@ -143,8 +135,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         });
 
         // the whole tx reverted, so even the first body's sub proposal was rolled back
-        address firstBody = sppPlugin
-        .getStages(sppPlugin.getCurrentConfigIndex())[0].bodies[0].addr;
+        address firstBody = sppPlugin.getStages(sppPlugin.getCurrentConfigIndex())[0].bodies[0].addr;
         assertEq(PluginA(firstBody).proposalCount(), 0, "firstBodyProposalsCount");
         assertEq(PluginA(secondBody).proposalCount(), 0, "secondBodyProposalsCount");
     }
@@ -261,11 +252,8 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
                 assertEq(_currentPluginProposalsCount, 1, "proposalsCount");
 
                 // check sub proposal id was stored
-                uint256 subProposalId = sppPlugin.getBodyProposalId(
-                    proposalId,
-                    0,
-                    _currentPlugin.addr
-                );
+                uint256 subProposalId =
+                    sppPlugin.getBodyProposalId(proposalId, 0, _currentPlugin.addr);
 
                 assertEq(subProposalId, _currentPluginProposalsCount - 1, "subProposalId");
             }
@@ -386,8 +374,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
                 executed: false,
                 canceled: false,
                 targetConfig: IPlugin.TargetConfig({
-                    target: address(dao),
-                    operation: IPlugin.Operation.Call
+                    target: address(dao), operation: IPlugin.Operation.Call
                 }),
                 creator: users.manager
             }),
@@ -409,11 +396,8 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
                 assertEq(_currentPluginProposalsCount, 1, "proposalsCount");
 
                 // check sub proposal id was stored
-                uint256 subProposalId = sppPlugin.getBodyProposalId(
-                    proposalId,
-                    0,
-                    _currentPlugin.addr
-                );
+                uint256 subProposalId =
+                    sppPlugin.getBodyProposalId(proposalId, 0, _currentPlugin.addr);
 
                 assertEq(subProposalId, _currentPluginProposalsCount - 1, "subProposalId");
 
@@ -513,8 +497,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
                 executed: false,
                 canceled: false,
                 targetConfig: IPlugin.TargetConfig({
-                    target: address(dao),
-                    operation: IPlugin.Operation.Call
+                    target: address(dao), operation: IPlugin.Operation.Call
                 }),
                 creator: users.manager
             }),
@@ -536,11 +519,8 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
                 assertEq(_currentPluginProposalsCount, 1, "proposalsCount");
 
                 // check sub proposal id was stored
-                uint256 subProposalId = sppPlugin.getBodyProposalId(
-                    proposalId,
-                    0,
-                    _currentPlugin.addr
-                );
+                uint256 subProposalId =
+                    sppPlugin.getBodyProposalId(proposalId, 0, _currentPlugin.addr);
 
                 assertEq(subProposalId, _currentPluginProposalsCount - 1, "subProposalId");
 

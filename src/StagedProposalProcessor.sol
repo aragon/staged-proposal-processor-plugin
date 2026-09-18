@@ -5,9 +5,13 @@ import {Errors} from "./libraries/Errors.sol";
 import {Permissions} from "./libraries/Permissions.sol";
 
 import {IDAO} from "@aragon/osx-commons-contracts/src/dao/IDAO.sol";
-import {PluginUUPSUpgradeable} from "@aragon/osx-commons-contracts/src/plugin/PluginUUPSUpgradeable.sol";
+import {
+    PluginUUPSUpgradeable
+} from "@aragon/osx-commons-contracts/src/plugin/PluginUUPSUpgradeable.sol";
 import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
-import {IProposal} from "@aragon/osx-commons-contracts/src/plugin/extensions/proposal/IProposal.sol";
+import {
+    IProposal
+} from "@aragon/osx-commons-contracts/src/plugin/extensions/proposal/IProposal.sol";
 import {
     MetadataExtensionUpgradeable
 } from "@aragon/osx-commons-contracts/src/utils/metadata/MetadataExtensionUpgradeable.sol";
@@ -22,7 +26,11 @@ import {ERC165Checker} from "@openzeppelin/contracts/utils/introspection/ERC165C
 /// @notice A multi-stage proposal processor where proposals progress through defined stages.
 ///         Each stage is evaluated by the responsible bodies, determining whether the proposal advances
 ///         to the next stage. Once a proposal successfully passes all stages, it can be executed.
-contract StagedProposalProcessor is ProposalUpgradeable, MetadataExtensionUpgradeable, PluginUUPSUpgradeable {
+contract StagedProposalProcessor is
+    ProposalUpgradeable,
+    MetadataExtensionUpgradeable,
+    PluginUUPSUpgradeable
+{
     using ERC165Checker for address;
 
     /// @notice The different types that bodies can be registered as.
@@ -107,16 +115,22 @@ contract StagedProposalProcessor is ProposalUpgradeable, MetadataExtensionUpgrad
     }
 
     /// @notice A mapping to track sub-proposal IDs for a given proposal, stage, and body.
-    mapping(uint256 proposalId => mapping(uint16 stageId => mapping(address body => uint256 subProposalId))) private
-        bodyProposalIds;
+    mapping(
+        uint256 proposalId
+            => mapping(uint16 stageId => mapping(address body => uint256 subProposalId))
+    ) private bodyProposalIds;
 
     /// @notice A mapping to store the result types reported by bodies for a given proposal and stage.
-    mapping(uint256 proposalId => mapping(uint16 stageId => mapping(address body => ResultType resultType))) private
-        bodyResults;
+    mapping(
+        uint256 proposalId
+            => mapping(uint16 stageId => mapping(address body => ResultType resultType))
+    ) private bodyResults;
 
     /// @notice A mapping to store custom proposal parameters data for a given proposal, stage, and body index.
-    mapping(uint256 proposalId => mapping(uint16 stageId => mapping(uint256 bodyIndex => bytes customParams))) private
-        createProposalParams;
+    mapping(
+        uint256 proposalId
+            => mapping(uint16 stageId => mapping(uint256 bodyIndex => bytes customParams))
+    ) private createProposalParams;
 
     /// @notice A mapping between proposal IDs and their associated proposal information.
     mapping(uint256 proposalId => Proposal) private proposals;
@@ -136,13 +150,17 @@ contract StagedProposalProcessor is ProposalUpgradeable, MetadataExtensionUpgrad
     /// @param proposalId The proposal id.
     /// @param stageId The stage index.
     /// @param sender The address that advanced the proposal.
-    event ProposalAdvanced(uint256 indexed proposalId, uint16 indexed stageId, address indexed sender);
+    event ProposalAdvanced(
+        uint256 indexed proposalId, uint16 indexed stageId, address indexed sender
+    );
 
     /// @notice Emitted when the proposal gets cancelled.
     /// @param proposalId the proposal id.
     /// @param stageId The stage index in which the proposal was cancelled.
     /// @param sender The sender that canceled the proposal.
-    event ProposalCanceled(uint256 indexed proposalId, uint16 indexed stageId, address indexed sender);
+    event ProposalCanceled(
+        uint256 indexed proposalId, uint16 indexed stageId, address indexed sender
+    );
 
     /// @notice Emitted when the proposal gets edited.
     /// @param proposalId the proposal id.
@@ -151,14 +169,20 @@ contract StagedProposalProcessor is ProposalUpgradeable, MetadataExtensionUpgrad
     /// @param metadata The new metadata that replaces old metadata.
     /// @param actions The new actions that replaces old actions.
     event ProposalEdited(
-        uint256 indexed proposalId, uint16 indexed stageId, address indexed sender, bytes metadata, Action[] actions
+        uint256 indexed proposalId,
+        uint16 indexed stageId,
+        address indexed sender,
+        bytes metadata,
+        Action[] actions
     );
 
     /// @notice Emitted when a body reports results by calling `reportProposalResult`.
     /// @param proposalId The proposal id.
     /// @param stageId The stage index.
     /// @param body The sender that reported the result.
-    event ProposalResultReported(uint256 indexed proposalId, uint16 indexed stageId, address indexed body);
+    event ProposalResultReported(
+        uint256 indexed proposalId, uint16 indexed stageId, address indexed body
+    );
 
     /// @notice Emitted when this plugin successfully creates a proposal on sub-body.
     /// @param proposalId The proposal id.
@@ -166,7 +190,10 @@ contract StagedProposalProcessor is ProposalUpgradeable, MetadataExtensionUpgrad
     /// @param body The sub-body on which sub-proposal has been created.
     /// @param bodyProposalId The proposal id that sub-body returns for later usage by this plugin.
     event SubProposalCreated(
-        uint256 indexed proposalId, uint16 indexed stageId, address indexed body, uint256 bodyProposalId
+        uint256 indexed proposalId,
+        uint16 indexed stageId,
+        address indexed body,
+        uint256 bodyProposalId
     );
 
     /// @notice Emitted when the stage configuration is updated for a proposal process.
@@ -212,7 +239,10 @@ contract StagedProposalProcessor is ProposalUpgradeable, MetadataExtensionUpgrad
     /// @dev Requires the caller to have the `UPDATE_STAGES_PERMISSION_ID` permission.
     ///      Reverts if the provided `_stages` array is empty.
     /// @param _stages The new stage configuration as an array of `Stage` structs.
-    function updateStages(Stage[] calldata _stages) external auth(Permissions.UPDATE_STAGES_PERMISSION_ID) {
+    function updateStages(Stage[] calldata _stages)
+        external
+        auth(Permissions.UPDATE_STAGES_PERMISSION_ID)
+    {
         if (_stages.length == 0) {
             revert Errors.StageCountZero();
         }
@@ -229,10 +259,12 @@ contract StagedProposalProcessor is ProposalUpgradeable, MetadataExtensionUpgrad
     /// @param _stageId The index of the stage, being reported on. Must not exceed the current stage of the proposal.
     /// @param _resultType The result type being reported (`Approval` or `Veto`).
     /// @param _tryAdvance Whether to attempt advancing the proposal to the next stage if conditions are met.
-    function reportProposalResult(uint256 _proposalId, uint16 _stageId, ResultType _resultType, bool _tryAdvance)
-        external
-        virtual
-    {
+    function reportProposalResult(
+        uint256 _proposalId,
+        uint16 _stageId,
+        ResultType _resultType,
+        bool _tryAdvance
+    ) external virtual {
         Proposal storage proposal = proposals[_proposalId];
 
         if (!_proposalExists(proposal)) {
@@ -256,7 +288,8 @@ contract StagedProposalProcessor is ProposalUpgradeable, MetadataExtensionUpgrad
         }
 
         // If the last stage, caller must have `EXECUTE_PERMISSION_ID`, otherwise `ADVANCE_PERMISSION_ID`.
-        bool hasPermission = _isAtLastStage(proposal) ? hasExecutePermission(sender) : hasAdvancePermission(sender);
+        bool hasPermission =
+            _isAtLastStage(proposal) ? hasExecutePermission(sender) : hasAdvancePermission(sender);
 
         // It's important to not revert and silently succeed even if proposal
         // can not advance due to permission or state, because as sub-body's
@@ -382,7 +415,8 @@ contract StagedProposalProcessor is ProposalUpgradeable, MetadataExtensionUpgrad
          */
         bytes memory _data
     ) public virtual override returns (uint256 proposalId) {
-        proposalId = createProposal(_metadata, _actions, 0, _startDate, abi.decode(_data, (bytes[][])));
+        proposalId =
+            createProposal(_metadata, _actions, 0, _startDate, abi.decode(_data, (bytes[][])));
     }
 
     /// @notice Advances the specified proposal to the next stage if allowed.
@@ -420,7 +454,8 @@ contract StagedProposalProcessor is ProposalUpgradeable, MetadataExtensionUpgrad
 
         // Reverts if proposal is not Active, Advanceable or doesn't exist.
         _validateStateBitmap(
-            _proposalId, _encodeStateBitmap(ProposalState.Active) | _encodeStateBitmap(ProposalState.Advanceable)
+            _proposalId,
+            _encodeStateBitmap(ProposalState.Active) | _encodeStateBitmap(ProposalState.Advanceable)
         );
 
         uint16 currentStage = proposal.currentStage;
@@ -451,7 +486,8 @@ contract StagedProposalProcessor is ProposalUpgradeable, MetadataExtensionUpgrad
 
         // Reverts if proposal doesn't exist.
         ProposalState currentState = _validateStateBitmap(
-            _proposalId, _encodeStateBitmap(ProposalState.Advanceable) | _encodeStateBitmap(ProposalState.Active)
+            _proposalId,
+            _encodeStateBitmap(ProposalState.Advanceable) | _encodeStateBitmap(ProposalState.Active)
         );
 
         uint16 currentStage = proposal.currentStage;
@@ -479,7 +515,11 @@ contract StagedProposalProcessor is ProposalUpgradeable, MetadataExtensionUpgrad
 
     /// @inheritdoc IProposal
     /// @dev Requires the `EXECUTE_PERMISSION_ID` permission.
-    function execute(uint256 _proposalId) public virtual auth(Permissions.EXECUTE_PROPOSAL_PERMISSION_ID) {
+    function execute(uint256 _proposalId)
+        public
+        virtual
+        auth(Permissions.EXECUTE_PROPOSAL_PERMISSION_ID)
+    {
         if (!canExecute(_proposalId)) {
             revert Errors.ProposalExecutionForbidden(_proposalId);
         }
@@ -559,8 +599,9 @@ contract StagedProposalProcessor is ProposalUpgradeable, MetadataExtensionUpgrad
             }
         }
 
-        bool thresholdMet =
-            _thresholdsMet(_proposalId, proposal.currentStage, stage.approvalThreshold, stage.vetoThreshold);
+        bool thresholdMet = _thresholdsMet(
+            _proposalId, proposal.currentStage, stage.approvalThreshold, stage.vetoThreshold
+        );
 
         if (thresholdMet) {
             return ProposalState.Advanceable;
@@ -679,14 +720,21 @@ contract StagedProposalProcessor is ProposalUpgradeable, MetadataExtensionUpgrad
     /// @param _account The address on which the `EXECUTE_PERMISSION_ID` is checked.
     /// @return Returns `true` if the caller has the `EXECUTE_PERMISSION_ID` permission, otherwise `false`.
     function hasExecutePermission(address _account) public view virtual returns (bool) {
-        return dao().hasPermission(address(this), _account, Permissions.EXECUTE_PROPOSAL_PERMISSION_ID, _msgData());
+        return dao()
+            .hasPermission(
+                address(this), _account, Permissions.EXECUTE_PROPOSAL_PERMISSION_ID, _msgData()
+            );
     }
 
     /// @notice Checks whether the caller has the required permission to advance a proposal.
     /// @param _account The address on which the `ADVANCE_PERMISSION_ID` is checked.
     /// @return Returns `true` if the caller has the `ADVANCE_PERMISSION_ID` permission, otherwise `false`.
     function hasAdvancePermission(address _account) public view virtual returns (bool) {
-        return dao().hasPermission(address(this), _account, Permissions.ADVANCE_PERMISSION_ID, _msgData());
+        return
+            dao()
+                .hasPermission(
+                    address(this), _account, Permissions.ADVANCE_PERMISSION_ID, _msgData()
+                );
     }
 
     // =========================== INTERNAL/PRIVATE FUNCTIONS =============================
@@ -727,7 +775,10 @@ contract StagedProposalProcessor is ProposalUpgradeable, MetadataExtensionUpgrad
 
                 // If the sub-body accepts an automatic creation by SPP,
                 // then it must obey `IProposal` interface.
-                if (!bodies[j].isManual && !bodies[j].addr.supportsInterface(type(IProposal).interfaceId)) {
+                if (
+                    !bodies[j].isManual
+                        && !bodies[j].addr.supportsInterface(type(IProposal).interfaceId)
+                ) {
                     revert Errors.InterfaceNotSupported();
                 }
 
@@ -777,10 +828,12 @@ contract StagedProposalProcessor is ProposalUpgradeable, MetadataExtensionUpgrad
     /// @param _stageId The stage index.
     /// @param _resultType The result type being reported (`Approval` or `Veto`).
     /// @param _sender The address that reported the result.
-    function _processProposalResult(uint256 _proposalId, uint16 _stageId, ResultType _resultType, address _sender)
-        internal
-        virtual
-    {
+    function _processProposalResult(
+        uint256 _proposalId,
+        uint16 _stageId,
+        ResultType _resultType,
+        address _sender
+    ) internal virtual {
         bodyResults[_proposalId][_stageId][_sender] = _resultType;
         emit ProposalResultReported(_proposalId, _stageId, _sender);
     }
@@ -817,7 +870,8 @@ contract StagedProposalProcessor is ProposalUpgradeable, MetadataExtensionUpgrad
                 to: address(this),
                 value: 0,
                 data: abi.encodeCall(
-                    this.reportProposalResult, (_proposalId, _stageId, body.resultType, body.tryAdvance)
+                    this.reportProposalResult,
+                    (_proposalId, _stageId, body.resultType, body.tryAdvance)
                 )
             });
 
@@ -954,11 +1008,12 @@ contract StagedProposalProcessor is ProposalUpgradeable, MetadataExtensionUpgrad
     /// @param _approvalThreshold The approval threshold of the `_stageId`.
     /// @param _vetoThreshold The veto threshold of the `_stageId`.
     /// @return Returns true if the thresholds are met, otherwise false.
-    function _thresholdsMet(uint256 _proposalId, uint16 _stageId, uint256 _approvalThreshold, uint256 _vetoThreshold)
-        internal
-        view
-        returns (bool)
-    {
+    function _thresholdsMet(
+        uint256 _proposalId,
+        uint16 _stageId,
+        uint256 _approvalThreshold,
+        uint256 _vetoThreshold
+    ) internal view returns (bool) {
         (uint256 approvals, uint256 vetoes) = _getProposalTally(_proposalId, _stageId);
 
         if (_vetoThreshold > 0 && vetoes >= _vetoThreshold) {
@@ -999,7 +1054,11 @@ contract StagedProposalProcessor is ProposalUpgradeable, MetadataExtensionUpgrad
     /// @param _proposalId The proposal id.
     /// @param _allowedStates The allowed states that proposal can be in.
     /// @return Returns the current state of the proposal.
-    function _validateStateBitmap(uint256 _proposalId, bytes32 _allowedStates) private view returns (ProposalState) {
+    function _validateStateBitmap(uint256 _proposalId, bytes32 _allowedStates)
+        private
+        view
+        returns (ProposalState)
+    {
         ProposalState currentState = state(_proposalId);
         if (_encodeStateBitmap(currentState) & _allowedStates == bytes32(0)) {
             revert Errors.UnexpectedProposalState(_proposalId, uint8(currentState), _allowedStates);

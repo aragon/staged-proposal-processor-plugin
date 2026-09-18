@@ -24,19 +24,19 @@ abstract contract RuleConditionConfiguredTest is BaseTest {
     function setUp() public virtual override {
         super.setUp();
 
-        ruleConditionImplementation = address(
-            new SPPRuleCondition(address(0), new RuledCondition.Rule[](0))
-        );
+        ruleConditionImplementation =
+            address(new SPPRuleCondition(address(0), new RuledCondition.Rule[](0)));
 
         // deploy rule condition
         ruleCondition = new SPPRuleCondition(address(dao), new RuledCondition.Rule[](0));
 
         // grant permission to update rules
-        DAO(payable(address(dao))).grant({
-            _where: address(ruleCondition),
-            _who: users.manager,
-            _permissionId: Permissions.UPDATE_RULES_PERMISSION_ID
-        });
+        DAO(payable(address(dao)))
+            .grant({
+                _where: address(ruleCondition),
+                _who: users.manager,
+                _permissionId: Permissions.UPDATE_RULES_PERMISSION_ID
+            });
 
         // deploy dummy plugins conditions
         pluginACondition = new PluginACondition(address(new PluginA(defaultTargetConfig)));
@@ -44,12 +44,8 @@ abstract contract RuleConditionConfiguredTest is BaseTest {
     }
 
     function getDummyRule() internal pure returns (RuledCondition.Rule memory) {
-        return
-            RuledCondition.Rule({
-                id: 1,
-                op: 1,
-                value: 55,
-                permissionId: Permissions.CREATE_PROPOSAL_PERMISSION_ID
-            });
+        return RuledCondition.Rule({
+            id: 1, op: 1, value: 55, permissionId: Permissions.CREATE_PROPOSAL_PERMISSION_ID
+        });
     }
 }

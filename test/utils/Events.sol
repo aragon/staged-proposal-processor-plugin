@@ -6,8 +6,12 @@ import {StagedProposalProcessor as SPP} from "../../src/StagedProposalProcessor.
 import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
 
 contract Events {
-    event ProposalAdvanced(uint256 indexed proposalId, uint16 indexed stageId, address indexed sender);
-    event ProposalResultReported(uint256 indexed proposalId, uint16 indexed stageId, address indexed plugin);
+    event ProposalAdvanced(
+        uint256 indexed proposalId, uint16 indexed stageId, address indexed sender
+    );
+    event ProposalResultReported(
+        uint256 indexed proposalId, uint16 indexed stageId, address indexed plugin
+    );
     event MetadataSet(bytes releaseMetadata);
     event Initialized(uint8 version);
     event StagesUpdated(SPP.Stage[] stages);
@@ -23,16 +27,25 @@ contract Events {
     event ProposalCreated(uint256 proposalId, uint64 startDate, uint64 endDate);
     event ProposalExecuted(uint256 indexed proposalId);
 
-    event ProposalCanceled(uint256 indexed proposalId, uint16 indexed stageId, address indexed sender);
+    event ProposalCanceled(
+        uint256 indexed proposalId, uint16 indexed stageId, address indexed sender
+    );
 
     event ProposalEdited(
-        uint256 indexed proposalId, uint16 indexed stageId, address indexed sender, bytes metadata, Action[] actions
+        uint256 indexed proposalId,
+        uint16 indexed stageId,
+        address indexed sender,
+        bytes metadata,
+        Action[] actions
     );
 
     event TrustedForwarderUpdated(address indexed forwarder);
 
     event SubProposalCreated(
-        uint256 indexed proposalId, uint16 indexed stageId, address indexed body, uint256 bodyProposalId
+        uint256 indexed proposalId,
+        uint16 indexed stageId,
+        address indexed body,
+        uint256 bodyProposalId
     );
 
     // test helpers

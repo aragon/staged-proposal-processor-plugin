@@ -20,3 +20,6 @@ out = "./foundry-docs"
 
 [fuzz]
 runs = 256
+
+[fmt]
+line_length = 100

@@ -16,10 +16,7 @@ contract UpdateStages_SPP_UnitTest is BaseTest {
 
         resetPrank(users.unauthorized);
         SPP.Stage[] memory stages = _createDummyStages({
-            _stageCount: 2,
-            _body1Manual: true,
-            _body2Manual: true,
-            _body3Manual: false
+            _stageCount: 2, _body1Manual: true, _body2Manual: true, _body3Manual: false
         });
 
         vm.expectRevert(
@@ -38,10 +35,7 @@ contract UpdateStages_SPP_UnitTest is BaseTest {
         // it should revert.
 
         SPP.Stage[] memory stages = _createDummyStages({
-            _stageCount: 0,
-            _body1Manual: true,
-            _body2Manual: true,
-            _body3Manual: false
+            _stageCount: 0, _body1Manual: true, _body2Manual: true, _body3Manual: false
         });
 
         vm.expectRevert(abi.encodeWithSelector(Errors.StageCountZero.selector));
@@ -53,10 +47,7 @@ contract UpdateStages_SPP_UnitTest is BaseTest {
         // it should update the stage.
 
         SPP.Stage[] memory stages = _createDummyStages({
-            _stageCount: 1,
-            _body1Manual: true,
-            _body2Manual: true,
-            _body3Manual: false
+            _stageCount: 1, _body1Manual: true, _body2Manual: true, _body3Manual: false
         });
         uint256 _newConfigIndex = sppPlugin.getCurrentConfigIndex() + 1;
 
@@ -83,10 +74,7 @@ contract UpdateStages_SPP_UnitTest is BaseTest {
         // set minAdvance bigger than maxAdvance
         minAdvance = maxAdvance + 1;
         SPP.Stage[] memory stages = _createDummyStages({
-            _stageCount: 2,
-            _body1Manual: true,
-            _body2Manual: true,
-            _body3Manual: false
+            _stageCount: 2, _body1Manual: true, _body2Manual: true, _body3Manual: false
         });
 
         vm.expectRevert(abi.encodeWithSelector(Errors.StageDurationsInvalid.selector));
@@ -95,10 +83,7 @@ contract UpdateStages_SPP_UnitTest is BaseTest {
         // set minAdvance equal to maxAdvance
         minAdvance = maxAdvance;
         stages = _createDummyStages({
-            _stageCount: 2,
-            _body1Manual: true,
-            _body2Manual: true,
-            _body3Manual: false
+            _stageCount: 2, _body1Manual: true, _body2Manual: true, _body3Manual: false
         });
 
         vm.expectRevert(abi.encodeWithSelector(Errors.StageDurationsInvalid.selector));
@@ -114,10 +99,7 @@ contract UpdateStages_SPP_UnitTest is BaseTest {
         // set voteDuration bigger than maxAdvance
         voteDuration = maxAdvance + 1;
         SPP.Stage[] memory stages = _createDummyStages({
-            _stageCount: 2,
-            _body1Manual: true,
-            _body2Manual: true,
-            _body3Manual: false
+            _stageCount: 2, _body1Manual: true, _body2Manual: true, _body3Manual: false
         });
 
         vm.expectRevert(abi.encodeWithSelector(Errors.StageDurationsInvalid.selector));
@@ -126,10 +108,7 @@ contract UpdateStages_SPP_UnitTest is BaseTest {
         // set voteDuration equal to maxAdvance
         voteDuration = maxAdvance;
         stages = _createDummyStages({
-            _stageCount: 2,
-            _body1Manual: true,
-            _body2Manual: true,
-            _body3Manual: false
+            _stageCount: 2, _body1Manual: true, _body2Manual: true, _body3Manual: false
         });
 
         vm.expectRevert(abi.encodeWithSelector(Errors.StageDurationsInvalid.selector));
@@ -145,10 +124,7 @@ contract UpdateStages_SPP_UnitTest is BaseTest {
         // set approvalThreshold bigger than bodies length
         approvalThreshold = 3;
         SPP.Stage[] memory stages = _createDummyStages({
-            _stageCount: 2,
-            _body1Manual: true,
-            _body2Manual: true,
-            _body3Manual: false
+            _stageCount: 2, _body1Manual: true, _body2Manual: true, _body3Manual: false
         });
 
         vm.expectRevert(abi.encodeWithSelector(Errors.StageThresholdsInvalid.selector));
@@ -164,10 +140,7 @@ contract UpdateStages_SPP_UnitTest is BaseTest {
         // set vetoThreshold bigger than bodies length
         vetoThreshold = 3;
         SPP.Stage[] memory stages = _createDummyStages({
-            _stageCount: 2,
-            _body1Manual: true,
-            _body2Manual: true,
-            _body3Manual: false
+            _stageCount: 2, _body1Manual: true, _body2Manual: true, _body3Manual: false
         });
 
         vm.expectRevert(abi.encodeWithSelector(Errors.StageThresholdsInvalid.selector));
@@ -223,10 +196,7 @@ contract UpdateStages_SPP_UnitTest is BaseTest {
         // it should update the stages.
 
         SPP.Stage[] memory stages = _createDummyStages({
-            _stageCount: 3,
-            _body1Manual: true,
-            _body2Manual: true,
-            _body3Manual: true
+            _stageCount: 3, _body1Manual: true, _body2Manual: true, _body3Manual: true
         });
 
         // remove bodies from stage 2
@@ -258,10 +228,7 @@ contract UpdateStages_SPP_UnitTest is BaseTest {
         // it should emit event.
         // it should update the stages.
         SPP.Stage[] memory stages = _createDummyStages({
-            _stageCount: 3,
-            _body1Manual: true,
-            _body2Manual: false,
-            _body3Manual: false
+            _stageCount: 3, _body1Manual: true, _body2Manual: false, _body3Manual: false
         });
         uint256 _newConfigIndex = sppPlugin.getCurrentConfigIndex() + 1;
 
@@ -298,10 +265,7 @@ contract UpdateStages_SPP_UnitTest is BaseTest {
         // it should update the stage.
 
         SPP.Stage[] memory stages = _createDummyStages({
-            _stageCount: 3,
-            _body1Manual: true,
-            _body2Manual: true,
-            _body3Manual: true
+            _stageCount: 3, _body1Manual: true, _body2Manual: true, _body3Manual: true
         });
         uint256 _newConfigIndex = sppPlugin.getCurrentConfigIndex() + 1;
 

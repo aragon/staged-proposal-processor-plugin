@@ -38,14 +38,10 @@ contract PrepareInstallation_SPPSetup_UnitTest is BaseTest {
         // it should return correct permissions list.
 
         SPP.Stage[] memory stages = _createDummyStages(3, false, false, false);
-        bytes memory data = abi.encode(
-            DUMMY_METADATA,
-            stages,
-            new RuledCondition.Rule[](0),
-            defaultTargetConfig
-        );
-        (address deployedPlugin, IPluginSetup.PreparedSetupData memory setupData) = sppSetup
-            .prepareInstallation(address(dao), data);
+        bytes memory data =
+            abi.encode(DUMMY_METADATA, stages, new RuledCondition.Rule[](0), defaultTargetConfig);
+        (address deployedPlugin, IPluginSetup.PreparedSetupData memory setupData) =
+            sppSetup.prepareInstallation(address(dao), data);
 
         // check deployed plugin.
         assertNotEq(address(0), deployedPlugin, "deployedPlugin");
@@ -101,10 +97,8 @@ contract PrepareInstallation_SPPSetup_UnitTest is BaseTest {
             new RuledCondition.Rule[](0), // empty rules
             defaultTargetConfig
         );
-        (, IPluginSetup.PreparedSetupData memory setupData) = sppSetup.prepareInstallation(
-            address(dao),
-            data
-        );
+        (, IPluginSetup.PreparedSetupData memory setupData) =
+            sppSetup.prepareInstallation(address(dao), data);
 
         // check returned helpers
         assertEq(1, setupData.helpers.length, "helpersLength");
@@ -128,10 +122,7 @@ contract PrepareInstallation_SPPSetup_UnitTest is BaseTest {
 
         RuledCondition.Rule[] memory rules = new RuledCondition.Rule[](1);
         rules[0] = RuledCondition.Rule({
-            id: 1,
-            op: 1,
-            value: 1,
-            permissionId: Permissions.CREATE_PROPOSAL_PERMISSION_ID
+            id: 1, op: 1, value: 1, permissionId: Permissions.CREATE_PROPOSAL_PERMISSION_ID
         });
         bytes memory data = abi.encode(
             DUMMY_METADATA,
@@ -139,10 +130,8 @@ contract PrepareInstallation_SPPSetup_UnitTest is BaseTest {
             rules, //not empty rules
             defaultTargetConfig
         );
-        (, IPluginSetup.PreparedSetupData memory setupData) = sppSetup.prepareInstallation(
-            address(dao),
-            data
-        );
+        (, IPluginSetup.PreparedSetupData memory setupData) =
+            sppSetup.prepareInstallation(address(dao), data);
 
         // check returned helpers
         assertEq(1, setupData.helpers.length, "helpersLength");
@@ -159,9 +148,11 @@ contract PrepareInstallation_SPPSetup_UnitTest is BaseTest {
         assertEq(rules, SPPRuleCondition(setupData.helpers[0]).getRules(), "rules");
     }
 
-    function _findCreateProposalPermission(
-        PermissionLib.MultiTargetPermission[] memory permissions
-    ) private returns (PermissionLib.MultiTargetPermission memory permission) {
+    function _findCreateProposalPermission(PermissionLib
+                .MultiTargetPermission[] memory permissions)
+        private
+        returns (PermissionLib.MultiTargetPermission memory permission)
+    {
         for (uint256 i = 0; i < permissions.length; i++) {
             if (permissions[i].permissionId == Permissions.CREATE_PROPOSAL_PERMISSION_ID) {
                 permission = permissions[i];

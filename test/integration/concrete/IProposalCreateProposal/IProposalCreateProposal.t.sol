@@ -53,11 +53,7 @@ contract IProposal_CreateProposal_SPP_IntegrationTest is StagedConfiguredSharedT
         // });
 
         uint256 proposalId = sppPlugin.createProposal(
-            DUMMY_METADATA,
-            new Action[](0),
-            START_DATE,
-            START_DATE + 1,
-            data
+            DUMMY_METADATA, new Action[](0), START_DATE, START_DATE + 1, data
         );
 
         // check proposal exists

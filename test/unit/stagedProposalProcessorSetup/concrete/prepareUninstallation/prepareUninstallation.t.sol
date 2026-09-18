@@ -26,16 +26,11 @@ contract PrepareUninstallation_SPPSetup_UnitTest is BaseTest {
         address[] memory helpers = new address[](1);
         helpers[0] = address(this);
 
-        IPluginSetup.SetupPayload memory payload = IPluginSetup.SetupPayload({
-            plugin: address(0),
-            currentHelpers: helpers,
-            data: ""
-        });
+        IPluginSetup.SetupPayload memory payload =
+            IPluginSetup.SetupPayload({plugin: address(0), currentHelpers: helpers, data: ""});
 
-        PermissionLib.MultiTargetPermission[] memory permissions = sppSetup.prepareUninstallation(
-            address(dao),
-            payload
-        );
+        PermissionLib.MultiTargetPermission[] memory permissions =
+            sppSetup.prepareUninstallation(address(dao), payload);
 
         // check returned permissions list.
         assertEq(permissions.length, _getSetupPermissions().length, "permissionsLength");
