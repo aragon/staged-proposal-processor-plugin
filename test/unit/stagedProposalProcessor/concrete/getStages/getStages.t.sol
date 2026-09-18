@@ -32,7 +32,10 @@ contract GetStages_SPP_UnitTest is BaseTest {
 
         // update stages configuration
         SPP.Stage[] memory stages = _createDummyStages({
-            _stageCount: 1, _body1Manual: true, _body2Manual: true, _body3Manual: false
+            _stageCount: 1,
+            _body1Manual: true,
+            _body2Manual: true,
+            _body3Manual: false
         });
 
         sppPlugin.updateStages(stages);

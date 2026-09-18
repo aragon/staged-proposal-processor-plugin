@@ -32,10 +32,11 @@ contract SetTrustedForwarder_SPP_UnitTest is BaseTest {
         // it should emit TrustedForwarderUpdated event.
 
         // grant permission to manager
-        DAO(payable(address(dao)))
-            .grant(
-                address(sppPlugin), users.manager, Permissions.SET_TRUSTED_FORWARDER_PERMISSION_ID
-            );
+        DAO(payable(address(dao))).grant(
+            address(sppPlugin),
+            users.manager,
+            Permissions.SET_TRUSTED_FORWARDER_PERMISSION_ID
+        );
 
         vm.expectEmit({emitter: address(sppPlugin)});
         emit TrustedForwarderUpdated(newTrustedForwarder);

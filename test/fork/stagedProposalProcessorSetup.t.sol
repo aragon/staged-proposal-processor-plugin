@@ -41,7 +41,7 @@ contract StagedProposalProcessorSetup_ForkTest is ForkBaseTest {
 
     function test_installSPP() external {
         // install spp stage 1 admin, stage 2 empty stage 3 multisig
-        (address sppPlugin,) = _installSPP(dao, _prepareInstallationData());
+        (address sppPlugin, ) = _installSPP(dao, _prepareInstallationData());
 
         // check spp plugin is installed
         assertNotEq(address(sppPlugin), address(0), "pluginAddr");
@@ -60,7 +60,10 @@ contract StagedProposalProcessorSetup_ForkTest is ForkBaseTest {
 
     function test_uninstallSPP() external {
         // install spp
-        (address sppPlugin, address[] memory helpers) = _installSPP(dao, _prepareInstallationData());
+        (address sppPlugin, address[] memory helpers) = _installSPP(
+            dao,
+            _prepareInstallationData()
+        );
 
         // check spp plugin is installed
         assertNotEq(address(sppPlugin), address(0), "pluginAddr");

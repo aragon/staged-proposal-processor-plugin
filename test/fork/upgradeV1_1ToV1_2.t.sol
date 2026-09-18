@@ -63,11 +63,15 @@ contract UpgradeV1_1ToV1_2_ForkTest is ForkBaseTest {
 
         // ---- 1. Install the SPP at build 1 (the v1.1 setup that lives on the fork). ----
         PluginSetupRef memory build1Ref = PluginSetupRef({
-            versionTag: PluginRepo.Tag({release: 1, build: 1}), pluginSetupRepo: sppRepo
+            versionTag: PluginRepo.Tag({release: 1, build: 1}),
+            pluginSetupRepo: sppRepo
         });
 
-        (address plugin, address[] memory helpers) =
-            _installSPPAtRef(dao, _prepareSimpleInstallData(), build1Ref);
+        (address plugin, address[] memory helpers) = _installSPPAtRef(
+            dao,
+            _prepareSimpleInstallData(),
+            build1Ref
+        );
         address oldCondition = helpers[0];
         assertEq(SPPRuleCondition(oldCondition).getRules().length, 0, "starts with no rules");
 
@@ -113,8 +117,12 @@ contract UpgradeV1_1ToV1_2_ForkTest is ForkBaseTest {
         // Because of the swap, the predicate sees `(_where=aliceWho, _who=plugin)`, doesn't
         // match the expected pair, and the IF_ELSE returns false instead.
         assertFalse(
-            SPPRuleCondition(oldCondition)
-                .isGranted(plugin, aliceWho, Permissions.CREATE_PROPOSAL_PERMISSION_ID, bytes("")),
+            SPPRuleCondition(oldCondition).isGranted(
+                plugin,
+                aliceWho,
+                Permissions.CREATE_PROPOSAL_PERMISSION_ID,
+                bytes("")
+            ),
             "v1.1: IF_ELSE swap bug returns false where it should return true"
         );
 
@@ -123,20 +131,26 @@ contract UpgradeV1_1ToV1_2_ForkTest is ForkBaseTest {
 
         // ---- 3. prepareUpdate(1 -> 2). The new setup published in setUp handles the migration. ----
         PluginSetupRef memory build2Ref = PluginSetupRef({
-            versionTag: PluginRepo.Tag({release: 1, build: 2}), pluginSetupRepo: sppRepo
+            versionTag: PluginRepo.Tag({release: 1, build: 2}),
+            pluginSetupRepo: sppRepo
         });
 
-        (bytes memory initData, IPluginSetup.PreparedSetupData memory preparedSetupData) = psp.prepareUpdate(
-            address(dao),
-            PluginSetupProcessor.PrepareUpdateParams({
-                currentVersionTag: build1Ref.versionTag,
-                newVersionTag: build2Ref.versionTag,
-                pluginSetupRepo: sppRepo,
-                setupPayload: IPluginSetup.SetupPayload({
-                    plugin: plugin, currentHelpers: helpers, data: ""
+        (
+            bytes memory initData,
+            IPluginSetup.PreparedSetupData memory preparedSetupData
+        ) = psp.prepareUpdate(
+                address(dao),
+                PluginSetupProcessor.PrepareUpdateParams({
+                    currentVersionTag: build1Ref.versionTag,
+                    newVersionTag: build2Ref.versionTag,
+                    pluginSetupRepo: sppRepo,
+                    setupPayload: IPluginSetup.SetupPayload({
+                        plugin: plugin,
+                        currentHelpers: helpers,
+                        data: ""
+                    })
                 })
-            })
-        );
+            );
 
         address newCondition = preparedSetupData.helpers[0];
         assertNotEq(newCondition, oldCondition, "helper replaced");
@@ -170,21 +184,31 @@ contract UpgradeV1_1ToV1_2_ForkTest is ForkBaseTest {
 
         assertTrue(
             dao.hasPermission(
-                newCondition, address(dao), Permissions.UPDATE_RULES_PERMISSION_ID, bytes("")
+                newCondition,
+                address(dao),
+                Permissions.UPDATE_RULES_PERMISSION_ID,
+                bytes("")
             ),
             "new helper grants UPDATE_RULES to DAO"
         );
         assertFalse(
             dao.hasPermission(
-                oldCondition, address(dao), Permissions.UPDATE_RULES_PERMISSION_ID, bytes("")
+                oldCondition,
+                address(dao),
+                Permissions.UPDATE_RULES_PERMISSION_ID,
+                bytes("")
             ),
             "old helper no longer grants UPDATE_RULES to DAO"
         );
 
         // The same call that returned the wrong answer on v1.1 must now return the right one.
         assertTrue(
-            SPPRuleCondition(newCondition)
-                .isGranted(plugin, aliceWho, Permissions.CREATE_PROPOSAL_PERMISSION_ID, bytes("")),
+            SPPRuleCondition(newCondition).isGranted(
+                plugin,
+                aliceWho,
+                Permissions.CREATE_PROPOSAL_PERMISSION_ID,
+                bytes("")
+            ),
             "v1.2: IF_ELSE predicate now evaluates with the correct (_where, _who) order"
         );
     }
@@ -209,23 +233,26 @@ contract UpgradeV1_1ToV1_2_ForkTest is ForkBaseTest {
             editable: false
         });
 
-        return abi.encode(
-            "dummy spp metadata",
-            stages,
-            new RuledCondition.Rule[](0),
-            IPlugin.TargetConfig({target: address(0), operation: IPlugin.Operation.Call})
-        );
+        return
+            abi.encode(
+                "dummy spp metadata",
+                stages,
+                new RuledCondition.Rule[](0),
+                IPlugin.TargetConfig({target: address(0), operation: IPlugin.Operation.Call})
+            );
     }
 
-    function _installSPPAtRef(DAO _dao, bytes memory _data, PluginSetupRef memory _ref)
-        internal
-        returns (address plugin, address[] memory helpers)
-    {
+    function _installSPPAtRef(
+        DAO _dao,
+        bytes memory _data,
+        PluginSetupRef memory _ref
+    ) internal returns (address plugin, address[] memory helpers) {
         resetPrank(address(_dao));
 
         IPluginSetup.PreparedSetupData memory preparedSetupData;
         (plugin, preparedSetupData) = psp.prepareInstallation(
-            address(_dao), PluginSetupProcessor.PrepareInstallationParams(_ref, _data)
+            address(_dao),
+            PluginSetupProcessor.PrepareInstallationParams(_ref, _data)
         );
 
         helpers = preparedSetupData.helpers;
@@ -235,7 +262,10 @@ contract UpgradeV1_1ToV1_2_ForkTest is ForkBaseTest {
         psp.applyInstallation(
             address(_dao),
             PluginSetupProcessor.ApplyInstallationParams(
-                _ref, plugin, preparedSetupData.permissions, hashHelpers(preparedSetupData.helpers)
+                _ref,
+                plugin,
+                preparedSetupData.permissions,
+                hashHelpers(preparedSetupData.helpers)
             )
         );
 

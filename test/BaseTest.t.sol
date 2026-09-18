@@ -120,8 +120,8 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
         );
 
         // grant permissions
-        PermissionLib.MultiTargetPermission[] memory permissions =
-            new PermissionLib.MultiTargetPermission[](8);
+        PermissionLib.MultiTargetPermission[]
+            memory permissions = new PermissionLib.MultiTargetPermission[](8);
 
         // grant update stage permission on SPP plugin to the DAO
         permissions[0] = PermissionLib.MultiTargetPermission({
@@ -223,7 +223,7 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
         stage2Bodies[0] = _createBodyStruct(body3Addr, _body3Manual);
 
         stages = new SPP.Stage[](_stageCount);
-        for (uint256 i; i < _stageCount; i++) {
+        for (uint i; i < _stageCount; i++) {
             if (i == 0) stages[i] = _createStageStruct(stage1Bodies);
             else stages[i] = _createStageStruct(stage2Bodies);
         }
@@ -254,40 +254,40 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
         _body2[0] = _createCustomBodyStruct(body3Addr, _body3Manual, _tryAdvance);
 
         stages = new SPP.Stage[](_stageCount);
-        for (uint256 i; i < _stageCount; i++) {
+        for (uint i; i < _stageCount; i++) {
             if (i == 0) stages[i] = _createStageStruct(_body1);
             else stages[i] = _createStageStruct(_body2);
         }
     }
 
-    function _createBodyStruct(address _bodyAddr, bool _isManual)
-        internal
-        view
-        virtual
-        returns (SPP.Body memory body)
-    {
+    function _createBodyStruct(
+        address _bodyAddr,
+        bool _isManual
+    ) internal view virtual returns (SPP.Body memory body) {
         body = SPP.Body({
-            addr: _bodyAddr, isManual: _isManual, tryAdvance: true, resultType: resultType
+            addr: _bodyAddr,
+            isManual: _isManual,
+            tryAdvance: true,
+            resultType: resultType
         });
     }
 
-    function _createCustomBodyStruct(address _bodyAddr, bool _isManual, bool _tryAdvance)
-        internal
-        view
-        virtual
-        returns (SPP.Body memory body)
-    {
+    function _createCustomBodyStruct(
+        address _bodyAddr,
+        bool _isManual,
+        bool _tryAdvance
+    ) internal view virtual returns (SPP.Body memory body) {
         body = SPP.Body({
-            addr: _bodyAddr, isManual: _isManual, tryAdvance: _tryAdvance, resultType: resultType
+            addr: _bodyAddr,
+            isManual: _isManual,
+            tryAdvance: _tryAdvance,
+            resultType: resultType
         });
     }
 
-    function _createStageStruct(SPP.Body[] memory _bodies)
-        internal
-        view
-        virtual
-        returns (SPP.Stage memory stage)
-    {
+    function _createStageStruct(
+        SPP.Body[] memory _bodies
+    ) internal view virtual returns (SPP.Stage memory stage) {
         // console.log("cancellable", cancellable);
         stage = SPP.Stage({
             bodies: _bodies,
@@ -314,10 +314,9 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
         actions[1].data = abi.encodeCall(target.setAddress, TARGET_ADDRESS);
     }
 
-    function _configureStagesAndCreateDummyProposal(bytes memory _metadata)
-        internal
-        returns (uint256 proposalId)
-    {
+    function _configureStagesAndCreateDummyProposal(
+        bytes memory _metadata
+    ) internal returns (uint256 proposalId) {
         // setup stages
         SPP.Stage[] memory stages = _createDummyStages(2, false, false, false);
         sppPlugin.updateStages(stages);

@@ -38,25 +38,27 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
     /// @dev The implementation address is used to deploy UUPS proxies referencing it and
     /// to verify the plugin on the respective block explorers.
     constructor(SPP _spp) PluginUpgradeableSetup(address(_spp)) {
-        CONDITION_IMPLEMENTATION =
-            address(new SPPRuleCondition(address(0), new RuledCondition.Rule[](0)));
+        CONDITION_IMPLEMENTATION = address(
+            new SPPRuleCondition(address(0), new RuledCondition.Rule[](0))
+        );
         // Clones not supported on ZkSync
         CLONES_SUPPORTED = block.chainid != 324 && block.chainid != 300;
     }
 
     /// @inheritdoc IPluginSetup
-    function prepareInstallation(address _dao, bytes calldata _installationParams)
-        external
-        returns (address spp, PreparedSetupData memory preparedSetupData)
-    {
+    function prepareInstallation(
+        address _dao,
+        bytes calldata _installationParams
+    ) external returns (address spp, PreparedSetupData memory preparedSetupData) {
         (
             bytes memory pluginMetadata,
             SPP.Stage[] memory stages,
             RuledCondition.Rule[] memory rules,
             IPlugin.TargetConfig memory targetConfig
         ) = abi.decode(
-            _installationParams, (bytes, SPP.Stage[], RuledCondition.Rule[], IPlugin.TargetConfig)
-        );
+                _installationParams,
+                (bytes, SPP.Stage[], RuledCondition.Rule[], IPlugin.TargetConfig)
+            );
 
         // By default, we assume that sub-plugins will use a delegate call to invoke the executor,
         // which will keep `msg.sender` as the sub-plugin within the SPP context.
@@ -65,7 +67,8 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
         // Allowing a user-provided trusted forwarder here is risky if the plugin installer is malicious.
         spp = IMPLEMENTATION.deployUUPSProxy(
             abi.encodeCall(
-                SPP.initialize, (IDAO(_dao), address(0), stages, pluginMetadata, targetConfig)
+                SPP.initialize,
+                (IDAO(_dao), address(0), stages, pluginMetadata, targetConfig)
             )
         );
 
@@ -76,8 +79,12 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
             ? CONDITION_IMPLEMENTATION.deployMinimalProxy(initData)
             : CONDITION_IMPLEMENTATION.deployUUPSProxy(initData);
 
-        preparedSetupData.permissions =
-            _getPermissions(_dao, spp, sppCondition, PermissionLib.Operation.Grant);
+        preparedSetupData.permissions = _getPermissions(
+            _dao,
+            spp,
+            sppCondition,
+            PermissionLib.Operation.Grant
+        );
 
         preparedSetupData.helpers = new address[](1);
         preparedSetupData.helpers[0] = sppCondition;
@@ -90,12 +97,11 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
     /// by the `PluginSetupProcessor` automatically; no reinitializer is required because no new storage
     /// is introduced in build 2. Existing rules are read from the old helper, so no caller-supplied data
     /// is required — `_payload.data` is ignored.
-    function prepareUpdate(address _dao, uint16 _fromBuild, SetupPayload calldata _payload)
-        external
-        virtual
-        override
-        returns (bytes memory initData, PreparedSetupData memory preparedSetupData)
-    {
+    function prepareUpdate(
+        address _dao,
+        uint16 _fromBuild,
+        SetupPayload calldata _payload
+    ) external virtual override returns (bytes memory initData, PreparedSetupData memory preparedSetupData) {
         if (_fromBuild != 1) {
             revert InvalidUpdatePath({fromBuild: _fromBuild, thisBuild: 2});
         }
@@ -103,7 +109,10 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
         address oldCondition = _payload.currentHelpers[0];
         RuledCondition.Rule[] memory rules = SPPRuleCondition(oldCondition).getRules();
 
-        bytes memory conditionInitData = abi.encodeCall(SPPRuleCondition.initialize, (_dao, rules));
+        bytes memory conditionInitData = abi.encodeCall(
+            SPPRuleCondition.initialize,
+            (_dao, rules)
+        );
         address newCondition = CLONES_SUPPORTED
             ? CONDITION_IMPLEMENTATION.deployMinimalProxy(conditionInitData)
             : CONDITION_IMPLEMENTATION.deployUUPSProxy(conditionInitData);
@@ -150,13 +159,15 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
     }
 
     /// @inheritdoc IPluginSetup
-    function prepareUninstallation(address _dao, SetupPayload calldata _payload)
-        external
-        pure
-        returns (PermissionLib.MultiTargetPermission[] memory permissions)
-    {
+    function prepareUninstallation(
+        address _dao,
+        SetupPayload calldata _payload
+    ) external pure returns (PermissionLib.MultiTargetPermission[] memory permissions) {
         permissions = _getPermissions(
-            _dao, _payload.plugin, _payload.currentHelpers[0], PermissionLib.Operation.Revoke
+            _dao,
+            _payload.plugin,
+            _payload.currentHelpers[0],
+            PermissionLib.Operation.Revoke
         );
     }
 

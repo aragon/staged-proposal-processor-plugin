@@ -37,8 +37,11 @@ contract MsgSender_SPP_UnitTest is BaseTest {
     function test_WhenCalldataLengthIsGreaterThan20Bytes() external whenCallerIsTrustedForwarder {
         // it should return the appended address as the sender.
 
-        (address appendedAddress,) = makeAddrAndKey("alice");
-        bytes memory data = abi.encodePacked(SppHarness.exposed_msgSender.selector, appendedAddress);
+        (address appendedAddress, ) = makeAddrAndKey("alice");
+        bytes memory data = abi.encodePacked(
+            SppHarness.exposed_msgSender.selector,
+            appendedAddress
+        );
 
         // check the data length is greater than 20 bytes
         assertGt(data.length, 20, "data-length");
@@ -69,8 +72,11 @@ contract MsgSender_SPP_UnitTest is BaseTest {
 
         resetPrank(users.manager);
 
-        (address appendedAddress,) = makeAddrAndKey("alice");
-        bytes memory data = abi.encodePacked(SppHarness.exposed_msgSender.selector, appendedAddress);
+        (address appendedAddress, ) = makeAddrAndKey("alice");
+        bytes memory data = abi.encodePacked(
+            SppHarness.exposed_msgSender.selector,
+            appendedAddress
+        );
 
         (bool success, bytes memory returnData) = address(sppHarness).call(data);
 

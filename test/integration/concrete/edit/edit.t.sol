@@ -15,8 +15,8 @@ import {console} from "forge-std/console.sol";
 contract Edit_SPP_IntegrationTest is BaseTest {
     uint256 proposalId;
     bytes32 validStageBitmap =
-        _encodeStateBitmap(SPP.ProposalState.Advanceable)
-        | _encodeStateBitmap(SPP.ProposalState.Active);
+        _encodeStateBitmap(SPP.ProposalState.Advanceable) |
+            _encodeStateBitmap(SPP.ProposalState.Active);
     bytes newMetadata = "dummy metadata 2";
 
     modifier whenProposalExists() {
@@ -185,7 +185,9 @@ contract Edit_SPP_IntegrationTest is BaseTest {
         vm.warp(VOTE_DURATION + START_DATE);
 
         assertEq(
-            uint8(sppPlugin.state(proposalId)), uint8(SPP.ProposalState.Advanceable), "advanceable"
+            uint8(sppPlugin.state(proposalId)),
+            uint8(SPP.ProposalState.Advanceable),
+            "advanceable"
         );
 
         // check event emitted
@@ -213,7 +215,9 @@ contract Edit_SPP_IntegrationTest is BaseTest {
         vm.warp(VOTE_DURATION + START_DATE);
 
         assertEq(
-            uint8(sppPlugin.state(proposalId)), uint8(SPP.ProposalState.Advanceable), "advanceable"
+            uint8(sppPlugin.state(proposalId)),
+            uint8(SPP.ProposalState.Advanceable),
+            "advanceable"
         );
 
         vm.expectRevert(
@@ -259,10 +263,9 @@ contract Edit_SPP_IntegrationTest is BaseTest {
         actions[1] = Action({to: address(2), value: 2, data: abi.encode(0x5678)});
     }
 
-    function _configureStageWithNoBodies(bytes memory _metadata)
-        internal
-        returns (uint256 _proposalId)
-    {
+    function _configureStageWithNoBodies(
+        bytes memory _metadata
+    ) internal returns (uint256 _proposalId) {
         approvalThreshold = 0;
         vetoThreshold = 0;
 

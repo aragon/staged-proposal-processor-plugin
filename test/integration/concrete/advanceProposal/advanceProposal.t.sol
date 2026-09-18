@@ -140,7 +140,9 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
 
         // check sub proposal was not created
         assertEq(
-            PluginA(stages[initialStage + 1].bodies[0].addr).proposalCount(), 0, "proposalsCount"
+            PluginA(stages[initialStage + 1].bodies[0].addr).proposalCount(),
+            0,
+            "proposalsCount"
         );
     }
 
@@ -195,7 +197,9 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
 
         // check sub proposal created
         assertEq(
-            PluginA(stages[initialStage + 1].bodies[0].addr).proposalCount(), 1, "proposalsCount"
+            PluginA(stages[initialStage + 1].bodies[0].addr).proposalCount(),
+            1,
+            "proposalsCount"
         );
 
         // should set the extra params on sub proposals
@@ -263,7 +267,9 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
 
         // check sub proposal created
         assertEq(
-            PluginA(stages[initialStage + 1].bodies[0].addr).proposalCount(), 1, "proposalsCount"
+            PluginA(stages[initialStage + 1].bodies[0].addr).proposalCount(),
+            1,
+            "proposalsCount"
         );
 
         // should set the extra params on sub proposals
@@ -324,7 +330,9 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
 
         // check sub proposal was not created
         assertEq(
-            PluginA(stages[initialStage + 1].bodies[0].addr).proposalCount(), 0, "proposalsCount"
+            PluginA(stages[initialStage + 1].bodies[0].addr).proposalCount(),
+            0,
+            "proposalsCount"
         );
     }
 
@@ -369,7 +377,9 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
 
         // check sub proposal created
         assertEq(
-            PluginA(stages[initialStage + 1].bodies[0].addr).proposalCount(), 1, "proposalsCount"
+            PluginA(stages[initialStage + 1].bodies[0].addr).proposalCount(),
+            1,
+            "proposalsCount"
         );
     }
 
@@ -403,12 +413,11 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         address advanceProposalCaller = users.unauthorized;
 
         // grant advance permission but not execute permission
-        DAO(payable(address(dao)))
-            .grant({
-                _where: address(sppPlugin),
-                _who: advanceProposalCaller,
-                _permissionId: Permissions.ADVANCE_PERMISSION_ID
-            });
+        DAO(payable(address(dao))).grant({
+            _where: address(sppPlugin),
+            _who: advanceProposalCaller,
+            _permissionId: Permissions.ADVANCE_PERMISSION_ID
+        });
 
         // check event emitted
         vm.expectEmit({emitter: address(sppPlugin)});
@@ -425,7 +434,9 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
 
         // check sub proposal created
         assertEq(
-            PluginA(stages[initialStage + 1].bodies[0].addr).proposalCount(), 1, "proposalsCount"
+            PluginA(stages[initialStage + 1].bodies[0].addr).proposalCount(),
+            1,
+            "proposalsCount"
         );
     }
 
@@ -503,7 +514,9 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
 
         // check sub proposal not created
         assertEq(
-            PluginA(stages[initialStage + 1].bodies[0].addr).proposalCount(), 0, "proposalsCount"
+            PluginA(stages[initialStage + 1].bodies[0].addr).proposalCount(),
+            0,
+            "proposalsCount"
         );
     }
 
@@ -568,6 +581,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
     {
         // it should revert.
         // it should leave the proposal on its current stage, blocking advancement.
+        // it should advance once the body behaves again.
 
         // create proposal
         proposalId = sppPlugin.createProposal({
@@ -600,7 +614,11 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         PluginA(nextStageBody).setRevertOnCreateProposal(false);
         sppPlugin.advanceProposal(proposalId);
 
-        assertEq(sppPlugin.getProposal(proposalId).currentStage, initialStage + 1, "currentStage");
+        assertEq(
+            sppPlugin.getProposal(proposalId).currentStage,
+            initialStage + 1,
+            "currentStage"
+        );
         assertEq(PluginA(nextStageBody).proposalCount(), 1, "proposalsCount");
     }
 

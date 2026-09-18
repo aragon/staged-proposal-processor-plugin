@@ -2,7 +2,7 @@
 pragma solidity ^0.8.18;
 
 contract Target {
-    uint256 public val;
+    uint public val;
     address public ctrAddress;
 
     function setValue(uint256 _val) public {

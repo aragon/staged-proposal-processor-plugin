@@ -24,8 +24,10 @@ contract GetProposalTally_SPP_IntegrationTest is BaseTest {
         // execute proposals to report the results
         _executeStageProposals(0);
 
-        (uint256 votes, uint256 vetos) =
-            sppPlugin.getProposalTally(proposalId, sppPlugin.getProposal(proposalId).currentStage);
+        (uint256 votes, uint256 vetos) = sppPlugin.getProposalTally(
+            proposalId,
+            sppPlugin.getProposal(proposalId).currentStage
+        );
 
         // there should be 2 vetos and no vote
         assertEq(vetos, 2, "vetos");
@@ -46,7 +48,10 @@ contract GetProposalTally_SPP_IntegrationTest is BaseTest {
         resultType = SPP.ResultType.Veto;
         // setup stages
         SPP.Stage[] memory stages = _createDummyStages({
-            _stageCount: 2, _body1Manual: false, _body2Manual: true, _body3Manual: false
+            _stageCount: 2,
+            _body1Manual: false,
+            _body2Manual: true,
+            _body3Manual: false
         });
         sppPlugin.updateStages(stages);
 
@@ -60,8 +65,10 @@ contract GetProposalTally_SPP_IntegrationTest is BaseTest {
             _proposalParams: defaultCreationParams
         });
 
-        (uint256 votes, uint256 vetos) =
-            sppPlugin.getProposalTally(proposalId, sppPlugin.getProposal(proposalId).currentStage);
+        (uint256 votes, uint256 vetos) = sppPlugin.getProposalTally(
+            proposalId,
+            sppPlugin.getProposal(proposalId).currentStage
+        );
 
         // there should be no votes and 2 vetos but second sub proposal veto should not be counted because it is manual
         assertEq(vetos, 1, "vetos");
@@ -90,13 +97,15 @@ contract GetProposalTally_SPP_IntegrationTest is BaseTest {
             _proposalParams: defaultCreationParams
         });
 
-        // make the second body revert on `hasSucceeded` so its result can not be read
-        address secondBodyAddr =
-            sppPlugin.getStages(sppPlugin.getCurrentConfigIndex())[0].bodies[1].addr;
+        // make a body revert on `hasSucceeded` so its result can not be read
+        address secondBodyAddr = sppPlugin
+        .getStages(sppPlugin.getCurrentConfigIndex())[0].bodies[1].addr;
         PluginA(secondBodyAddr).setRevertOnHasSucceeded(true);
 
-        (uint256 votes, uint256 vetos) =
-            sppPlugin.getProposalTally(proposalId, sppPlugin.getProposal(proposalId).currentStage);
+        (uint256 votes, uint256 vetos) = sppPlugin.getProposalTally(
+            proposalId,
+            sppPlugin.getProposal(proposalId).currentStage
+        );
 
         // there should be no votes and 1 vetos because one of the sub proposals result can not be read
         assertEq(vetos, 1, "vetos");
@@ -116,8 +125,10 @@ contract GetProposalTally_SPP_IntegrationTest is BaseTest {
     {
         // it should count unreported results.
 
-        (uint256 votes, uint256 vetos) =
-            sppPlugin.getProposalTally(proposalId, sppPlugin.getProposal(proposalId).currentStage);
+        (uint256 votes, uint256 vetos) = sppPlugin.getProposalTally(
+            proposalId,
+            sppPlugin.getProposal(proposalId).currentStage
+        );
 
         // there should be 2 vetos and no vote
         assertEq(vetos, 2, "vetos");
@@ -134,12 +145,14 @@ contract GetProposalTally_SPP_IntegrationTest is BaseTest {
         // it should count unreported results.
 
         // set the can execute on sub body to false
-        address secondBodyAddr =
-            sppPlugin.getStages(sppPlugin.getCurrentConfigIndex())[0].bodies[1].addr;
+        address secondBodyAddr = sppPlugin
+        .getStages(sppPlugin.getCurrentConfigIndex())[0].bodies[1].addr;
         PluginA(secondBodyAddr).setCanExecuteResult(false);
 
-        (uint256 votes, uint256 vetos) =
-            sppPlugin.getProposalTally(proposalId, sppPlugin.getProposal(proposalId).currentStage);
+        (uint256 votes, uint256 vetos) = sppPlugin.getProposalTally(
+            proposalId,
+            sppPlugin.getProposal(proposalId).currentStage
+        );
 
         // there should be 1 vetos and no vote, because second body can not execute
         assertEq(vetos, 1, "vetos");

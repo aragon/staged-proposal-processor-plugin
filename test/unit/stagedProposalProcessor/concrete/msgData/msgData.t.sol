@@ -42,8 +42,11 @@ contract MsgData_SPP_UnitTest is BaseTest {
         // it should return the calldata without the appended address.
 
         uint256 dataValue = type(uint256).max;
-        bytes memory data =
-            abi.encodePacked(SppHarness.exposed_msgData.selector, dataValue, trustedForwarder);
+        bytes memory data = abi.encodePacked(
+            SppHarness.exposed_msgData.selector,
+            dataValue,
+            trustedForwarder
+        );
 
         // check the data length is greater than 20 bytes
         assertGt(data.length, 20, "data-length");
@@ -95,8 +98,11 @@ contract MsgData_SPP_UnitTest is BaseTest {
         // it should return the original calldata.
 
         uint256 dataValue = type(uint256).max;
-        bytes memory data =
-            abi.encodePacked(SppHarness.exposed_msgData.selector, dataValue, trustedForwarder);
+        bytes memory data = abi.encodePacked(
+            SppHarness.exposed_msgData.selector,
+            dataValue,
+            trustedForwarder
+        );
 
         (bool success, bytes memory returnData) = address(sppHarness).call(data);
 

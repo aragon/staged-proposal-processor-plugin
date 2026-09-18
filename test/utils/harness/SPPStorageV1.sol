@@ -19,7 +19,9 @@ import {
 /// @dev Snapshot of the StagedProposalProcessor storage layout as it was at v1 (initial deployment).
 /// Used as the reference contract for storage layout compatibility checks: `just validate-upgrade`.
 contract SPPStorageV1 is ProposalUpgradeable, MetadataExtensionUpgradeable, PluginUUPSUpgradeable {
-    function supportsInterface(bytes4 _interfaceId)
+    function supportsInterface(
+        bytes4 _interfaceId
+    )
         public
         view
         virtual
@@ -39,9 +41,7 @@ contract SPPStorageV1 is ProposalUpgradeable, MetadataExtensionUpgradeable, Plug
         bytes memory _metadata,
         Action[] memory _actions,
         uint64 _startDate,
-        uint64,
-        /**
-         */
+        uint64 /** */,
         bytes memory _data
     ) public virtual override returns (uint256 proposalId) {}
 

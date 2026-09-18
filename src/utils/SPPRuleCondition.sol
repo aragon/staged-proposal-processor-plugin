@@ -42,11 +42,12 @@ contract SPPRuleCondition is DaoAuthorizableUpgradeable, RuledCondition {
     }
 
     /// @inheritdoc IPermissionCondition
-    function isGranted(address _where, address _who, bytes32 _permissionId, bytes calldata)
-        external
-        view
-        returns (bool isPermitted)
-    {
+    function isGranted(
+        address _where,
+        address _who,
+        bytes32 _permissionId,
+        bytes calldata
+    ) external view returns (bool isPermitted) {
         if (getRules().length == 0) {
             return true;
         }

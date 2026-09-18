@@ -26,14 +26,17 @@ contract GasExpensivePlugin is IProposal, IERC165 {
 
     function supportsInterface(bytes4 _interfaceId) public view virtual override returns (bool) {
         return
-            _interfaceId == type(IProposal).interfaceId || _interfaceId == type(IERC165).interfaceId;
+            _interfaceId == type(IProposal).interfaceId ||
+            _interfaceId == type(IERC165).interfaceId;
     }
 
-    function createProposal(bytes calldata, Action[] calldata, uint64, uint64, bytes memory)
-        external
-        override
-        returns (uint256)
-    {
+    function createProposal(
+        bytes calldata,
+        Action[] calldata,
+        uint64,
+        uint64,
+        bytes memory
+    ) external override returns (uint256) {
         for (uint256 i = 0; i < iterationsCount; i++) {
             store[i] = 1;
         }

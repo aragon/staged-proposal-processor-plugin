@@ -8,11 +8,10 @@ import {Stage, Body} from "../utils/Types.sol";
 import {StagedProposalProcessor as SPP} from "../../src/StagedProposalProcessor.sol";
 
 abstract contract Fuzzers is StdUtils {
-    function fuzzSppStages(Stage[] memory _stages, Body[] memory _bodies)
-        internal
-        pure
-        returns (SPP.Stage[] memory _fuzzedStages)
-    {
+    function fuzzSppStages(
+        Stage[] memory _stages,
+        Body[] memory _bodies
+    ) internal pure returns (SPP.Stage[] memory _fuzzedStages) {
         SPP.Body[] memory fuzzBodies = fuzzSppBodies(_bodies);
 
         _fuzzedStages = new SPP.Stage[](_stages.length);
@@ -30,11 +29,9 @@ abstract contract Fuzzers is StdUtils {
         }
     }
 
-    function fuzzSppBodies(Body[] memory _bodies)
-        internal
-        pure
-        returns (SPP.Body[] memory _fuzzedBodies)
-    {
+    function fuzzSppBodies(
+        Body[] memory _bodies
+    ) internal pure returns (SPP.Body[] memory _fuzzedBodies) {
         _fuzzedBodies = new SPP.Body[](_bodies.length);
         for (uint256 i = 0; i < _bodies.length; ++i) {
             _fuzzedBodies[i] = SPP.Body({

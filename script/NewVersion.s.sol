@@ -102,15 +102,11 @@ contract NewVersion is BaseScript {
         console.log("  data:  ");
         console.logBytes(multisigCalldata);
         console.log("\n  proposal metadata: ", PluginSettings.PROPOSAL_METADATA);
-        console.log(
-            "  defaults: allowFailureMap=0, approveProposal=true, tryExecution=false, startDate=0"
-        );
+        console.log("  defaults: allowFailureMap=0, approveProposal=true, tryExecution=false, startDate=0");
         console.log("  endDate (unix):    ", uint256(endDate));
         console.log("\n  proposal id (deterministic salt):");
         console.logBytes32(proposalSalt);
-        console.log(
-            "  full id = keccak256(abi.encode(chainid, block.number @ submission, multisig, salt))"
-        );
+        console.log("  full id = keccak256(abi.encode(chainid, block.number @ submission, multisig, salt))");
         console.log("  or read it from the `ProposalCreated` event on the submission tx receipt.");
 
         console.log("\nThe new plugin setup is deployed and the publish proposal is ready.");
@@ -131,8 +127,7 @@ contract NewVersion is BaseScript {
     function _readLatestImplementation() internal view returns (SPP) {
         uint8 latestRelease = sppRepo.latestRelease();
         uint16 latestBuild = uint16(sppRepo.buildCount(latestRelease));
-        PluginRepo.Tag memory latestTag =
-            PluginRepo.Tag({release: latestRelease, build: latestBuild});
+        PluginRepo.Tag memory latestTag = PluginRepo.Tag({release: latestRelease, build: latestBuild});
         address latestSetup = sppRepo.getVersion(latestTag).pluginSetup;
         return SPP(IPluginSetup(latestSetup).implementation());
     }

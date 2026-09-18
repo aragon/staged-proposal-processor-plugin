@@ -15,12 +15,12 @@ contract PluginBCondition is PermissionCondition {
         PLUGIN_B = PluginB(_pluginB);
     }
 
-    function isGranted(address _where, address _who, bytes32 _permissionId, bytes calldata _data)
-        public
-        view
-        override
-        returns (bool)
-    {
+    function isGranted(
+        address _where,
+        address _who,
+        bytes32 _permissionId,
+        bytes calldata _data
+    ) public view override returns (bool) {
         (_where, _data, _permissionId);
 
         return PLUGIN_B.hasPermission(_who, _data);
