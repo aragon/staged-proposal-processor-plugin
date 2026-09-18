@@ -89,7 +89,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         _;
     }
 
-    function test_WhenSubProposalCanNotBeCreated()
+    function test_RevertWhen_SubProposalCanNotBeCreated()
         external
         whenStagesAreConfigured
         whenProposalDoesNotExist
@@ -104,8 +104,8 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         _stages[0] = _createStageStruct(_bodies);
         sppPlugin.updateStages(_stages);
 
-        // the body's revert bubbles up through `createProposal`.
-        vm.expectRevert("Always reverts");
+        // the body's revert is rethrown naming the body that failed.
+        vm.expectRevert(_subProposalCreationFailed(_bodies[0].addr, "Always reverts"));
 
         sppPlugin.createProposal({
             _actions: new Action[](0),
@@ -130,7 +130,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         .getStages(sppPlugin.getCurrentConfigIndex())[0].bodies[1].addr;
         PluginA(secondBody).setRevertOnCreateProposal(true);
 
-        vm.expectRevert("revertOnCreateProposal");
+        vm.expectRevert(_subProposalCreationFailed(secondBody, "revertOnCreateProposal"));
 
         sppPlugin.createProposal({
             _actions: _createDummyActions(),
@@ -147,6 +147,55 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         assertEq(PluginA(secondBody).proposalCount(), 0, "secondBodyProposalsCount");
     }
 
+    function test_RevertWhen_ParamsWouldSkipTheVetoBody()
+        external
+        whenStagesAreConfigured
+        whenProposalDoesNotExist
+    {
+        // it should revert rather than create a proposal the veto body can not veto.
+
+        // A stage guarded by a single veto body, as a multisig veto would be configured.
+        resultType = SPP.ResultType.Veto;
+        vetoThreshold = 1;
+        approvalThreshold = 0;
+
+        address vetoBody = address(new PluginA(defaultTargetConfig));
+        address otherBody = address(new PluginA(defaultTargetConfig));
+
+        SPP.Body[] memory bodies = new SPP.Body[](2);
+        bodies[0] = _createBodyStruct(otherBody, false);
+        bodies[1] = _createBodyStruct(vetoBody, false);
+
+        SPP.Stage[] memory stages = new SPP.Stage[](1);
+        stages[0] = _createStageStruct(bodies);
+        sppPlugin.updateStages(stages);
+
+        // The creator controls the per-body params. Here the veto body is given params it
+        // rejects, which would stop its sub-proposal from being created while the rest of
+        // the stage is set up normally. If that were tolerated, the veto body would hold no
+        // proposal to vote on and could never veto, so the stage would pass unopposed.
+        PluginA(vetoBody).setNeedExtraParams(true);
+
+        bytes[][] memory creationParams = new bytes[][](1);
+        creationParams[0] = new bytes[](2);
+        creationParams[0][0] = abi.encodePacked("data1");
+        creationParams[0][1] = new bytes(0);
+
+        vm.expectRevert(_subProposalCreationFailed(vetoBody, "needExtraParams"));
+
+        sppPlugin.createProposal({
+            _actions: _createDummyActions(),
+            _allowFailureMap: 0,
+            _metadata: DUMMY_METADATA,
+            _startDate: START_DATE,
+            _proposalParams: creationParams
+        });
+
+        // no sub proposal exists on either body, so the veto body was not bypassed
+        assertEq(PluginA(vetoBody).proposalCount(), 0, "vetoBodyProposalsCount");
+        assertEq(PluginA(otherBody).proposalCount(), 0, "otherBodyProposalsCount");
+    }
+
     function test_RevertWhen_SubBodyReturnsMalformedData()
         external
         whenStagesAreConfigured
@@ -155,14 +204,18 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
     {
         // it should revert since the returndata can not be decoded as a uint256.
 
-        // body advertises `IProposal` but returns empty returndata
+        // body advertises `IProposal` but returns fewer than the 32 bytes needed to decode
+        // a `uint256`. The body itself returns successfully and the caller then reverts on
+        // the `returndatasize()` check, which happens outside the `try/catch` around the
+        // call. So this is NOT rethrown as `SubProposalCreationFailed` and the revert
+        // carries no data naming the offending body.
         SPP.Body[] memory _bodies = new SPP.Body[](1);
-        _bodies[0] = _createBodyStruct(address(new MalformedReturnPlugin(0)), false);
+        _bodies[0] = _createBodyStruct(address(new MalformedReturnPlugin(31)), false);
         SPP.Stage[] memory _stages = new SPP.Stage[](1);
         _stages[0] = _createStageStruct(_bodies);
         sppPlugin.updateStages(_stages);
 
-        vm.expectRevert();
+        vm.expectRevert(bytes(""));
 
         sppPlugin.createProposal({
             _actions: new Action[](0),
@@ -171,6 +224,26 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
             _startDate: START_DATE,
             _proposalParams: defaultCreationParams
         });
+
+        // control: the same body returning a well-formed 32-byte value succeeds, which
+        // pins the revert above to the returndata size and not to anything around it.
+        address okBody = address(new MalformedReturnPlugin(32));
+        SPP.Body[] memory _okBodies = new SPP.Body[](1);
+        _okBodies[0] = _createBodyStruct(okBody, false);
+        SPP.Stage[] memory _okStages = new SPP.Stage[](1);
+        _okStages[0] = _createStageStruct(_okBodies);
+        sppPlugin.updateStages(_okStages);
+
+        uint256 proposalId = sppPlugin.createProposal({
+            _actions: new Action[](0),
+            _allowFailureMap: 0,
+            _metadata: DUMMY_METADATA,
+            _startDate: START_DATE,
+            _proposalParams: defaultCreationParams
+        });
+
+        // the decoded sub-proposal id is the zero word the body returned
+        assertEq(sppPlugin.getBodyProposalId(proposalId, 0, okBody), 0, "subProposalId");
     }
 
     function test_RevertWhen_SubBodyHasNoCode()
@@ -286,7 +359,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         _;
     }
 
-    function test_WhenExtraParamsAreNotProvided()
+    function test_RevertWhen_ExtraParamsAreNotProvided()
         external
         whenStagesAreConfigured
         whenProposalDoesNotExist
@@ -300,8 +373,12 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
 
         Action[] memory actions = _createDummyActions();
 
-        // the sub-body reverts and the revert bubbles up through `createProposal`.
-        vm.expectRevert("needExtraParams");
+        // the first body on stage zero is the first one to be asked for params, so it is
+        // the one that fails and gets named in the rethrown error.
+        address failingBody = sppPlugin
+        .getStages(sppPlugin.getCurrentConfigIndex())[0].bodies[0].addr;
+
+        vm.expectRevert(_subProposalCreationFailed(failingBody, "needExtraParams"));
 
         sppPlugin.createProposal({
             _actions: actions,
@@ -569,7 +646,7 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         }
     }
 
-    function test_WhenExtraParamsAreProvidedButNotEnoughParams()
+    function test_RevertWhen_ExtraParamsAreProvidedButNotEnoughParams()
         external
         whenStagesAreConfigured
         whenProposalDoesNotExist
@@ -591,8 +668,11 @@ contract CreateProposal_SPP_IntegrationTest is BaseTest {
         customCreationParam[1] = new bytes[](1);
         customCreationParam[1][0] = abi.encodePacked("data3");
 
-        // the second sub-body reverts and the revert bubbles up through `createProposal`.
-        vm.expectRevert("needExtraParams");
+        // the first body gets `data1`, the second one gets nothing and is the one that fails.
+        address failingBody = sppPlugin
+        .getStages(sppPlugin.getCurrentConfigIndex())[0].bodies[1].addr;
+
+        vm.expectRevert(_subProposalCreationFailed(failingBody, "needExtraParams"));
 
         sppPlugin.createProposal({
             _actions: actions,

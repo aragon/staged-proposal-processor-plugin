@@ -11,7 +11,7 @@ AdvanceProposal_SPP_IntegrationTest
 │   │       ├── when all plugins on next stage are non manual
 │   │       │   ├── when some sub proposal need extra params
 │   │       │   │   ├── when extra params are not provided
-│   │       │   │   │   ├── it should revert since the sub-body reverts when the extra param is not provided.
+│   │       │   │   │   ├── it should revert.
 │   │       │   │   │   ├── it should not advance the proposal.
 │   │       │   │   │   └── it should not create sub proposals.
 │   │       │   │   ├── when extra params are provided
@@ -23,13 +23,17 @@ AdvanceProposal_SPP_IntegrationTest
 │   │       │   │   │   ├── it should advance proposal.
 │   │       │   │   │   └── it should create sub proposals with correct extra params.
 │   │       │   │   └── when extra params are provided but not enough params // there are more sub plugins than extra params
-│   │       │   │       ├── it should revert since the sub-body reverts when the extra param is not provided.
+│   │       │   │       ├── it should revert.
 │   │       │   │       ├── it should not advance the proposal.
 │   │       │   │       └── it should not create sub proposals.
 │   │       │   ├── when sub body on next stage reverts on createProposal
 │   │       │   │   ├── it should revert.
 │   │       │   │   ├── it should leave the proposal on its current stage, blocking advancement.
 │   │       │   │   └── it should advance once the body behaves again.
+│   │       │   ├── when stage params stored at creation can not satisfy the next stage
+│   │       │   │   ├── it should revert when advancing to the stage whose params are unusable.
+│   │       │   │   ├── it should leave the proposal permanently stuck, the stored params are not fixable.
+│   │       │   │   └── it should expire unadvanced once maxAdvance passes.
 │   │       │   ├── when none sub proposal need extra params
 │   │       │   │   ├── it should emit ProposalAdvanced event.
 │   │       │   │   ├── it should advance proposal.

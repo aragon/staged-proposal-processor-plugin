@@ -8,10 +8,9 @@ GetProposalTally_SPP_IntegrationTest
 │       └── when unreported proposal is non manual
 │           ├── when the body reverts on hasSucceeded
 │           │   └── it should not count unreported results.
-│           └── when stored proposal id is valid
-│               ├── when unreported plugin result can be executed
-│               │   └── it should count unreported results.
-│               └── when unreported plugin result can not be executed
-│                   └── it should not count unreported results.
+│           ├── when unreported plugin result can be executed
+│           │   └── it should count unreported results.
+│           └── when unreported plugin result can not be executed
+│               └── it should not count unreported results.
 └── when non existent proposal
     └── it should revert.

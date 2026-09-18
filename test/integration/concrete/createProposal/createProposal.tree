@@ -7,12 +7,13 @@ CreateProposal_SPP_IntegrationTest
 │   └── when proposal does not exist
 │       ├── given all plugins on stage zero are non manual
 │       │   ├── when sub proposal can not be created
-│       │   │   └── it should revert since the body's createProposal always reverts.
+│       │   │   └── it should revert.
 │       │   ├── when sub body reverts on createProposal
 │       │   │   ├── it should revert and no proposal should exist.
 │       │   │   └── it should roll back the sub proposals created before it.
 │       │   ├── when sub body returns malformed data
-│       │   │   └── it should revert since the returndata can not be decoded as a uint256.
+│       │   │   ├── it should revert since the returndata can not be decoded as a uint256.
+│       │   │   └── it should create the proposal when the same body returns a well formed value.
 │       │   ├── when sub body has no code
 │       │   │   └── it should revert on updateStages since the interface is not supported.
 │       │   └── when sub proposal can be created
@@ -24,7 +25,7 @@ CreateProposal_SPP_IntegrationTest
 │       │       │   └── it should not create sub proposals on non zero stages.
 │       │       └── when some sub proposal need extra params
 │       │           ├── when extra params are not provided
-│       │           │    ├── it should revert since the sub-body reverts when the extra param is not provided.
+│       │           │    ├── it should revert.
 │       │           │    ├── it should not create the proposal.
 │       │           │    ├── it should not create sub proposals.
 │       │           ├── when extra params are provided
@@ -40,9 +41,11 @@ CreateProposal_SPP_IntegrationTest
 │       │           │    ├── it should store non-manual sub proposal ids.
 │       │           │    └── it should not create sub proposals on non zero stages.
 │       │           └── when extra params are provided but not enough params // there are more sub plugins than extra params
-│       │                ├── it should revert since the second sub-body gets no extra param and reverts.
+│       │                ├── it should revert.
 │       │                ├── it should not create the parent proposal.
 │       │                └── it should not create sub proposals.
+│       ├── when params would skip the veto body
+│       │   └── it should revert rather than create a proposal the veto body can not veto.
 │       ├── given some plugins on stage zero are manual
 │       │   ├── it should emit events.
 │       │   ├── it should create proposal.

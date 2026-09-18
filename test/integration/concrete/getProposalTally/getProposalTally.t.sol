@@ -112,16 +112,11 @@ contract GetProposalTally_SPP_IntegrationTest is BaseTest {
         assertEq(votes, 0, "votes");
     }
 
-    modifier whenStoredProposalIdIsValid() {
-        _;
-    }
-
     function test_WhenUnreportedPluginResultCanBeExecuted()
         external
         whenExistentProposal
         whenSomeResultsAreNotReported
         whenUnreportedProposalIsNonManual
-        whenStoredProposalIdIsValid
     {
         // it should count unreported results.
 
@@ -140,7 +135,6 @@ contract GetProposalTally_SPP_IntegrationTest is BaseTest {
         whenExistentProposal
         whenSomeResultsAreNotReported
         whenUnreportedProposalIsNonManual
-        whenStoredProposalIdIsValid
     {
         // it should count unreported results.
 

@@ -14,6 +14,9 @@ contract SPP_Unit_FuzzTest is BaseTest {
 
         assumeNotPrecompile(_randomAddress);
         vm.assume(_randomAddress != users.manager);
+        // A call from the trusted forwarder is attributed to the address appended to the
+        // calldata, not to the forwarder, so `_msgSender()` would not be `_randomAddress`.
+        vm.assume(_randomAddress != address(trustedForwarder));
 
         resetPrank(_randomAddress);
 
@@ -34,6 +37,9 @@ contract SPP_Unit_FuzzTest is BaseTest {
 
         assumeNotPrecompile(_randomAddress);
         vm.assume(_randomAddress != users.manager);
+        // A call from the trusted forwarder is attributed to the address appended to the
+        // calldata, not to the forwarder, so `_msgSender()` would not be `_randomAddress`.
+        vm.assume(_randomAddress != address(trustedForwarder));
 
         resetPrank(_randomAddress);
         SPP.Stage[] memory stages = _createDummyStages(2, true, true, false);
