@@ -70,8 +70,6 @@ library Errors {
     /// @notice Thrown when the metadata is empty.
     error EmptyMetadata();
 
-    error InsufficientGas();
-
     // Trusted Forwarder
     /// @notice Thrown when trusted forwarder can not execute the actions.
     error IncorrectActionCount();

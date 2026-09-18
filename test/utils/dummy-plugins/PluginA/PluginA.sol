@@ -23,6 +23,7 @@ contract PluginA is IERC165, Proposal {
     mapping(uint256 => bytes) public extraParams;
 
     bool public revertOnCreateProposal;
+    bool public revertOnHasSucceeded;
     bool public needExtraParams;
     bool public canExecuteResult = true;
 
@@ -82,6 +83,7 @@ contract PluginA is IERC165, Proposal {
     }
 
     function hasSucceeded(uint256) public view returns (bool) {
+        if (revertOnHasSucceeded) revert("revertOnHasSucceeded");
         return canExecuteResult;
     }
 
@@ -120,6 +122,10 @@ contract PluginA is IERC165, Proposal {
 
     function setRevertOnCreateProposal(bool _revertOnCreateProposal) external {
         revertOnCreateProposal = _revertOnCreateProposal;
+    }
+
+    function setRevertOnHasSucceeded(bool _revertOnHasSucceeded) external {
+        revertOnHasSucceeded = _revertOnHasSucceeded;
     }
 
     function setCanExecuteResult(bool _canExecuteResult) external {

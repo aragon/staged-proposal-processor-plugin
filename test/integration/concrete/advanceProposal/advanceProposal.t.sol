@@ -47,9 +47,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         // it should revert.
         resetPrank(users.unauthorized);
         vm.warp(sppPlugin.getProposal(proposalId).lastStageTransition + VOTE_DURATION + START_DATE);
-        vm.expectRevert(
-            abi.encodeWithSelector(Errors.ProposalExecutionForbidden.selector, proposalId)
-        );
+        vm.expectRevert(abi.encodeWithSelector(Errors.ProposalExecutionForbidden.selector, proposalId));
         sppPlugin.advanceProposal(proposalId);
     }
 
@@ -93,8 +91,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
 
     modifier whenSomeSubProposalNeedExtraParams() {
         // configure in the plugin that extra params are needed.
-        PluginA(sppPlugin.getStages(sppPlugin.getCurrentConfigIndex())[1].bodies[0].addr)
-            .setNeedExtraParams(true);
+        PluginA(sppPlugin.getStages(sppPlugin.getCurrentConfigIndex())[1].bodies[0].addr).setNeedExtraParams(true);
 
         _;
     }
@@ -107,9 +104,9 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         whenAllPluginsOnNextStageAreNonManual
         whenSomeSubProposalNeedExtraParams
     {
-        // it should emit ProposalAdvanced event.
-        // it should advance proposal.
-        // it should not create sub proposals since extra param was not provided.
+        // it should revert since the sub-body reverts when the extra param is not provided.
+        // it should not advance the proposal.
+        // it should not create sub proposals.
 
         // create proposal
         Action[] memory actions = _createDummyActions();
@@ -127,25 +124,19 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
 
         vm.warp(VOTE_DURATION + START_DATE);
 
-        // check event emitted
-        vm.expectEmit({emitter: address(sppPlugin)});
-        // users.manager is from which the `advanceProposal` call is made.
-        emit ProposalAdvanced(proposalId, initialStage + 1, users.manager);
+        // the sub-body reverts and the revert bubbles up through `advanceProposal`.
+        vm.expectRevert("needExtraParams");
 
         sppPlugin.advanceProposal(proposalId);
 
         SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
         SPP.Stage[] memory stages = sppPlugin.getStages(sppPlugin.getCurrentConfigIndex());
 
-        // check proposal advanced
-        assertEq(proposal.currentStage, initialStage + 1, "currentStage");
+        // check proposal did not advance
+        assertEq(proposal.currentStage, initialStage, "currentStage");
 
         // check sub proposal was not created
-        assertEq(
-            PluginA(stages[initialStage + 1].bodies[0].addr).proposalCount(),
-            0,
-            "proposalsCount"
-        );
+        assertEq(PluginA(stages[initialStage + 1].bodies[0].addr).proposalCount(), 0, "proposalsCount");
     }
 
     function test_WhenExtraParamsAreProvided()
@@ -198,17 +189,11 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         SPP.Stage[] memory stages = sppPlugin.getStages(sppPlugin.getCurrentConfigIndex());
 
         // check sub proposal created
-        assertEq(
-            PluginA(stages[initialStage + 1].bodies[0].addr).proposalCount(),
-            1,
-            "proposalsCount"
-        );
+        assertEq(PluginA(stages[initialStage + 1].bodies[0].addr).proposalCount(), 1, "proposalsCount");
 
         // should set the extra params on sub proposals
         assertEq(
-            PluginA(stages[initialStage + 1].bodies[0].addr).extraParams(0),
-            customCreationParam[1][0],
-            "extraParams"
+            PluginA(stages[initialStage + 1].bodies[0].addr).extraParams(0), customCreationParam[1][0], "extraParams"
         );
     }
 
@@ -268,17 +253,11 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         SPP.Stage[] memory stages = sppPlugin.getStages(sppPlugin.getCurrentConfigIndex());
 
         // check sub proposal created
-        assertEq(
-            PluginA(stages[initialStage + 1].bodies[0].addr).proposalCount(),
-            1,
-            "proposalsCount"
-        );
+        assertEq(PluginA(stages[initialStage + 1].bodies[0].addr).proposalCount(), 1, "proposalsCount");
 
         // should set the extra params on sub proposals
         assertEq(
-            PluginA(stages[initialStage + 1].bodies[0].addr).extraParams(0),
-            customCreationParam[1][0],
-            "extraParams"
+            PluginA(stages[initialStage + 1].bodies[0].addr).extraParams(0), customCreationParam[1][0], "extraParams"
         );
     }
 
@@ -290,9 +269,9 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         whenAllPluginsOnNextStageAreNonManual
         whenSomeSubProposalNeedExtraParams
     {
-        // it should emit ProposalAdvanced event.
-        // it should advance proposal.
-        // it should not create sub proposals since extra param was not provided.
+        // it should revert since the sub-body reverts when the extra param is not provided.
+        // it should not advance the proposal.
+        // it should not create sub proposals.
 
         // create custom params
         bytes[][] memory customCreationParam = new bytes[][](2);
@@ -318,25 +297,20 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
 
         vm.warp(VOTE_DURATION + START_DATE);
 
-        // check event emitted
-        vm.expectEmit({emitter: address(sppPlugin)});
-        emit ProposalAdvanced(proposalId, initialStage + 1, users.manager);
+        // the sub-body reverts and the revert bubbles up through `advanceProposal`.
+        vm.expectRevert("needExtraParams");
 
         sppPlugin.advanceProposal(proposalId);
 
         SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
 
-        // check proposal advanced
-        assertEq(proposal.currentStage, initialStage + 1, "currentStage");
+        // check proposal did not advance
+        assertEq(proposal.currentStage, initialStage, "currentStage");
 
         SPP.Stage[] memory stages = sppPlugin.getStages(sppPlugin.getCurrentConfigIndex());
 
         // check sub proposal was not created
-        assertEq(
-            PluginA(stages[initialStage + 1].bodies[0].addr).proposalCount(),
-            0,
-            "proposalsCount"
-        );
+        assertEq(PluginA(stages[initialStage + 1].bodies[0].addr).proposalCount(), 0, "proposalsCount");
     }
 
     function test_WhenNoneSubProposalNeedExtraParams()
@@ -379,11 +353,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         assertEq(proposal.currentStage, initialStage + 1, "currentStage");
 
         // check sub proposal created
-        assertEq(
-            PluginA(stages[initialStage + 1].bodies[0].addr).proposalCount(),
-            1,
-            "proposalsCount"
-        );
+        assertEq(PluginA(stages[initialStage + 1].bodies[0].addr).proposalCount(), 1, "proposalsCount");
     }
 
     function test_WhenCallerHasNoExecutePermission()
@@ -416,11 +386,12 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         address advanceProposalCaller = users.unauthorized;
 
         // grant advance permission but not execute permission
-        DAO(payable(address(dao))).grant({
-            _where: address(sppPlugin),
-            _who: advanceProposalCaller,
-            _permissionId: Permissions.ADVANCE_PERMISSION_ID
-        });
+        DAO(payable(address(dao)))
+            .grant({
+                _where: address(sppPlugin),
+                _who: advanceProposalCaller,
+                _permissionId: Permissions.ADVANCE_PERMISSION_ID
+            });
 
         // check event emitted
         vm.expectEmit({emitter: address(sppPlugin)});
@@ -436,11 +407,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         assertEq(proposal.currentStage, initialStage + 1, "currentStage");
 
         // check sub proposal created
-        assertEq(
-            PluginA(stages[initialStage + 1].bodies[0].addr).proposalCount(),
-            1,
-            "proposalsCount"
-        );
+        assertEq(PluginA(stages[initialStage + 1].bodies[0].addr).proposalCount(), 1, "proposalsCount");
     }
 
     function test_RevertWhen_CallerHasNoAdvancePermission()
@@ -469,9 +436,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
 
         resetPrank(users.unauthorized);
         vm.warp(sppPlugin.getProposal(proposalId).lastStageTransition + VOTE_DURATION + START_DATE);
-        vm.expectRevert(
-            abi.encodeWithSelector(Errors.ProposalAdvanceForbidden.selector, proposalId)
-        );
+        vm.expectRevert(abi.encodeWithSelector(Errors.ProposalAdvanceForbidden.selector, proposalId));
         sppPlugin.advanceProposal(proposalId);
     }
 
@@ -516,11 +481,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         assertEq(proposal.currentStage, initialStage + 1, "currentStage");
 
         // check sub proposal not created
-        assertEq(
-            PluginA(stages[initialStage + 1].bodies[0].addr).proposalCount(),
-            0,
-            "proposalsCount"
-        );
+        assertEq(PluginA(stages[initialStage + 1].bodies[0].addr).proposalCount(), 0, "proposalsCount");
     }
 
     function test_WhenThereAreNoPluginsOnNextStage()
@@ -575,6 +536,51 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         assertTrue(sppPlugin.canProposalAdvance(proposalId), "canAdvance");
     }
 
+    function test_RevertWhen_SubBodyOnNextStageRevertsOnCreateProposal()
+        external
+        givenProposalExists
+        whenProposalCanAdvance
+        whenProposalIsNotInLastStage
+        whenAllPluginsOnNextStageAreNonManual
+    {
+        // it should revert.
+        // it should leave the proposal on its current stage, blocking advancement.
+
+        // create proposal
+        proposalId = sppPlugin.createProposal({
+            _actions: _createDummyActions(),
+            _allowFailureMap: 0,
+            _metadata: DUMMY_METADATA,
+            _startDate: START_DATE,
+            _proposalParams: defaultCreationParams
+        });
+        uint16 initialStage;
+
+        // execute proposals on first stage
+        _executeStageProposals(initialStage);
+
+        // make the next stage's body revert when the sub proposal is created
+        SPP.Stage[] memory stages = sppPlugin.getStages(sppPlugin.getCurrentConfigIndex());
+        address nextStageBody = stages[initialStage + 1].bodies[0].addr;
+        PluginA(nextStageBody).setRevertOnCreateProposal(true);
+
+        vm.warp(VOTE_DURATION + START_DATE);
+
+        // a single misbehaving body on the next stage blocks the whole advancement
+        vm.expectRevert("revertOnCreateProposal");
+        sppPlugin.advanceProposal(proposalId);
+
+        // the proposal is stuck on its current stage
+        assertEq(sppPlugin.getProposal(proposalId).currentStage, initialStage, "currentStage");
+
+        // once the body behaves again, the proposal can advance
+        PluginA(nextStageBody).setRevertOnCreateProposal(false);
+        sppPlugin.advanceProposal(proposalId);
+
+        assertEq(sppPlugin.getProposal(proposalId).currentStage, initialStage + 1, "currentStage");
+        assertEq(PluginA(nextStageBody).proposalCount(), 1, "proposalsCount");
+    }
+
     function test_RevertWhen_ProposalCanNotAdvance() external givenProposalExists {
         // it should revert.
 
@@ -608,9 +614,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
     function test_RevertGiven_ProposalDoesNotExist() external {
         // it should revert.
 
-        vm.expectRevert(
-            abi.encodeWithSelector(Errors.NonexistentProposal.selector, NON_EXISTENT_PROPOSAL_ID)
-        );
+        vm.expectRevert(abi.encodeWithSelector(Errors.NonexistentProposal.selector, NON_EXISTENT_PROPOSAL_ID));
         sppPlugin.advanceProposal(NON_EXISTENT_PROPOSAL_ID);
     }
 }
