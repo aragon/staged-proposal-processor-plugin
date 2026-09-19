@@ -33,6 +33,15 @@ contract StagedProposalProcessor is
 {
     using ERC165Checker for address;
 
+    /// @notice Stored as a body's sub-proposal id while that sub-proposal is being created.
+    /// @dev Written before the external `createProposal` call and replaced by the real id after
+    ///      it returns, so a body that reenters from inside that call finds this value instead
+    ///      of a default zero that could pass for a real id. `_getProposalTally` treats it as
+    ///      "this stage can not be scored yet". A body is not allowed to return this value as an
+    ///      id. It deliberately differs from `type(uint256).max`, which earlier versions stored
+    ///      for sub-proposals that failed to be created.
+    uint256 private constant PROPOSAL_IN_PROGRESS = type(uint256).max - 1;
+
     /// @notice The different types that bodies can be registered as.
     /// @param None Used to check if the body reported the result or not.
     /// @param Approval Used to allow a body to report approval result.
@@ -895,6 +904,11 @@ contract StagedProposalProcessor is
                 )
             });
 
+            // Mark the sub-proposal as in progress before handing control to the body. The
+            // real id is only known once the call returns, and until then the slot would
+            // otherwise hold a zero that a reentrant tally could mistake for a real id.
+            bodyProposalIds[_proposalId][_stageId][body.addr] = PROPOSAL_IN_PROGRESS;
+
             // A sub-body that fails to create the sub-proposal reverts the outer tx
             // instead of being recorded and skipped. The failure is rethrown as
             // `SubProposalCreationFailed` so it names the body that caused it.
@@ -907,6 +921,12 @@ contract StagedProposalProcessor is
                     _stageProposalParams.length > i ? _stageProposalParams[i] : new bytes(0)
                 )
             returns (uint256 subProposalId) {
+                // The marker must never be stored as a real id, or the stage would look
+                // in progress forever.
+                if (subProposalId == PROPOSAL_IN_PROGRESS) {
+                    revert Errors.SubProposalCreationFailed(body.addr, "");
+                }
+
                 bodyProposalIds[_proposalId][_stageId][body.addr] = subProposalId;
 
                 emit SubProposalCreated(_proposalId, _stageId, body.addr, subProposalId);
@@ -977,6 +997,21 @@ contract StagedProposalProcessor is
             Body storage body = stage.bodies[i];
 
             uint256 bodyProposalId = getBodyProposalId(_proposalId, _stageId, body.addr);
+
+            // A stage whose sub-proposals are still being created can not have passed.
+            // Returning here, before any result is counted, also means that no body after
+            // this one is consulted while its own id is still unwritten.
+            //
+            // The returned tally is chosen to fail `_thresholdsMet` whatever the stage's
+            // thresholds are: zero approvals is below any approval threshold of one or
+            // more, and `type(uint256).max` vetoes reaches any veto threshold of one or
+            // more, while a real veto count can never exceed the number of bodies. A stage
+            // with both thresholds at zero passes any tally by definition and is not
+            // protected by this.
+            if (bodyProposalId == PROPOSAL_IN_PROGRESS) {
+                return (0, type(uint256).max);
+            }
+
             ResultType resultType = getBodyResult(_proposalId, _stageId, body.addr);
 
             if (resultType != ResultType.None) {

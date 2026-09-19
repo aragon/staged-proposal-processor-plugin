@@ -378,6 +378,27 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
         return bytes32(1 << uint8(_proposalState));
     }
 
+    /// @dev Mirrors how SPP derives a proposal id, so a test can know the id of a proposal
+    ///      before creating it. Assumes `users.manager` is the creator.
+    function _predictProposalId(
+        Action[] memory _actions,
+        bytes memory _metadata
+    ) internal view returns (uint256) {
+        return _predictProposalIdFor(_actions, _metadata, users.manager);
+    }
+
+    function _predictProposalIdFor(
+        Action[] memory _actions,
+        bytes memory _metadata,
+        address _creator
+    ) internal view returns (uint256) {
+        bytes32 salt = keccak256(abi.encode(_actions, _metadata, _creator));
+        return
+            uint256(
+                keccak256(abi.encode(block.chainid, block.number, address(sppPlugin), salt))
+            );
+    }
+
     /// @dev Expected revert data when `_body` fails to create its sub-proposal with
     ///      a `require`/`revert` string, which SPP rethrows as `SubProposalCreationFailed`.
     function _subProposalCreationFailed(
