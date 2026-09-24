@@ -35,6 +35,7 @@ interface IManagementDaoMultisig {
 contract NewVersion is BaseScript {
     function run() external {
         sppRepo = PluginRepo(vm.envAddress("SPP_PLUGIN_REPO_ADDRESS"));
+        address managementDao = vm.envAddress("MANAGEMENT_DAO_ADDRESS");
         address managementDaoMultisig = vm.envAddress("MANAGEMENT_DAO_MULTISIG_ADDRESS");
 
         // Reuse the previous build's plugin implementation. v1.2's bytecode is identical to v1.1's
@@ -48,6 +49,20 @@ contract NewVersion is BaseScript {
         console.log(
             "- Version:                   ",
             _versionString(PluginSettings.VERSION_RELEASE, PluginSettings.VERSION_BUILD)
+        );
+
+        // Emit the artifacts-hub envelope for the setup we just deployed.
+        // NOTE: the version itself is not published on-chain until the
+        // management DAO multisig approves and executes the proposal printed
+        // below. Only run `just import-plugin` on this file AFTER that has
+        // happened — importing early would record a version that doesn't
+        // exist on-chain yet.
+        _writeArtifact(
+            managementDao,
+            PluginSettings.VERSION_RELEASE,
+            uint16(PluginSettings.VERSION_BUILD),
+            address(sppSetup),
+            address(existingImpl)
         );
 
         bytes memory createVersionData = abi.encodeCall(

@@ -85,6 +85,16 @@ contract Deploy is BaseScript {
             "- Version:          ",
             _versionString(PluginSettings.VERSION_RELEASE, PluginSettings.VERSION_BUILD)
         );
+
+        // Emit the artifacts-hub envelope for the version just published.
+        // Placeholder builds (if any) are not recorded here; see Base.sol.
+        _writeArtifact(
+            managementDao,
+            PluginSettings.VERSION_RELEASE,
+            uint16(PluginSettings.VERSION_BUILD),
+            address(sppSetup),
+            sppSetup.implementation()
+        );
     }
 
     function _createPluginRepo(address _factory) internal returns (PluginRepo _sppRepo) {
