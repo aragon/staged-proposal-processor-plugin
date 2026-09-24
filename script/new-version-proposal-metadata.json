@@ -1,7 +1,7 @@
 {
-    "title": "Publish StagedProposalProcessor v1.2",
-    "summary": "Publishes build 2 of the StagedProposalProcessor (release 1) on the SPP repo.",
-    "description": "Calls `createVersion` on the SPP plugin repo to publish v1.2 (release 1, build 2).\n\nBuild 2 is recompiled against an amended `osx-commons` `RuledCondition`. The installation parameters are unchanged versus build 1.\n\nExisting v1.1 installations can update in place via the setup's `prepareUpdate` flow, which deploys a fresh `SPPRuleCondition` seeded with the existing rules and migrates the `CREATE_PROPOSAL` and `UPDATE_RULES` permissions from the old helper to the new one.",
+    "title": "Publish StagedProposalProcessor v1.3",
+    "summary": "Publishes build 3 of the StagedProposalProcessor (release 1) on the SPP repo. This version addresses a security issue: existing deployments are strongly recommended to update.",
+    "description": "Calls `createVersion` on the SPP plugin repo to publish v1.3 (release 1, build 3).\n\nSub-proposal creation now reverts the outer tx when any automatic sub-body's `createProposal` fails. This version also hardens the stage tally against same-transaction flows where a trusted sub-body could reenter.\n\nAll existing deployments are strongly recommended to update to build 3. Installation parameters are unchanged versus build 2.",
     "resources": [
         {
             "name": "changelog",
