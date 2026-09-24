@@ -20,7 +20,7 @@ import {
 /// @title StagedProposalProcessorSetup
 /// @author Aragon X - 2024
 /// @notice The setup contract of the `StagedProposalProcessor` plugin.
-/// @dev Release 1, Build 2
+/// @dev Release 1, Build 3
 contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
     using ProxyLib for address;
 
@@ -91,21 +91,37 @@ contract StagedProposalProcessorSetup is PluginUpgradeableSetup {
     }
 
     /// @inheritdoc IPluginSetup
-    /// @dev v1.1 → v1.2: deploys a fresh `SPPRuleCondition` seeded with the existing rules and migrates
-    /// `CREATE_PROPOSAL_PERMISSION` (on the plugin) and `UPDATE_RULES_PERMISSION` (on the helper) from
-    /// the old condition to the new one. The plugin proxy itself is upgraded to the new implementation
-    /// by the `PluginSetupProcessor` automatically; no reinitializer is required because no new storage
-    /// is introduced in build 2. Existing rules are read from the old helper, so no caller-supplied data
-    /// is required — `_payload.data` is ignored.
+    /// @dev Supports two update paths ending at build 3:
+    ///      - v1.1 → v1.3 (`_fromBuild == 1`): deploys a fresh `SPPRuleCondition` seeded with the
+    ///        existing rules and migrates `CREATE_PROPOSAL_PERMISSION` (on the plugin) and
+    ///        `UPDATE_RULES_PERMISSION` (on the helper) from the old condition to the new one.
+    ///        This is the same migration that build 2 introduced; running it once from build 1
+    ///        also lands the caller on build 3 because `PluginSetupProcessor.applyUpdate` swaps
+    ///        the plugin proxy's implementation to this setup's `IMPLEMENTATION` (build 3).
+    ///      - v1.2 → v1.3 (`_fromBuild == 2`): no helper or permission changes. The existing
+    ///        helper is passed through unchanged and no permission entries are returned; PSP
+    ///        still upgrades the plugin proxy to the build 3 implementation on `applyUpdate`.
+    ///      No reinitializer is required in either path because no new storage is introduced.
+    ///      Existing rules are read from the old helper (v1.1 path only), so no caller-supplied
+    ///      data is required — `_payload.data` is ignored.
     function prepareUpdate(
         address _dao,
         uint16 _fromBuild,
         SetupPayload calldata _payload
     ) external virtual override returns (bytes memory initData, PreparedSetupData memory preparedSetupData) {
-        if (_fromBuild != 1) {
-            revert InvalidUpdatePath({fromBuild: _fromBuild, thisBuild: 2});
+        if (_fromBuild != 1 && _fromBuild != 2) {
+            revert InvalidUpdatePath({fromBuild: _fromBuild, thisBuild: 3});
         }
 
+        // v1.2 → v1.3: impl-only upgrade. Pass the existing helper through and return no
+        // permission changes; PSP performs the proxy implementation swap on applyUpdate.
+        if (_fromBuild == 2) {
+            preparedSetupData.helpers = new address[](1);
+            preparedSetupData.helpers[0] = _payload.currentHelpers[0];
+            return ("", preparedSetupData);
+        }
+
+        // v1.1 → v1.3: replay the helper migration that build 2 introduced.
         address oldCondition = _payload.currentHelpers[0];
         RuledCondition.Rule[] memory rules = SPPRuleCondition(oldCondition).getRules();
 
