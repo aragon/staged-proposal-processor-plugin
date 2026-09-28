@@ -23,8 +23,15 @@ contract TrustedForwarder {
         // append msg.sender in the end of the actual calldata
         bytes memory callData = abi.encodePacked(_actions[0].data, msg.sender);
 
-        (bool success, ) = _actions[0].to.call{value: _actions[0].value}(callData);
+        (bool success, bytes memory result) = _actions[0].to.call{value: _actions[0].value}(
+            callData
+        );
 
-        success;
+        // Bubble up the revert so tests can see a rejected forwarded call.
+        if (!success) {
+            assembly {
+                revert(add(result, 32), mload(result))
+            }
+        }
     }
 }

@@ -26,7 +26,6 @@ import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.s
 contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
     // variables
     Users internal users;
-    address allowedBody;
 
     // contracts
     IDAO internal dao;
@@ -60,7 +59,6 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
         users.alice = _createUser("Alice");
         users.bob = _createUser("Bob");
         users.unauthorized = _createUser("unauthorized");
-        allowedBody = users.manager;
 
         // set up dao and plugin
         _setupDaoAndPluginHelper();

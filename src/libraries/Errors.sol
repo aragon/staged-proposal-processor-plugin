@@ -67,6 +67,14 @@ library Errors {
     /// @param reportedStageId The stage id for which the report is being submitted.
     error StageIdInvalid(uint64 currentStageId, uint64 reportedStageId);
 
+    /// @notice Thrown when the sender is not a body of the stage, or reports a result type other than
+    ///         its configured one or `None`.
+    /// @dev `resultType` is a `uint8` because `ResultType` is declared inside the SPP contract.
+    /// @param stageId The stage id the result is reported for.
+    /// @param sender The address that reported the result.
+    /// @param resultType The result type that was reported.
+    error ResultTypeNotAllowed(uint16 stageId, address sender, uint8 resultType);
+
     /// @notice Thrown when the metadata is empty.
     error EmptyMetadata();
 

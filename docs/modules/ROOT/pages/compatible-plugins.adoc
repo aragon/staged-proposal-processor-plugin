@@ -75,10 +75,9 @@ For manual bodies, the SPP does not create sub-proposals automatically. Instead,
 * After creating a proposal in the SPP, note its `proposalId` and initiate a transaction on the Safe, where:
     ** **to**: SPP’s address
     ** **data**: `abi.encodeCall(StagedProposalProcessor.reportProposalResult, (proposalId, stageId, resultType, tryAdvance))`
-        *** `resultType` can be `Approval` or `Veto`.
+        *** `resultType` must be the one this body is configured with in that stage (`Approval` or `Veto`), or `None` to retract a previous result. Any other result type reverts with `ResultTypeNotAllowed`. A body that must be able to both approve and veto needs to be registered in a stage as an approving body and in another as a vetoing one.
         *** `stageId` must correspond to the stage where this body is registered. We require bodies to pass this explicitly
-        as there could be the same body added in multiple stages. If `stageId` is passed in which this body has not been added, the resultType
-        will not be used in SPP's decision making process to advance(i.e it will have no effect other than for you, spending gas in vain).
+        as there could be the same body added in multiple stages. Reporting for a stage in which this body has not been added reverts with `ResultTypeNotAllowed`, whatever the result type.
         *** `tryAdvance` if you know the result is enough to advance the proposal and body also has `ADVANCE_PERMISSION_ID`, this can be `true` which 
         will automatically advance the proposal to the next stage.
 * Once the transaction is executed, the SPP records the result. Ensure this transaction occurs before the `maxAdvance` time of the relevant stage.

@@ -258,9 +258,8 @@ contract StagedProposalProcessor is
     }
 
     /// @notice Reports and records the result for a proposal at a specific stage.
-    /// @dev This function can be called by any address even if it is not included in the stage configuration.
-    ///      `_canProposalAdvance` function ensures that only records from addresses
-    ///      in the stage configuration are used.
+    /// @dev Reverts with `ResultTypeNotAllowed` unless the caller is a body of the `_stageId` reporting
+    ///      its configured result type, or `None` to retract a previous result.
     ///      If `_tryAdvance` is true, the proposal will attempt to advance to the next stage if eligible.
     ///      Requires the caller to have the `EXECUTE_PERMISSION_ID` permission to execute the final stage.
     ///      Reporting the result does not revert when the proposal is simply not eligible to advance,
@@ -271,7 +270,7 @@ contract StagedProposalProcessor is
     ///      false and advance the proposal in a separate transaction.
     /// @param _proposalId The ID of the proposal.
     /// @param _stageId The index of the stage, being reported on. Must not exceed the current stage of the proposal.
-    /// @param _resultType The result type being reported (`Approval` or `Veto`).
+    /// @param _resultType The result type being reported: the body's configured type, or `None` to retract.
     /// @param _tryAdvance Whether to attempt advancing the proposal to the next stage if conditions are met.
     ///        Note that a failed advancement reverts this call, see the note above.
     function reportProposalResult(
@@ -295,6 +294,26 @@ contract StagedProposalProcessor is
         }
 
         address sender = _msgSender();
+
+        // Only a body of this stage may report, and only its configured result type or `None`
+        // (retracting), so approvers can not veto and vetoers can not approve.
+        {
+            Body[] storage bodies = stages[proposal.stageConfigIndex][_stageId].bodies;
+            bool isAllowed;
+
+            for (uint256 i = 0; i < bodies.length; ++i) {
+                if (bodies[i].addr == sender) {
+                    isAllowed =
+                        _resultType == ResultType.None ||
+                        _resultType == bodies[i].resultType;
+                    break;
+                }
+            }
+
+            if (!isAllowed) {
+                revert Errors.ResultTypeNotAllowed(_stageId, sender, uint8(_resultType));
+            }
+        }
 
         _processProposalResult(_proposalId, _stageId, _resultType, sender);
 
