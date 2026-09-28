@@ -29,7 +29,7 @@ metadata and list of actions prior to advancing to the next stage.
 === Bodies and Results
 
 A “body” represents an external governance component—such as another plugin or any other address—that evaluates the proposal at a given stage. 
-Bodies call `reportProposalResult` to indicate if they are approving or vetoing a proposal. Stages can have any number of bodies, 
+Bodies call `reportProposalResult` to report their result on a proposal. Each body is configured as either approving or vetoing, and can only report that result type (or retract it). Stages can have any number of bodies, 
 each reporting their own results. Stages have configurable thresholds to determine if it can be advanced to the next stage, based on 
 the governance results from the bodies.
 

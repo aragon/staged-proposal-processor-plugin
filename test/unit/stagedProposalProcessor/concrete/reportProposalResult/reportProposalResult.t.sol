@@ -98,10 +98,13 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         // pass the stage duration.
         vm.warp(proposal.lastStageTransition + VOTE_DURATION + 1);
 
+        address body = _stageBody(0);
+
         // check event
         vm.expectEmit({emitter: address(sppPlugin)});
-        emit ProposalResultReported(proposalId, 0, users.manager);
+        emit ProposalResultReported(proposalId, 0, body);
 
+        resetPrank(body);
         sppPlugin.reportProposalResult({
             _proposalId: proposalId,
             _stageId: 0,
@@ -112,7 +115,7 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         // check result was recorded
         proposal = sppPlugin.getProposal(proposalId);
         assertEq(
-            sppPlugin.getBodyResult(proposalId, proposal.currentStage, users.manager),
+            sppPlugin.getBodyResult(proposalId, proposal.currentStage, body),
             SPP.ResultType.Approval,
             "resultType"
         );
@@ -564,10 +567,13 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         // it should use the sender stored in the call data.
         // it should record the result and emit ProposalResultReported event.
 
+        address body = _stageBody(0);
+
         // check event was emitted
         vm.expectEmit({emitter: address(sppPlugin)});
-        emit ProposalResultReported(proposalId, 0, allowedBody);
+        emit ProposalResultReported(proposalId, 0, body);
 
+        resetPrank(body);
         sppPlugin.reportProposalResult({
             _proposalId: proposalId,
             _stageId: 0,
@@ -578,7 +584,7 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         // check result was recorded
         SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
         assertEq(
-            sppPlugin.getBodyResult(proposalId, proposal.currentStage, allowedBody),
+            sppPlugin.getBodyResult(proposalId, proposal.currentStage, body),
             SPP.ResultType.Approval,
             "resultType"
         );
@@ -599,10 +605,13 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
     {
         // it should record the result and emit ProposalResultReported event.
 
+        address body = _stageBody(0);
+
         // check event was emitted
         vm.expectEmit({emitter: address(sppPlugin)});
-        emit ProposalResultReported(proposalId, 0, allowedBody);
+        emit ProposalResultReported(proposalId, 0, body);
 
+        resetPrank(body);
         sppPlugin.reportProposalResult({
             _proposalId: proposalId,
             _stageId: 0,
@@ -613,7 +622,7 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         // check result was recorded
         SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
         assertEq(
-            sppPlugin.getBodyResult(proposalId, proposal.currentStage, allowedBody),
+            sppPlugin.getBodyResult(proposalId, proposal.currentStage, body),
             SPP.ResultType.Approval,
             "resultType"
         );
@@ -648,10 +657,13 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         //     count: 0
         // });
 
+        address body = _stageBody(0);
+
         // check event
         vm.expectEmit({emitter: address(sppPlugin)});
-        emit ProposalResultReported(proposalId, 0, allowedBody);
+        emit ProposalResultReported(proposalId, 0, body);
 
+        resetPrank(body);
         sppPlugin.reportProposalResult({
             _proposalId: proposalId,
             _stageId: 0,
@@ -662,7 +674,7 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         // check result was recorded
         SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
         assertEq(
-            sppPlugin.getBodyResult(proposalId, proposal.currentStage, allowedBody),
+            sppPlugin.getBodyResult(proposalId, proposal.currentStage, body),
             SPP.ResultType.Approval,
             "resultType"
         );
@@ -740,11 +752,14 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         uint16 currentStage = sppPlugin.getProposal(proposalId).currentStage;
         stageId = currentStage - 1;
 
+        address body = _stageBody(stageId);
+
         // check event was emitted
         vm.expectEmit({emitter: address(sppPlugin)});
-        emit ProposalResultReported(proposalId, stageId, users.manager);
+        emit ProposalResultReported(proposalId, stageId, body);
 
         // report results for the stage 0
+        resetPrank(body);
         sppPlugin.reportProposalResult({
             _proposalId: proposalId,
             _stageId: stageId,
@@ -754,7 +769,7 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
 
         // check result was recorded
         assertEq(
-            sppPlugin.getBodyResult(proposalId, stageId, users.manager),
+            sppPlugin.getBodyResult(proposalId, stageId, body),
             SPP.ResultType.Approval,
             "resultType"
         );
@@ -772,6 +787,194 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
             _resultType: SPP.ResultType.Approval,
             _tryAdvance: _tryAdvance
         });
+    }
+
+    modifier givenStageWithAnApproverAndAVetoer() {
+        // one stage with two manual bodies: alice approves, bob vetoes
+        SPP.Body[] memory bodies = new SPP.Body[](2);
+        bodies[0] = SPP.Body({
+            addr: users.alice,
+            isManual: true,
+            tryAdvance: false,
+            resultType: SPP.ResultType.Approval
+        });
+        bodies[1] = SPP.Body({
+            addr: users.bob,
+            isManual: true,
+            tryAdvance: false,
+            resultType: SPP.ResultType.Veto
+        });
+
+        approvalThreshold = 1;
+        vetoThreshold = 1;
+        SPP.Stage[] memory stages = new SPP.Stage[](1);
+        stages[0] = _createStageStruct(bodies);
+        sppPlugin.updateStages(stages);
+
+        proposalId = sppPlugin.createProposal({
+            _actions: _createDummyActions(),
+            _allowFailureMap: 0,
+            _metadata: DUMMY_METADATA,
+            _startDate: START_DATE,
+            _proposalParams: new bytes[][](0)
+        });
+        _;
+    }
+
+    function test_RevertWhen_ApproverReportsVeto() external givenStageWithAnApproverAndAVetoer {
+        // it should revert.
+
+        _expectResultTypeNotAllowed(0, users.alice, SPP.ResultType.Veto);
+        _report(users.alice, 0, SPP.ResultType.Veto);
+    }
+
+    function test_RevertWhen_VetoerReportsApproval() external givenStageWithAnApproverAndAVetoer {
+        // it should revert.
+
+        _expectResultTypeNotAllowed(0, users.bob, SPP.ResultType.Approval);
+        _report(users.bob, 0, SPP.ResultType.Approval);
+    }
+
+    function test_RevertWhen_NonBodyReports() external givenStageWithAnApproverAndAVetoer {
+        // it should revert for every result type, `None` included.
+
+        _expectResultTypeNotAllowed(0, users.unauthorized, SPP.ResultType.None);
+        _report(users.unauthorized, 0, SPP.ResultType.None);
+
+        _expectResultTypeNotAllowed(0, users.unauthorized, SPP.ResultType.Approval);
+        _report(users.unauthorized, 0, SPP.ResultType.Approval);
+
+        _expectResultTypeNotAllowed(0, users.unauthorized, SPP.ResultType.Veto);
+        _report(users.unauthorized, 0, SPP.ResultType.Veto);
+    }
+
+    function testFuzz_RevertWhen_NonBodyReports(
+        address _sender,
+        uint8 _resultType
+    ) external givenStageWithAnApproverAndAVetoer {
+        // it should revert for any address that is not a body of the stage.
+        vm.assume(_sender != users.alice && _sender != users.bob);
+        // the trusted forwarder would report on behalf of the address appended to the calldata
+        vm.assume(_sender != address(trustedForwarder));
+
+        SPP.ResultType reported = SPP.ResultType(bound(_resultType, 0, uint8(SPP.ResultType.Veto)));
+
+        _expectResultTypeNotAllowed(0, _sender, reported);
+        _report(_sender, 0, reported);
+    }
+
+    function test_RevertWhen_BodyOfAnotherStageReports() external whenProposalExists {
+        // it should revert, as a body is only allowed on the stages it is listed in.
+
+        SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
+        SPP.Stage[] memory stages = sppPlugin.getStages(proposal.stageConfigIndex);
+        address stageOneBody = stages[1].bodies[0].addr;
+        assertEq(uint8(stages[1].bodies[0].resultType), uint8(SPP.ResultType.Approval));
+
+        _expectResultTypeNotAllowed(0, stageOneBody, SPP.ResultType.Approval);
+        _report(stageOneBody, 0, SPP.ResultType.Approval);
+
+        _expectResultTypeNotAllowed(0, stageOneBody, SPP.ResultType.None);
+        _report(stageOneBody, 0, SPP.ResultType.None);
+    }
+
+    function test_RevertWhen_ForwardedSenderReportsTheOtherType()
+        external
+        givenStageWithAnApproverAndAVetoer
+    {
+        // it should check the sender stored in the call data, not the trusted forwarder.
+
+        bytes memory callData = abi.encodePacked(
+            abi.encodeCall(
+                SPP.reportProposalResult,
+                (proposalId, 0, SPP.ResultType.Approval, false)
+            ),
+            users.bob
+        );
+
+        resetPrank(address(trustedForwarder));
+        (bool success, bytes memory result) = address(sppPlugin).call(callData);
+
+        assertFalse(success, "forwarded report succeeded");
+        assertEq(
+            result,
+            abi.encodeWithSelector(
+                Errors.ResultTypeNotAllowed.selector,
+                uint16(0),
+                users.bob,
+                uint8(SPP.ResultType.Approval)
+            ),
+            "revert data"
+        );
+    }
+
+    function test_WhenBodiesReportTheirConfiguredType()
+        external
+        givenStageWithAnApproverAndAVetoer
+    {
+        // it should record both results, and re-reporting the same type is allowed.
+
+        _report(users.alice, 0, SPP.ResultType.Approval);
+        _report(users.bob, 0, SPP.ResultType.Veto);
+        _report(users.bob, 0, SPP.ResultType.Veto);
+
+        assertEq(
+            sppPlugin.getBodyResult(proposalId, 0, users.alice),
+            SPP.ResultType.Approval,
+            "alice"
+        );
+        assertEq(sppPlugin.getBodyResult(proposalId, 0, users.bob), SPP.ResultType.Veto, "bob");
+    }
+
+    function test_WhenBodyRetractsItsResult() external givenStageWithAnApproverAndAVetoer {
+        // it should clear the result, so the stage stops counting it.
+
+        // a stage with a veto threshold can only advance once the vote duration has passed
+        vm.warp(sppPlugin.getProposal(proposalId).lastStageTransition + VOTE_DURATION + 1);
+
+        _report(users.alice, 0, SPP.ResultType.Approval);
+        assertEq(
+            uint8(sppPlugin.state(proposalId)),
+            uint8(SPP.ProposalState.Advanceable),
+            "advanceable after approval"
+        );
+
+        _report(users.alice, 0, SPP.ResultType.None);
+        assertEq(
+            sppPlugin.getBodyResult(proposalId, 0, users.alice),
+            SPP.ResultType.None,
+            "retracted"
+        );
+        assertEq(
+            uint8(sppPlugin.state(proposalId)),
+            uint8(SPP.ProposalState.Active),
+            "active after retraction"
+        );
+    }
+
+    /// @dev The first body of `_stageId` in the current config. Only a listed body may report.
+    function _stageBody(uint16 _stageId) internal view returns (address) {
+        return sppPlugin.getStages(sppPlugin.getCurrentConfigIndex())[_stageId].bodies[0].addr;
+    }
+
+    function _report(address _sender, uint16 _stageId, SPP.ResultType _resultType) internal {
+        resetPrank(_sender);
+        sppPlugin.reportProposalResult(proposalId, _stageId, _resultType, false);
+    }
+
+    function _expectResultTypeNotAllowed(
+        uint16 _stageId,
+        address _sender,
+        SPP.ResultType _resultType
+    ) internal {
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Errors.ResultTypeNotAllowed.selector,
+                _stageId,
+                _sender,
+                uint8(_resultType)
+            )
+        );
     }
 
     function _updateStagesAndCreateNewProposal(
