@@ -88,9 +88,10 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, Test {
 
         uint256 latestBuild = sppRepo.buildCount(uint8(latestRelease));
 
-        // Publish a test build that reuses the latest published SPP implementation. Mirrors
-        // NewVersion.s.sol so that PSP.applyUpdate sees `currentImpl == newImpl` and skips
-        // the proxy upgrade — i.e., per-DAO upgrades work without UPGRADE_PLUGIN_PERMISSION.
+        // Publish a test build that reuses the latest published SPP implementation, so that
+        // PSP.applyUpdate sees `currentImpl == newImpl` and skips the proxy upgrade — i.e.,
+        // per-DAO upgrades work without UPGRADE_PLUGIN_PERMISSION (the v1.1 → v1.2 model).
+        // Tests for builds with new bytecode (v1.3+) publish their own fresh-impl build.
         address latestSetup = sppRepo
             .getVersion(PluginRepo.Tag({release: uint8(latestRelease), build: uint16(latestBuild)}))
             .pluginSetup;
