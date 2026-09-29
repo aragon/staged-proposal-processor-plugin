@@ -258,8 +258,9 @@ contract StagedProposalProcessor is
     }
 
     /// @notice Reports and records the result for a proposal at a specific stage.
-    /// @dev Reverts with `ResultTypeNotAllowed` unless the caller is a body of the `_stageId` reporting
-    ///      its configured result type, or `None` to retract a previous result.
+    /// @dev A body of the `_stageId` may only report its configured result type, or `None` to retract a
+    ///      previous result, and reverts with `ResultTypeNotAllowed` otherwise. A call from an address
+    ///      that is not a body of the `_stageId` returns without effect.
     ///      If `_tryAdvance` is true, the proposal will attempt to advance to the next stage if eligible.
     ///      Requires the caller to have the `EXECUTE_PERMISSION_ID` permission to execute the final stage.
     ///      Reporting the result does not revert when the proposal is simply not eligible to advance,
@@ -295,24 +296,23 @@ contract StagedProposalProcessor is
 
         address sender = _msgSender();
 
-        // Only a body of this stage may report, and only its configured result type or `None`
-        // (retracting), so approvers can not veto and vetoers can not approve.
+        // A body of this stage may only report its configured result type or `None` (retracting). 
+        // A report from any other address is ignored.
         {
             Body[] storage bodies = stages[proposal.stageConfigIndex][_stageId].bodies;
-            bool isAllowed;
+            bool isBody;
 
             for (uint256 i = 0; i < bodies.length; ++i) {
                 if (bodies[i].addr == sender) {
-                    isAllowed =
-                        _resultType == ResultType.None ||
-                        _resultType == bodies[i].resultType;
+                    if (_resultType != ResultType.None && _resultType != bodies[i].resultType) {
+                        revert Errors.ResultTypeNotAllowed(_stageId, sender, uint8(_resultType));
+                    }
+                    isBody = true;
                     break;
                 }
             }
 
-            if (!isAllowed) {
-                revert Errors.ResultTypeNotAllowed(_stageId, sender, uint8(_resultType));
-            }
+            if (!isBody) return;
         }
 
         _processProposalResult(_proposalId, _stageId, _resultType, sender);
