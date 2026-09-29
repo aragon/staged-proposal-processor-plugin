@@ -201,13 +201,24 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, Test {
     }
 
     function _installMultisigAndRevokeRoot(DAO dao) internal returns (address plugin) {
+        return
+            _installMultisigAndRevokeRoot(
+                dao,
+                IPlugin.TargetConfig({
+                    target: address(trustedForwarder),
+                    operation: IPlugin.Operation.Call
+                })
+            );
+    }
+
+    function _installMultisigAndRevokeRoot(
+        DAO dao,
+        IPlugin.TargetConfig memory targetConfig
+    ) internal returns (address plugin) {
         bytes memory multisigData = abi.encode(
             members,
             MultisigSettings({onlyListed: true, minApprovals: 2}),
-            IPlugin.TargetConfig({
-                target: address(trustedForwarder),
-                operation: IPlugin.Operation.Call
-            }),
+            targetConfig,
             "dummy multisig metadata"
         );
         (plugin, ) = _installPlugin(dao, getPluginSetupRef(multisigRepo), multisigData);
