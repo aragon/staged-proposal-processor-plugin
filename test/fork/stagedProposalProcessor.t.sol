@@ -6,7 +6,6 @@ import {StagedProposalProcessor as SPP} from "../../src/StagedProposalProcessor.
 
 import {DAO} from "@aragon/osx/core/dao/DAO.sol";
 import {Permissions} from "../../src/libraries/Permissions.sol";
-import {DAOFactory} from "@aragon/osx/framework/dao/DAOFactory.sol";
 import {IPlugin} from "@aragon/osx-commons-contracts/src/plugin/IPlugin.sol";
 import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
 import {
@@ -15,7 +14,7 @@ import {
 
 contract StagedProposalProcessor_ForkTest is ForkBaseTest {
     DAO internal dao;
-    address internal adminPlugin;
+    address internal adminBody;
     address internal multisigPlugin;
     SPP internal sppPlugin;
 
@@ -65,8 +64,8 @@ contract StagedProposalProcessor_ForkTest is ForkBaseTest {
 
     // ===== Helper functions - i.e NOT TESTS =======
 
-    // Since stage 0 has adminPlugin, creating a proposal there automatically
-    // executes proposals - i.e immediatelly reports result on SPP.
+    // Stage 0's body is an Admin plugin, so creating the proposal also creates and executes its
+    // sub-proposal, which reports the result on the SPP from within `createProposal`.
     function _test_createProposalAndExecuteSubproposal() public {
         uint64 startDate = uint64(block.timestamp);
         bytes memory testMetadata = "test proposal metadata";
@@ -107,7 +106,7 @@ contract StagedProposalProcessor_ForkTest is ForkBaseTest {
         // emit SPP.SubProposalCreated({
         //     proposalId: 0,
         //     stageId: 0,
-        //     body: adminPlugin,
+        //     body: adminBody,
         //     bodyProposalId: 0
         // });
 
@@ -142,12 +141,17 @@ contract StagedProposalProcessor_ForkTest is ForkBaseTest {
         );
 
         // check subproposal id was stored
-        uint256 subproposalId = sppPlugin.getBodyProposalId(proposalId, 0, adminPlugin);
+        uint256 subproposalId = sppPlugin.getBodyProposalId(proposalId, 0, adminBody);
         assertNotEq(subproposalId, 0, "subproposalId");
         assertNotEq(subproposalId, type(uint256).max, "subproposalId");
 
-        // 1. since stage 0's sub body is Admin, it should be executed automatically
-        // 2. below checks tally as well.
+        // the Admin body reported its result itself, from within `createProposal`
+        assertEq(
+            sppPlugin.getBodyResult(proposalId, 0, adminBody),
+            SPP.ResultType.Approval,
+            "admin body result"
+        );
+
         (uint256 approvals, uint256 vetos) = sppPlugin.getProposalTally(proposalId, 0);
         assertEq(approvals, 1, "approvals");
         assertEq(vetos, 0, "vetos");
@@ -302,24 +306,24 @@ contract StagedProposalProcessor_ForkTest is ForkBaseTest {
     }
 
     function _configureDummyDaoAndInstallSPP() internal {
-        // create new dao with admin plugin.
-        DAOFactory.InstalledPlugin[] memory _installedPlugins;
-        (dao, _installedPlugins) = _createDummyDaoAdmin();
+        // create new dao with admin plugin, which stays the DAO's admin
+        (dao, ) = _createDummyDaoAdmin();
 
-        adminPlugin = _installedPlugins[0].plugin;
+        // a second Admin plugin is the body of stage 0
+        adminBody = _installAdminBody(dao, deployer);
 
         // install multisig and revoke execute permission
         multisigPlugin = _installMultisigAndRevokeRoot(dao);
 
         SPP.Stage[] memory stages = new SPP.Stage[](3);
 
-        // stage 0 -> adminPlugin, stage 1 -> no body, stage 2 -> multisigPlugin
+        // stage 0 -> adminBody, stage 1 -> no body, stage 2 -> multisigPlugin
         SPP.Body[] memory bodiesStage0 = new SPP.Body[](1);
         SPP.Body[] memory bodiesStage1 = new SPP.Body[](0);
         SPP.Body[] memory bodiesStage2 = new SPP.Body[](1);
 
         bodiesStage0[0] = SPP.Body({
-            addr: adminPlugin,
+            addr: adminBody,
             isManual: false,
             tryAdvance: true,
             resultType: SPP.ResultType.Approval
@@ -377,10 +381,10 @@ contract StagedProposalProcessor_ForkTest is ForkBaseTest {
 
         resetPrank(address(dao));
 
-        // grant proposal creation permission on the admin plugin to the spp
-        dao.grant(adminPlugin, address(sppPlugin), Permissions.CREATE_PROPOSAL_PERMISSION_ID);
-        // grant also execute permission because admin plugin automatically executes
-        dao.grant(adminPlugin, address(sppPlugin), Permissions.EXECUTE_PROPOSAL_PERMISSION_ID);
+        // grant proposal creation permission on the admin body to the spp
+        dao.grant(adminBody, address(sppPlugin), Permissions.CREATE_PROPOSAL_PERMISSION_ID);
+        // grant also execute permission because the admin body executes on creation
+        dao.grant(adminBody, address(sppPlugin), Permissions.EXECUTE_PROPOSAL_PERMISSION_ID);
 
         // grant proposal creation permission on the multisig plugin to the spp
         dao.grant(multisigPlugin, address(sppPlugin), Permissions.CREATE_PROPOSAL_PERMISSION_ID);

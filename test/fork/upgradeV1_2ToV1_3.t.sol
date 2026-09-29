@@ -51,11 +51,7 @@ contract UpgradeV1_2ToV1_3_ForkTest is ForkBaseTest {
             pluginSetupRepo: sppRepo
         });
 
-        (address plugin, address[] memory helpers) = _installSPPAtRef(
-            dao,
-            _prepareSimpleInstallData(),
-            build2Ref
-        );
+        (address plugin, address[] memory helpers) = _installPlugin(dao, build2Ref, _prepareSimpleInstallData());
         address helperBeforeUpdate = helpers[0];
         address implBeforeUpdate = _proxyImpl(plugin);
 
@@ -175,36 +171,5 @@ contract UpgradeV1_2ToV1_3_ForkTest is ForkBaseTest {
                 new RuledCondition.Rule[](0),
                 IPlugin.TargetConfig({target: address(0), operation: IPlugin.Operation.Call})
             );
-    }
-
-    function _installSPPAtRef(
-        DAO _dao,
-        bytes memory _data,
-        PluginSetupRef memory _ref
-    ) internal returns (address plugin, address[] memory helpers) {
-        resetPrank(address(_dao));
-
-        IPluginSetup.PreparedSetupData memory preparedSetupData;
-        (plugin, preparedSetupData) = psp.prepareInstallation(
-            address(_dao),
-            PluginSetupProcessor.PrepareInstallationParams(_ref, _data)
-        );
-
-        helpers = preparedSetupData.helpers;
-
-        _dao.grant(address(_dao), address(psp), _dao.ROOT_PERMISSION_ID());
-
-        psp.applyInstallation(
-            address(_dao),
-            PluginSetupProcessor.ApplyInstallationParams(
-                _ref,
-                plugin,
-                preparedSetupData.permissions,
-                hashHelpers(preparedSetupData.helpers)
-            )
-        );
-
-        _dao.revoke(address(_dao), address(psp), _dao.ROOT_PERMISSION_ID());
-        resetPrank(deployer);
     }
 }

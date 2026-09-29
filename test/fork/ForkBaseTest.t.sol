@@ -28,6 +28,7 @@ import {
 import {PermissionLib} from "@aragon/osx-commons-contracts/src/permission/PermissionLib.sol";
 import {IPluginSetup} from "@aragon/osx-commons-contracts/src/plugin/setup/IPluginSetup.sol";
 import {PluginSetupProcessor} from "@aragon/osx/framework/plugin/setup/PluginSetupProcessor.sol";
+import {Executor} from "@aragon/osx-commons-contracts/src/executors/Executor.sol";
 
 contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, Test {
     uint256 internal deployerPrivateKey =
@@ -166,8 +167,40 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, Test {
         vm.label(installedPlugins[0].plugin, "AdminPlugin");
     }
 
-    function _installMultisigAndRevokeRoot(DAO dao) internal returns (address plugin) {
+    /// @notice Installs a plugin on `dao` through the PSP, as a DAO proposal would.
+    function _installPlugin(
+        DAO dao,
+        PluginSetupRef memory ref,
+        bytes memory data
+    ) internal returns (address plugin, address[] memory helpers) {
         resetPrank(address(dao));
+
+        IPluginSetup.PreparedSetupData memory preparedSetupData;
+        (plugin, preparedSetupData) = psp.prepareInstallation(
+            address(dao),
+            PluginSetupProcessor.PrepareInstallationParams(ref, data)
+        );
+        helpers = preparedSetupData.helpers;
+
+        // grant temporary root permission to psp
+        dao.grant(address(dao), address(psp), dao.ROOT_PERMISSION_ID());
+
+        psp.applyInstallation(
+            address(dao),
+            PluginSetupProcessor.ApplyInstallationParams(
+                ref,
+                plugin,
+                preparedSetupData.permissions,
+                hashHelpers(helpers)
+            )
+        );
+
+        // revoke root permission to the psp
+        dao.revoke(address(dao), address(psp), dao.ROOT_PERMISSION_ID());
+        resetPrank(deployer);
+    }
+
+    function _installMultisigAndRevokeRoot(DAO dao) internal returns (address plugin) {
         bytes memory multisigData = abi.encode(
             members,
             MultisigSettings({onlyListed: true, minApprovals: 2}),
@@ -177,80 +210,49 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, Test {
             }),
             "dummy multisig metadata"
         );
+        (plugin, ) = _installPlugin(dao, getPluginSetupRef(multisigRepo), multisigData);
 
-        PluginSetupRef memory multisigSetupRef = getPluginSetupRef(multisigRepo);
-
-        IPluginSetup.PreparedSetupData memory preparedSetupData;
-
-        (plugin, preparedSetupData) = psp.prepareInstallation(
-            address(dao),
-            PluginSetupProcessor.PrepareInstallationParams(multisigSetupRef, multisigData)
-        );
-
-        // grant temporary root permission to psp
-        dao.grant(address(dao), address(psp), dao.ROOT_PERMISSION_ID());
-
-        // Apply plugin.
-        psp.applyInstallation(
-            address(dao),
-            PluginSetupProcessor.ApplyInstallationParams(
-                multisigSetupRef,
-                plugin,
-                preparedSetupData.permissions,
-                hashHelpers(preparedSetupData.helpers)
-            )
-        );
-
-        // revoke root permission to the psp
-        dao.revoke(address(dao), address(psp), dao.ROOT_PERMISSION_ID());
-
-        // revoke execute permission to the plugin
-        dao.revoke(address(dao), plugin, dao.EXECUTE_PERMISSION_ID());
-
-        resetPrank(deployer);
+        _revokeExecuteOnDao(dao, plugin);
 
         vm.label(plugin, "MultisigPlugin");
+    }
+
+    /// @notice Installs an Admin plugin meant to be an SPP body, not the DAO's admin: it executes
+    ///         by delegatecalling an `Executor`, so its actions reach the SPP from the plugin's own
+    ///         address, and it can not execute on the DAO.
+    /// @dev The Admin executes a proposal as soon as it is created, so the SPP body reports its
+    ///      result from within the SPP's own `createProposal` or `advanceProposal`.
+    function _installAdminBody(DAO dao, address admin) internal returns (address plugin) {
+        bytes memory adminData = abi.encode(
+            admin,
+            IPlugin.TargetConfig({target: address(new Executor()), operation: IPlugin.Operation.DelegateCall})
+        );
+        (plugin, ) = _installPlugin(dao, getPluginSetupRef(adminRepo), adminData);
+
+        _revokeExecuteOnDao(dao, plugin);
+
+        vm.label(plugin, "AdminBody");
     }
 
     function _installSPP(
         DAO dao,
         bytes memory sppData
     ) internal returns (address plugin, address[] memory helpers) {
-        resetPrank(address(dao));
-        PluginSetupRef memory sppSetupRef = sppVersionUnderTest();
-
-        IPluginSetup.PreparedSetupData memory preparedSetupData;
-        (plugin, preparedSetupData) = psp.prepareInstallation(
-            address(dao),
-            PluginSetupProcessor.PrepareInstallationParams(sppSetupRef, sppData)
-        );
-
-        helpers = preparedSetupData.helpers;
-
-        // grant temporary root permission to psp
-        dao.grant(address(dao), address(psp), dao.ROOT_PERMISSION_ID());
-
-        // Apply plugin.
-        psp.applyInstallation(
-            address(dao),
-            PluginSetupProcessor.ApplyInstallationParams(
-                sppSetupRef,
-                plugin,
-                preparedSetupData.permissions,
-                hashHelpers(preparedSetupData.helpers)
-            )
-        );
+        (plugin, helpers) = _installPlugin(dao, sppVersionUnderTest(), sppData);
 
         assertEq(_proxyImpl(plugin), sppSetup.implementation(), "installed the version under test");
 
-        // set trusted forwarder
+        resetPrank(address(dao));
         SPP(plugin).setTrustedForwarder(address(trustedForwarder));
-
-        // revoke root permission to the psp
-        dao.revoke(address(dao), address(psp), dao.ROOT_PERMISSION_ID());
         resetPrank(deployer);
 
         vm.label(plugin, "SPPPlugin");
+    }
+
+    function _revokeExecuteOnDao(DAO dao, address plugin) internal {
+        resetPrank(address(dao));
+        dao.revoke(address(dao), plugin, dao.EXECUTE_PERMISSION_ID());
+        resetPrank(deployer);
     }
 
     function _uninstallSPP(DAO dao, address plugin, address[] memory currentHelpers) internal {
