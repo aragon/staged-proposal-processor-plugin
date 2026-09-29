@@ -835,47 +835,66 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         _report(users.bob, 0, SPP.ResultType.Approval);
     }
 
-    function test_RevertWhen_NonBodyReports() external givenStageWithAnApproverAndAVetoer {
-        // it should revert for every result type, `None` included.
+    function test_WhenNonBodyReports() external givenStageWithAnApproverAndAVetoer {
+        // it should ignore the report for every result type: no revert, no storage write, no event.
 
-        _expectResultTypeNotAllowed(0, users.unauthorized, SPP.ResultType.None);
-        _report(users.unauthorized, 0, SPP.ResultType.None);
-
-        _expectResultTypeNotAllowed(0, users.unauthorized, SPP.ResultType.Approval);
-        _report(users.unauthorized, 0, SPP.ResultType.Approval);
-
-        _expectResultTypeNotAllowed(0, users.unauthorized, SPP.ResultType.Veto);
-        _report(users.unauthorized, 0, SPP.ResultType.Veto);
+        _assertReportIsIgnored(users.unauthorized, 0, SPP.ResultType.None, false);
+        _assertReportIsIgnored(users.unauthorized, 0, SPP.ResultType.Approval, false);
+        _assertReportIsIgnored(users.unauthorized, 0, SPP.ResultType.Veto, false);
     }
 
-    function testFuzz_RevertWhen_NonBodyReports(
+    function test_WhenNonBodyReportsWithTryAdvance() external givenStageWithAnApproverAndAVetoer {
+        // it should not execute an executable proposal, even with the permission to execute it.
+
+        vm.warp(sppPlugin.getProposal(proposalId).lastStageTransition + VOTE_DURATION + 1);
+        _report(users.alice, 0, SPP.ResultType.Approval);
+        assertEq(
+            uint8(sppPlugin.state(proposalId)),
+            uint8(SPP.ProposalState.Advanceable),
+            "advanceable"
+        );
+
+        resetPrank(users.manager);
+        DAO(payable(address(dao))).grant(
+            address(sppPlugin),
+            users.unauthorized,
+            Permissions.EXECUTE_PROPOSAL_PERMISSION_ID
+        );
+
+        _assertReportIsIgnored(users.unauthorized, 0, SPP.ResultType.Approval, true);
+
+        assertFalse(sppPlugin.getProposal(proposalId).executed, "executed");
+        assertEq(
+            uint8(sppPlugin.state(proposalId)),
+            uint8(SPP.ProposalState.Advanceable),
+            "still advanceable"
+        );
+    }
+
+    function testFuzz_WhenNonBodyReports(
         address _sender,
         uint8 _resultType
     ) external givenStageWithAnApproverAndAVetoer {
-        // it should revert for any address that is not a body of the stage.
+        // it should ignore the report of any address that is not a body of the stage.
         vm.assume(_sender != users.alice && _sender != users.bob);
         // the trusted forwarder would report on behalf of the address appended to the calldata
         vm.assume(_sender != address(trustedForwarder));
 
         SPP.ResultType reported = SPP.ResultType(bound(_resultType, 0, uint8(SPP.ResultType.Veto)));
 
-        _expectResultTypeNotAllowed(0, _sender, reported);
-        _report(_sender, 0, reported);
+        _assertReportIsIgnored(_sender, 0, reported, false);
     }
 
-    function test_RevertWhen_BodyOfAnotherStageReports() external whenProposalExists {
-        // it should revert, as a body is only allowed on the stages it is listed in.
+    function test_WhenBodyOfAnotherStageReports() external whenProposalExists {
+        // it should ignore the report, as a body only counts on the stages it is listed in.
 
         SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
         SPP.Stage[] memory stages = sppPlugin.getStages(proposal.stageConfigIndex);
         address stageOneBody = stages[1].bodies[0].addr;
         assertEq(uint8(stages[1].bodies[0].resultType), uint8(SPP.ResultType.Approval));
 
-        _expectResultTypeNotAllowed(0, stageOneBody, SPP.ResultType.Approval);
-        _report(stageOneBody, 0, SPP.ResultType.Approval);
-
-        _expectResultTypeNotAllowed(0, stageOneBody, SPP.ResultType.None);
-        _report(stageOneBody, 0, SPP.ResultType.None);
+        _assertReportIsIgnored(stageOneBody, 0, SPP.ResultType.Approval, false);
+        _assertReportIsIgnored(stageOneBody, 0, SPP.ResultType.None, false);
     }
 
     function test_RevertWhen_ForwardedSenderReportsTheOtherType()
@@ -952,7 +971,7 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
         );
     }
 
-    /// @dev The first body of `_stageId` in the current config. Only a listed body may report.
+    /// @dev The first body of `_stageId` in the current config. Only a listed body's report counts.
     function _stageBody(uint16 _stageId) internal view returns (address) {
         return sppPlugin.getStages(sppPlugin.getCurrentConfigIndex())[_stageId].bodies[0].addr;
     }
@@ -960,6 +979,24 @@ contract ReportProposalResult_SPP_UnitTest is StagedConfiguredSharedTest {
     function _report(address _sender, uint16 _stageId, SPP.ResultType _resultType) internal {
         resetPrank(_sender);
         sppPlugin.reportProposalResult(proposalId, _stageId, _resultType, false);
+    }
+
+    /// @dev Reports as `_sender` and asserts the SPP ignored it: no storage write and no event.
+    function _assertReportIsIgnored(
+        address _sender,
+        uint16 _stageId,
+        SPP.ResultType _resultType,
+        bool _tryAdvanceReport
+    ) internal {
+        resetPrank(_sender);
+        vm.recordLogs();
+        vm.record();
+
+        sppPlugin.reportProposalResult(proposalId, _stageId, _resultType, _tryAdvanceReport);
+
+        (, bytes32[] memory writes) = vm.accesses(address(sppPlugin));
+        assertEq(writes.length, 0, "storage written");
+        assertEq(vm.getRecordedLogs().length, 0, "event emitted");
     }
 
     function _expectResultTypeNotAllowed(

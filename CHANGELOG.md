@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sub-proposal creation now reverts the outer tx when any automatic sub-body's `createProposal` fails. Failure is rethrown as `Errors.SubProposalCreationFailed(body, reason)` so the failing body is named in the revert.
 - This version also hardens the stage tally against same-transaction flows where a trusted sub-body could reenter. The sub-body's slot in `bodyProposalIds` is now written with a `PROPOSAL_IN_PROGRESS` sentinel before the external `createProposal` call and replaced with the real id after it returns, so a body reentering SPP during its own creation can no longer observe a stale zero and confuse it with a real id. `_getProposalTally` returns a threshold-failing tally (`0` approvals, `type(uint256).max` vetoes) while the marker is set, and rejects the marker as a returned id.
 
-- `reportProposalResult` reverts with `Errors.ResultTypeNotAllowed` unless the sender is a body of that stage reporting its configured result type, or `None` to retract.
+- `reportProposalResult` reverts with `Errors.ResultTypeNotAllowed` when a body of that stage reports a result type other than its configured one or `None` (retracting), so approving bodies can no longer veto and vetoing bodies can no longer approve.
 - `script/NewVersion.s.sol` deploys a fresh `StagedProposalProcessor` implementation for the new setup instead of reusing the previous build's (which was correct for v1.2, whose bytecode matched v1.1's).
 
 ### Removed

@@ -6,7 +6,7 @@ ReportProposalResult_SPP_UnitTest
 │   │   └── when stageId does not exist // stageId >= proposal.stages.length
 │   │       └── it should revert.
 │   ├── when body of another stage reports
-│   │   └── it should revert, as a body is only allowed on the stages it is listed in.
+│   │   └── it should ignore the report, as a body only counts on the stages it is listed in.
 │   └── when stage id is valid
 │       ├── when stageId is currentStage
 │       │   ├── when voteDuration has passed
@@ -73,8 +73,10 @@ ReportProposalResult_SPP_UnitTest
 │           ├── when vetoer reports approval
 │           │   └── it should revert.
 │           ├── when non body reports
-│           │   ├── it should revert for every result type, `None` included.
-│           │   └── it should revert for any address that is not a body of the stage. // fuzz
+│           │   ├── it should ignore the report for every result type: no revert, no storage write, no event.
+│           │   ├── it should ignore the report of any address that is not a body of the stage. // fuzz
+│           │   └── when trying to advance
+│           │       └── it should not execute an executable proposal, even with the permission to execute it.
 │           ├── when forwarded sender reports the other type
 │           │   └── it should check the sender stored in the call data, not the trusted forwarder.
 │           ├── when bodies report their configured type
