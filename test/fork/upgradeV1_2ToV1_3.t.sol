@@ -5,9 +5,6 @@ import {ForkBaseTest} from "./ForkBaseTest.t.sol";
 import {Permissions} from "../../src/libraries/Permissions.sol";
 import {SPPRuleCondition} from "../../src/utils/SPPRuleCondition.sol";
 import {StagedProposalProcessor as SPP} from "../../src/StagedProposalProcessor.sol";
-import {
-    StagedProposalProcessorSetup as SPPSetup
-} from "../../src/StagedProposalProcessorSetup.sol";
 
 import {DAO} from "@aragon/osx/core/dao/DAO.sol";
 import {DAOFactory} from "@aragon/osx/framework/dao/DAOFactory.sol";
@@ -24,8 +21,8 @@ import {
 } from "@aragon/osx-commons-contracts/src/permission/condition/extensions/RuledCondition.sol";
 
 /// @notice Forks a network where v1.2 is deployed (set RPC_URL accordingly), installs the SPP at
-/// build 2, publishes a build with a fresh SPP implementation (the on-fork stand-in for build 3),
-/// and exercises the v1.2 → v1.3 upgrade through the PSP.
+/// build 2 and exercises the v1.2 → v1.3 upgrade through the PSP. v1.3 is the published build 3
+/// once it exists, otherwise the stand-in `ForkBaseTest` publishes from this source.
 ///
 /// Unlike the v1.1 → v1.2 path, build 3 changes the plugin bytecode. `applyUpdate` therefore has
 /// to swap the proxy implementation, which requires `UPGRADE_PLUGIN_PERMISSION` on the plugin
@@ -40,16 +37,6 @@ contract UpgradeV1_2ToV1_3_ForkTest is ForkBaseTest {
     function setUp() public override {
         super.setUp();
 
-        // `super.setUp` publishes a throwaway build reusing the currently-latest SPP
-        // implementation (the "same-impl trick" that makes v1.1 → v1.2 fork tests work
-        // without needing `UPGRADE_PLUGIN_PERMISSION`). That's not useful here: v1.3 has
-        // a genuinely new implementation. Publish an additional build wrapping a fresh
-        // SPP impl — this test's stand-in for the on-chain v1.3.
-        SPPSetup freshSetup = new SPPSetup(new SPP());
-        resetPrank(managementDao);
-        sppRepo.createVersion(1, address(freshSetup), "dummy build 3 metadata", "dummy release metadata");
-        resetPrank(deployer);
-
         DAOFactory.InstalledPlugin[] memory installed;
         (dao, installed) = _createDummyDaoAdmin();
         installedAdminPlugin = installed[0].plugin;
@@ -58,16 +45,6 @@ contract UpgradeV1_2ToV1_3_ForkTest is ForkBaseTest {
     function test_upgradeFromBuild2_swapsImplementation_withUnchangedHelperAndNoPermissionChanges()
         external
     {
-        // Only meaningful on a fork where v1.2 is already on-chain: buildCount before
-        // `super.setUp` was 2, plus the throwaway (build 3) and this test's fresh-impl
-        // publish (build 4), so `buildCount(1) == 4` here iff preExisting was exactly v1.2.
-        // If v1.3 is already on the fork (preExisting >= 3), the "build 2 -> build 4"
-        // migration this test drives no longer models v1.2 → v1.3, so skip.
-        if (sppRepo.buildCount(1) != 4) {
-            vm.skip(true);
-            return;
-        }
-
         // ---- 1. Install the SPP at build 2 (real v1.2 setup on the fork). ----
         PluginSetupRef memory build2Ref = PluginSetupRef({
             versionTag: PluginRepo.Tag({release: 1, build: 2}),
@@ -85,11 +62,8 @@ contract UpgradeV1_2ToV1_3_ForkTest is ForkBaseTest {
         // PSP rejects an update in the same block as the install.
         vm.roll(block.number + 1);
 
-        // ---- 2. prepareUpdate(2 -> 4). Build 4 is this test's fresh-impl publish. ----
-        PluginSetupRef memory build3Ref = PluginSetupRef({
-            versionTag: PluginRepo.Tag({release: 1, build: 4}),
-            pluginSetupRepo: sppRepo
-        });
+        // ---- 2. prepareUpdate(2 -> 3). ----
+        PluginSetupRef memory build3Ref = sppVersionUnderTest();
 
         (
             bytes memory initData,
@@ -149,6 +123,7 @@ contract UpgradeV1_2ToV1_3_ForkTest is ForkBaseTest {
         //         helper (nothing about permissions changed for this update). ----
         address implAfterUpdate = _proxyImpl(plugin);
         assertNotEq(implAfterUpdate, implBeforeUpdate, "plugin impl actually changed");
+        assertEq(implAfterUpdate, sppSetup.implementation(), "plugin impl is the version under test");
 
         assertEq(
             SPPRuleCondition(helperBeforeUpdate).getRules().length,
@@ -164,12 +139,6 @@ contract UpgradeV1_2ToV1_3_ForkTest is ForkBaseTest {
             ),
             "DAO still holds UPDATE_RULES on the helper"
         );
-    }
-
-    /// @dev EIP-1967 impl slot: bytes32(uint256(keccak256("eip1967.proxy.implementation")) - 1).
-    function _proxyImpl(address _proxy) private view returns (address) {
-        bytes32 slot = 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
-        return address(uint160(uint256(vm.load(_proxy, slot))));
     }
 
     /// @dev Reproduces `keccak256("UPGRADE_PLUGIN_PERMISSION")` — the id PluginUUPSUpgradeable

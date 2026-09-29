@@ -9,6 +9,7 @@ import {Fuzzers} from "../utils/Fuzzers.sol";
 import {Constants} from "../utils/Constants.sol";
 import {Assertions} from "../utils/Assertions.sol";
 import {TrustedForwarder} from "../utils/TrustedForwarder.sol";
+import {PluginSettings} from "../../src/utils/PluginSettings.sol";
 import {StagedProposalProcessor as SPP} from "../../src/StagedProposalProcessor.sol";
 import {StagedProposalProcessorSetup as SPPSetup} from "../../src/StagedProposalProcessorSetup.sol";
 
@@ -83,36 +84,44 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, Test {
         target = new Target();
         trustedForwarder = new TrustedForwarder();
 
-        // Check release number
-        uint256 latestRelease = sppRepo.latestRelease();
-
-        uint256 latestBuild = sppRepo.buildCount(uint8(latestRelease));
-
-        // Publish a test build that reuses the latest published SPP implementation, so that
-        // PSP.applyUpdate sees `currentImpl == newImpl` and skips the proxy upgrade — i.e.,
-        // per-DAO upgrades work without UPGRADE_PLUGIN_PERMISSION (the v1.1 → v1.2 model).
-        // Tests for builds with new bytecode (v1.3+) publish their own fresh-impl build.
-        address latestSetup = sppRepo
-            .getVersion(PluginRepo.Tag({release: uint8(latestRelease), build: uint16(latestBuild)}))
-            .pluginSetup;
-        SPP existingImpl = SPP(IPluginSetup(latestSetup).implementation());
-        sppSetup = new SPPSetup(existingImpl);
-
-        // create plugin version
-        resetPrank(managementDao);
-        sppRepo.createVersion(
-            uint8(latestRelease),
-            address(sppSetup),
-            "dummy build metadata",
-            "dummy release metadata"
-        );
-
-        resetPrank(deployer);
-        // check version was created correctly
-        assertEq(sppRepo.latestRelease(), latestRelease, "release");
-        assertEq(sppRepo.buildCount(uint8(latestRelease)), latestBuild + 1, "build");
+        sppSetup = _resolveVersionUnderTest();
 
         _labelContracts();
+    }
+
+    /// @notice The version every fork test exercises: build `VERSION_BUILD` of the SPP repo.
+    function sppVersionUnderTest() internal view returns (PluginSetupRef memory ref) {
+        ref.pluginSetupRepo = sppRepo;
+        ref.versionTag = PluginRepo.Tag({
+            release: PluginSettings.VERSION_RELEASE,
+            build: PluginSettings.VERSION_BUILD
+        });
+    }
+
+    /// @dev Uses the on-chain setup once this version is published, so the tests check what DAOs
+    ///      actually upgrade to. Before that, publishes a setup built from this source as the next
+    ///      build, which only lines up with `VERSION_BUILD` when the fork holds every earlier build.
+    function _resolveVersionUnderTest() private returns (SPPSetup) {
+        uint8 release = PluginSettings.VERSION_RELEASE;
+        uint16 build = PluginSettings.VERSION_BUILD;
+        uint256 publishedBuilds = sppRepo.buildCount(release);
+
+        if (publishedBuilds >= build) {
+            return
+                SPPSetup(
+                    sppRepo.getVersion(PluginRepo.Tag({release: release, build: build})).pluginSetup
+                );
+        }
+
+        assertEq(publishedBuilds, build - 1, "fork is missing builds before the version under test");
+
+        SPPSetup setup = new SPPSetup(new SPP());
+        resetPrank(managementDao);
+        sppRepo.createVersion(release, address(setup), "dummy build metadata", "dummy release metadata");
+        resetPrank(deployer);
+
+        assertEq(sppRepo.buildCount(release), build, "version under test published");
+        return setup;
     }
 
     function _labelContracts() internal {
@@ -208,7 +217,7 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, Test {
         bytes memory sppData
     ) internal returns (address plugin, address[] memory helpers) {
         resetPrank(address(dao));
-        PluginSetupRef memory sppSetupRef = getPluginSetupRef(sppRepo);
+        PluginSetupRef memory sppSetupRef = sppVersionUnderTest();
 
         IPluginSetup.PreparedSetupData memory preparedSetupData;
         (plugin, preparedSetupData) = psp.prepareInstallation(
@@ -232,6 +241,8 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, Test {
             )
         );
 
+        assertEq(_proxyImpl(plugin), sppSetup.implementation(), "installed the version under test");
+
         // set trusted forwarder
         SPP(plugin).setTrustedForwarder(address(trustedForwarder));
 
@@ -244,7 +255,7 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, Test {
 
     function _uninstallSPP(DAO dao, address plugin, address[] memory currentHelpers) internal {
         resetPrank(address(dao));
-        PluginSetupRef memory sppSetupRef = getPluginSetupRef(sppRepo);
+        PluginSetupRef memory sppSetupRef = sppVersionUnderTest();
 
         PermissionLib.MultiTargetPermission[] memory permissions = psp.prepareUninstallation(
             address(dao),
@@ -266,6 +277,12 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, Test {
         // revoke root permission to the psp
         dao.revoke(address(dao), address(psp), dao.ROOT_PERMISSION_ID());
         resetPrank(deployer);
+    }
+
+    /// @dev EIP-1967 impl slot: bytes32(uint256(keccak256("eip1967.proxy.implementation")) - 1).
+    function _proxyImpl(address _proxy) internal view returns (address) {
+        bytes32 slot = 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
+        return address(uint160(uint256(vm.load(_proxy, slot))));
     }
 
     function getPluginSetupRef(
