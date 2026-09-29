@@ -35,14 +35,6 @@ import {
 ///
 /// Run with e.g. `RPC_URL=<sepolia rpc> just test-fork --match-contract UpgradeViaProposal`.
 contract UpgradeViaProposal_ForkTest is ForkBaseTest {
-    // Long enough for the in-flight proposals to outlive the upgrade proposal.
-    uint64 internal constant STAGE_VOTE_DURATION = 1 days;
-    uint64 internal constant STAGE_MIN_ADVANCE = 1 hours;
-    uint64 internal constant STAGE_MAX_ADVANCE = 30 days;
-
-    bytes32 internal constant UPGRADE_PLUGIN_PERMISSION_ID =
-        keccak256("UPGRADE_PLUGIN_PERMISSION");
-
     DAO internal dao;
     SPP internal spp;
     address internal multisig;

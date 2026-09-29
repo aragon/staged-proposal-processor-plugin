@@ -26,6 +26,9 @@ import {
     PluginUpgradeableSetup
 } from "@aragon/osx-commons-contracts/src/plugin/setup/PluginUpgradeableSetup.sol";
 import {PermissionLib} from "@aragon/osx-commons-contracts/src/permission/PermissionLib.sol";
+import {
+    RuledCondition
+} from "@aragon/osx-commons-contracts/src/permission/condition/extensions/RuledCondition.sol";
 import {IPluginSetup} from "@aragon/osx-commons-contracts/src/plugin/setup/IPluginSetup.sol";
 import {PluginSetupProcessor} from "@aragon/osx/framework/plugin/setup/PluginSetupProcessor.sol";
 import {Executor} from "@aragon/osx-commons-contracts/src/executors/Executor.sol";
@@ -56,6 +59,16 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, Test {
     TrustedForwarder internal trustedForwarder;
 
     address[] internal members = [address(1), address(2), address(3)];
+
+    /// @dev The id `PluginUUPSUpgradeable` requires for a proxy implementation swap, which the PSP
+    ///      needs on the plugin to apply an update that changes the implementation.
+    bytes32 internal constant UPGRADE_PLUGIN_PERMISSION_ID = keccak256("UPGRADE_PLUGIN_PERMISSION");
+
+    /// @dev Stage durations of every fork test. Longer than the unit tests' ones, so that proposals
+    ///      in flight outlive an upgrade proposal going through all its stages.
+    uint64 internal constant STAGE_VOTE_DURATION = 1 days;
+    uint64 internal constant STAGE_MIN_ADVANCE = 1 hours;
+    uint64 internal constant STAGE_MAX_ADVANCE = 30 days;
 
     // helper structs
     struct MultisigSettings {
@@ -165,6 +178,36 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, Test {
 
         vm.label(address(dao), "DAO");
         vm.label(installedPlugins[0].plugin, "AdminPlugin");
+    }
+
+    /// @notice SPP install data: one stage whose only body is `_manualBody`, approving, and no rules.
+    function _prepareSimpleInstallData(address _manualBody) internal pure returns (bytes memory) {
+        SPP.Stage[] memory stages = new SPP.Stage[](1);
+        SPP.Body[] memory bodies = new SPP.Body[](1);
+        bodies[0] = SPP.Body({
+            addr: _manualBody,
+            isManual: true,
+            tryAdvance: true,
+            resultType: SPP.ResultType.Approval
+        });
+        stages[0] = SPP.Stage({
+            bodies: bodies,
+            maxAdvance: STAGE_MAX_ADVANCE,
+            minAdvance: STAGE_MIN_ADVANCE,
+            voteDuration: STAGE_VOTE_DURATION,
+            approvalThreshold: 1,
+            vetoThreshold: 0,
+            cancelable: false,
+            editable: false
+        });
+
+        return
+            abi.encode(
+                "dummy spp metadata",
+                stages,
+                new RuledCondition.Rule[](0),
+                IPlugin.TargetConfig({target: address(0), operation: IPlugin.Operation.Call})
+            );
     }
 
     /// @notice Installs a plugin on `dao` through the PSP, as a DAO proposal would.

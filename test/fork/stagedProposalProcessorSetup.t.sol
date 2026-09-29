@@ -120,9 +120,9 @@ contract StagedProposalProcessorSetup_ForkTest is ForkBaseTest {
 
         stages[0] = SPP.Stage({
             bodies: bodiesStage0,
-            maxAdvance: 100,
-            minAdvance: 30,
-            voteDuration: 10,
+            maxAdvance: STAGE_MAX_ADVANCE,
+            minAdvance: STAGE_MIN_ADVANCE,
+            voteDuration: STAGE_VOTE_DURATION,
             approvalThreshold: 1,
             vetoThreshold: 0,
             cancelable: false,
@@ -130,9 +130,9 @@ contract StagedProposalProcessorSetup_ForkTest is ForkBaseTest {
         });
         stages[1] = SPP.Stage({
             bodies: bodiesStage1,
-            maxAdvance: 100,
-            minAdvance: 30,
-            voteDuration: 10,
+            maxAdvance: STAGE_MAX_ADVANCE,
+            minAdvance: STAGE_MIN_ADVANCE,
+            voteDuration: STAGE_VOTE_DURATION,
             approvalThreshold: 0,
             vetoThreshold: 0,
             cancelable: true,
@@ -140,9 +140,9 @@ contract StagedProposalProcessorSetup_ForkTest is ForkBaseTest {
         });
         stages[2] = SPP.Stage({
             bodies: bodiesStage2,
-            maxAdvance: 100,
-            minAdvance: 30,
-            voteDuration: 10,
+            maxAdvance: STAGE_MAX_ADVANCE,
+            minAdvance: STAGE_MIN_ADVANCE,
+            voteDuration: STAGE_VOTE_DURATION,
             approvalThreshold: 1,
             vetoThreshold: 0,
             cancelable: false,
