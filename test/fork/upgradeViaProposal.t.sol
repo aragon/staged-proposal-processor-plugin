@@ -7,10 +7,7 @@ import {Permissions} from "../../src/libraries/Permissions.sol";
 import {StagedProposalProcessor as SPP} from "../../src/StagedProposalProcessor.sol";
 
 import {DAO} from "@aragon/osx/core/dao/DAO.sol";
-import {
-    hashHelpers,
-    PluginSetupRef
-} from "@aragon/osx/framework/plugin/setup/PluginSetupProcessorHelpers.sol";
+import {PluginSetupRef} from "@aragon/osx/framework/plugin/setup/PluginSetupProcessorHelpers.sol";
 import {PluginRepo} from "@aragon/osx/framework/plugin/repo/PluginRepo.sol";
 import {IPlugin} from "@aragon/osx-commons-contracts/src/plugin/IPlugin.sol";
 import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
@@ -140,7 +137,10 @@ contract UpgradeViaProposal_ForkTest is ForkBaseTest {
                     })
                 })
             );
-        uint256 upgrade = _create("upgrade to v1.3", _updateActions(initData, prepared));
+        uint256 upgrade = _create(
+            "upgrade to v1.3",
+            _updateActions(dao, address(spp), initData, prepared)
+        );
         _approveOnMultisig(upgrade, 0, 0, 2);
         vm.warp(block.timestamp + STAGE_VOTE_DURATION + 1);
         spp.advanceProposal(upgrade);
@@ -153,9 +153,9 @@ contract UpgradeViaProposal_ForkTest is ForkBaseTest {
         _report(approver, upgrade, 1, SPP.ResultType.Approval);
         vm.warp(block.timestamp + STAGE_MIN_ADVANCE + 1);
 
-        bytes memory stateBefore = _state();
+        bytes memory stateBefore = _sppState(spp, _inFlight());
         spp.execute(upgrade);
-        bytes memory stateAfter = _state();
+        bytes memory stateAfter = _sppState(spp, _inFlight());
 
         // The SPP upgraded itself while executing the proposal, and still marked it executed.
         assertTrue(spp.getProposal(upgrade).executed, "upgrade proposal executed");
@@ -311,47 +311,6 @@ contract UpgradeViaProposal_ForkTest is ForkBaseTest {
             });
     }
 
-    /// @dev The actions of a DAO proposal applying a prepared update: grant the PSP what it needs,
-    ///      apply, and revoke again.
-    function _updateActions(
-        bytes memory _initData,
-        IPluginSetup.PreparedSetupData memory _prepared
-    ) internal view returns (Action[] memory actions) {
-        actions = new Action[](5);
-        actions[0] = _daoCall(
-            abi.encodeCall(dao.grant, (address(spp), address(psp), UPGRADE_PLUGIN_PERMISSION_ID))
-        );
-        actions[1] = _daoCall(
-            abi.encodeCall(dao.grant, (address(dao), address(psp), dao.ROOT_PERMISSION_ID()))
-        );
-        actions[2] = Action({
-            to: address(psp),
-            value: 0,
-            data: abi.encodeCall(
-                psp.applyUpdate,
-                (
-                    address(dao),
-                    PluginSetupProcessor.ApplyUpdateParams({
-                        plugin: address(spp),
-                        pluginSetupRef: sppVersionUnderTest(),
-                        initData: _initData,
-                        permissions: _prepared.permissions,
-                        helpersHash: hashHelpers(_prepared.helpers)
-                    })
-                )
-            )
-        });
-        actions[3] = _daoCall(
-            abi.encodeCall(dao.revoke, (address(dao), address(psp), dao.ROOT_PERMISSION_ID()))
-        );
-        actions[4] = _daoCall(
-            abi.encodeCall(dao.revoke, (address(spp), address(psp), UPGRADE_PLUGIN_PERMISSION_ID))
-        );
-    }
-
-    function _daoCall(bytes memory _data) internal view returns (Action memory) {
-        return Action({to: address(dao), value: 0, data: _data});
-    }
 
     function _create(string memory _metadata, uint256 _targetValue) internal returns (uint256) {
         Action[] memory actions = new Action[](1);
@@ -403,45 +362,9 @@ contract UpgradeViaProposal_ForkTest is ForkBaseTest {
         resetPrank(deployer);
     }
 
-    /// @dev Everything the SPP stores that an upgrade must preserve, for the in-flight proposals:
-    ///      configuration, every stage config, and each proposal with its sub-proposal ids, results
-    ///      and tallies on every stage it reached.
-    function _state() internal view returns (bytes memory state) {
-        uint256 configIndex = spp.getCurrentConfigIndex();
-        state = abi.encode(
-            configIndex,
-            spp.getTrustedForwarder(),
-            spp.getTargetConfig(),
-            spp.getMetadata()
-        );
-        for (uint256 i = 1; i <= configIndex; ++i) {
-            state = abi.encode(state, spp.getStages(i));
-        }
-
-        uint256[2] memory ids = [upgradedAtStage1, upgradedAtStage0];
-        for (uint256 p; p < ids.length; ++p) {
-            SPP.Proposal memory proposal = spp.getProposal(ids[p]);
-            SPP.Stage[] memory stages = spp.getStages(proposal.stageConfigIndex);
-            state = abi.encode(state, proposal, spp.state(ids[p]));
-
-            for (uint16 s; s <= proposal.currentStage; ++s) {
-                (uint256 approvals, uint256 vetoes) = spp.getProposalTally(ids[p], s);
-                state = abi.encode(state, approvals, vetoes);
-
-                for (uint256 b; b < stages[s].bodies.length; ++b) {
-                    address body = stages[s].bodies[b].addr;
-                    state = abi.encode(
-                        state,
-                        spp.getBodyProposalId(ids[p], s, body),
-                        spp.getBodyResult(ids[p], s, body)
-                    );
-                }
-            }
-        }
-    }
-
-    function _asArray(address _a) internal pure returns (address[] memory array) {
-        array = new address[](1);
-        array[0] = _a;
+    function _inFlight() internal view returns (uint256[] memory ids) {
+        ids = new uint256[](2);
+        ids[0] = upgradedAtStage1;
+        ids[1] = upgradedAtStage0;
     }
 }

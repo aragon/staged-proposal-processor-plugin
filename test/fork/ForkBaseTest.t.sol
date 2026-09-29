@@ -31,6 +31,7 @@ import {
 } from "@aragon/osx-commons-contracts/src/permission/condition/extensions/RuledCondition.sol";
 import {IPluginSetup} from "@aragon/osx-commons-contracts/src/plugin/setup/IPluginSetup.sol";
 import {PluginSetupProcessor} from "@aragon/osx/framework/plugin/setup/PluginSetupProcessor.sol";
+import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
 import {Executor} from "@aragon/osx-commons-contracts/src/executors/Executor.sol";
 
 contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, Test {
@@ -339,6 +340,98 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, Test {
     function _proxyImpl(address _proxy) internal view returns (address) {
         bytes32 slot = 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
         return address(uint160(uint256(vm.load(_proxy, slot))));
+    }
+
+    /// @notice The actions of a DAO proposal applying a prepared update of `plugin` to the version
+    ///         under test: grant the PSP what it needs, apply, and revoke again.
+    function _updateActions(
+        DAO dao,
+        address plugin,
+        bytes memory initData,
+        IPluginSetup.PreparedSetupData memory prepared
+    ) internal view returns (Action[] memory actions) {
+        actions = new Action[](5);
+        actions[0] = _daoCall(
+            dao,
+            abi.encodeCall(dao.grant, (plugin, address(psp), UPGRADE_PLUGIN_PERMISSION_ID))
+        );
+        actions[1] = _daoCall(
+            dao,
+            abi.encodeCall(dao.grant, (address(dao), address(psp), dao.ROOT_PERMISSION_ID()))
+        );
+        actions[2] = Action({
+            to: address(psp),
+            value: 0,
+            data: abi.encodeCall(
+                psp.applyUpdate,
+                (
+                    address(dao),
+                    PluginSetupProcessor.ApplyUpdateParams({
+                        plugin: plugin,
+                        pluginSetupRef: sppVersionUnderTest(),
+                        initData: initData,
+                        permissions: prepared.permissions,
+                        helpersHash: hashHelpers(prepared.helpers)
+                    })
+                )
+            )
+        });
+        actions[3] = _daoCall(
+            dao,
+            abi.encodeCall(dao.revoke, (address(dao), address(psp), dao.ROOT_PERMISSION_ID()))
+        );
+        actions[4] = _daoCall(
+            dao,
+            abi.encodeCall(dao.revoke, (plugin, address(psp), UPGRADE_PLUGIN_PERMISSION_ID))
+        );
+    }
+
+    function _daoCall(DAO dao, bytes memory data) private pure returns (Action memory) {
+        return Action({to: address(dao), value: 0, data: data});
+    }
+
+    /// @notice Everything an SPP stores that an upgrade must preserve: its configuration, every stage
+    ///         config, and each of `proposalIds` with its sub-proposal ids, results and tallies on
+    ///         every stage it reached.
+    function _sppState(
+        SPP spp,
+        uint256[] memory proposalIds
+    ) internal view returns (bytes memory state) {
+        uint256 configIndex = spp.getCurrentConfigIndex();
+        state = abi.encode(
+            configIndex,
+            spp.getTrustedForwarder(),
+            spp.getTargetConfig(),
+            spp.getMetadata()
+        );
+        for (uint256 i = 1; i <= configIndex; ++i) {
+            state = abi.encode(state, spp.getStages(i));
+        }
+
+        for (uint256 p; p < proposalIds.length; ++p) {
+            SPP.Proposal memory proposal = spp.getProposal(proposalIds[p]);
+            SPP.Stage[] memory stages = spp.getStages(proposal.stageConfigIndex);
+            state = abi.encode(state, proposal, spp.state(proposalIds[p]));
+
+            for (uint16 s; s <= proposal.currentStage; ++s) {
+                (uint256 approvals, uint256 vetoes) = spp.getProposalTally(proposalIds[p], s);
+                state = abi.encode(state, approvals, vetoes);
+
+                for (uint256 b; b < stages[s].bodies.length; ++b) {
+                    address body = stages[s].bodies[b].addr;
+                    state = abi.encode(
+                        state,
+                        spp.getBodyProposalId(proposalIds[p], s, body),
+                        spp.getBodyResult(proposalIds[p], s, body)
+                    );
+                }
+            }
+        }
+    }
+
+    function _asArray(address a) internal pure returns (address[] memory array) {
+        array = new address[](1);
+        array[0] = a;
     }
 
     function getPluginSetupRef(
