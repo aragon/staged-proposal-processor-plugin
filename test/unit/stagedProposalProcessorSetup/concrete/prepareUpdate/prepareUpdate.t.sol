@@ -28,8 +28,8 @@ contract PrepareUpdate_SPPSetup_UnitTest is BaseTest {
         sppSetup = new SPPSetup(new SPP());
     }
 
-    function test_RevertWhen_FromBuildIsNotOne() external {
-        // it should revert for any build other than 1 — there is only one supported update path.
+    function test_RevertWhen_FromBuildIsUnsupported() external {
+        // it should revert for any build other than 1 or 2 — those are the supported update paths.
 
         IPluginSetup.SetupPayload memory payload = IPluginSetup.SetupPayload({
             plugin: address(0),
@@ -37,17 +37,47 @@ contract PrepareUpdate_SPPSetup_UnitTest is BaseTest {
             data: ""
         });
 
-        uint16[3] memory invalidFromBuilds = [uint16(0), uint16(2), uint16(3)];
+        uint16[3] memory invalidFromBuilds = [uint16(0), uint16(3), uint16(4)];
         for (uint256 i = 0; i < invalidFromBuilds.length; i++) {
             vm.expectRevert(
                 abi.encodeWithSelector(
                     PluginUpgradeableSetup.InvalidUpdatePath.selector,
                     invalidFromBuilds[i],
-                    2
+                    3
                 )
             );
             sppSetup.prepareUpdate(address(dao), invalidFromBuilds[i], payload);
         }
+    }
+
+    function test_WhenFromBuildIsTwo() external {
+        // it should pass the existing helper through, return no permission entries,
+        // and emit empty initData — build 3 introduces no helper or permission changes
+        // versus build 2. PSP swaps the plugin proxy's implementation on applyUpdate.
+
+        SPPRuleCondition existingHelper = _deployOldConditionWithRules();
+
+        address[] memory currentHelpers = new address[](1);
+        currentHelpers[0] = address(existingHelper);
+        IPluginSetup.SetupPayload memory payload = IPluginSetup.SetupPayload({
+            plugin: makeAddr("fakePlugin"),
+            currentHelpers: currentHelpers,
+            data: ""
+        });
+
+        (bytes memory initData, IPluginSetup.PreparedSetupData memory setupData) = sppSetup
+            .prepareUpdate(address(dao), 2, payload);
+
+        assertEq(initData.length, 0, "initData should be empty");
+
+        assertEq(setupData.helpers.length, 1, "helpers length");
+        assertEq(
+            setupData.helpers[0],
+            address(existingHelper),
+            "helper is passed through unchanged"
+        );
+
+        assertEq(setupData.permissions.length, 0, "no permission changes on v1.2 -> v1.3");
     }
 
     function test_WhenFromBuildIsOne() external {

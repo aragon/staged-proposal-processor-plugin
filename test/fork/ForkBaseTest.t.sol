@@ -9,6 +9,7 @@ import {Fuzzers} from "../utils/Fuzzers.sol";
 import {Constants} from "../utils/Constants.sol";
 import {Assertions} from "../utils/Assertions.sol";
 import {TrustedForwarder} from "../utils/TrustedForwarder.sol";
+import {PluginSettings} from "../../src/utils/PluginSettings.sol";
 import {StagedProposalProcessor as SPP} from "../../src/StagedProposalProcessor.sol";
 import {StagedProposalProcessorSetup as SPPSetup} from "../../src/StagedProposalProcessorSetup.sol";
 
@@ -25,8 +26,13 @@ import {
     PluginUpgradeableSetup
 } from "@aragon/osx-commons-contracts/src/plugin/setup/PluginUpgradeableSetup.sol";
 import {PermissionLib} from "@aragon/osx-commons-contracts/src/permission/PermissionLib.sol";
+import {
+    RuledCondition
+} from "@aragon/osx-commons-contracts/src/permission/condition/extensions/RuledCondition.sol";
 import {IPluginSetup} from "@aragon/osx-commons-contracts/src/plugin/setup/IPluginSetup.sol";
 import {PluginSetupProcessor} from "@aragon/osx/framework/plugin/setup/PluginSetupProcessor.sol";
+import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
+import {Executor} from "@aragon/osx-commons-contracts/src/executors/Executor.sol";
 
 contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, Test {
     uint256 internal deployerPrivateKey =
@@ -54,6 +60,16 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, Test {
     TrustedForwarder internal trustedForwarder;
 
     address[] internal members = [address(1), address(2), address(3)];
+
+    /// @dev The id `PluginUUPSUpgradeable` requires for a proxy implementation swap, which the PSP
+    ///      needs on the plugin to apply an update that changes the implementation.
+    bytes32 internal constant UPGRADE_PLUGIN_PERMISSION_ID = keccak256("UPGRADE_PLUGIN_PERMISSION");
+
+    /// @dev Stage durations of every fork test. Longer than the unit tests' ones, so that proposals
+    ///      in flight outlive an upgrade proposal going through all its stages.
+    uint64 internal constant STAGE_VOTE_DURATION = 1 days;
+    uint64 internal constant STAGE_MIN_ADVANCE = 1 hours;
+    uint64 internal constant STAGE_MAX_ADVANCE = 30 days;
 
     // helper structs
     struct MultisigSettings {
@@ -83,35 +99,44 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, Test {
         target = new Target();
         trustedForwarder = new TrustedForwarder();
 
-        // Check release number
-        uint256 latestRelease = sppRepo.latestRelease();
-
-        uint256 latestBuild = sppRepo.buildCount(uint8(latestRelease));
-
-        // Publish a test build that reuses the latest published SPP implementation. Mirrors
-        // NewVersion.s.sol so that PSP.applyUpdate sees `currentImpl == newImpl` and skips
-        // the proxy upgrade — i.e., per-DAO upgrades work without UPGRADE_PLUGIN_PERMISSION.
-        address latestSetup = sppRepo
-            .getVersion(PluginRepo.Tag({release: uint8(latestRelease), build: uint16(latestBuild)}))
-            .pluginSetup;
-        SPP existingImpl = SPP(IPluginSetup(latestSetup).implementation());
-        sppSetup = new SPPSetup(existingImpl);
-
-        // create plugin version
-        resetPrank(managementDao);
-        sppRepo.createVersion(
-            uint8(latestRelease),
-            address(sppSetup),
-            "dummy build metadata",
-            "dummy release metadata"
-        );
-
-        resetPrank(deployer);
-        // check version was created correctly
-        assertEq(sppRepo.latestRelease(), latestRelease, "release");
-        assertEq(sppRepo.buildCount(uint8(latestRelease)), latestBuild + 1, "build");
+        sppSetup = _resolveVersionUnderTest();
 
         _labelContracts();
+    }
+
+    /// @notice The version every fork test exercises: build `VERSION_BUILD` of the SPP repo.
+    function sppVersionUnderTest() internal view returns (PluginSetupRef memory ref) {
+        ref.pluginSetupRepo = sppRepo;
+        ref.versionTag = PluginRepo.Tag({
+            release: PluginSettings.VERSION_RELEASE,
+            build: PluginSettings.VERSION_BUILD
+        });
+    }
+
+    /// @dev Uses the on-chain setup once this version is published, so the tests check what DAOs
+    ///      actually upgrade to. Before that, publishes a setup built from this source as the next
+    ///      build, which only lines up with `VERSION_BUILD` when the fork holds every earlier build.
+    function _resolveVersionUnderTest() private returns (SPPSetup) {
+        uint8 release = PluginSettings.VERSION_RELEASE;
+        uint16 build = PluginSettings.VERSION_BUILD;
+        uint256 publishedBuilds = sppRepo.buildCount(release);
+
+        if (publishedBuilds >= build) {
+            return
+                SPPSetup(
+                    sppRepo.getVersion(PluginRepo.Tag({release: release, build: build})).pluginSetup
+                );
+        }
+
+        assertEq(publishedBuilds, build - 1, "fork is missing builds before the version under test");
+
+        SPPSetup setup = new SPPSetup(new SPP());
+        resetPrank(managementDao);
+        sppRepo.createVersion(release, address(setup), "dummy build metadata", "dummy release metadata");
+        resetPrank(deployer);
+
+        assertEq(sppRepo.buildCount(release), build, "version under test published");
+        return setup;
     }
 
     function _labelContracts() internal {
@@ -156,94 +181,138 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, Test {
         vm.label(installedPlugins[0].plugin, "AdminPlugin");
     }
 
-    function _installMultisigAndRevokeRoot(DAO dao) internal returns (address plugin) {
-        resetPrank(address(dao));
-        bytes memory multisigData = abi.encode(
-            members,
-            MultisigSettings({onlyListed: true, minApprovals: 2}),
-            IPlugin.TargetConfig({
-                target: address(trustedForwarder),
-                operation: IPlugin.Operation.Call
-            }),
-            "dummy multisig metadata"
-        );
+    /// @notice SPP install data: one stage whose only body is `_manualBody`, approving, and no rules.
+    function _prepareSimpleInstallData(address _manualBody) internal pure returns (bytes memory) {
+        SPP.Stage[] memory stages = new SPP.Stage[](1);
+        SPP.Body[] memory bodies = new SPP.Body[](1);
+        bodies[0] = SPP.Body({
+            addr: _manualBody,
+            isManual: true,
+            tryAdvance: true,
+            resultType: SPP.ResultType.Approval
+        });
+        stages[0] = SPP.Stage({
+            bodies: bodies,
+            maxAdvance: STAGE_MAX_ADVANCE,
+            minAdvance: STAGE_MIN_ADVANCE,
+            voteDuration: STAGE_VOTE_DURATION,
+            approvalThreshold: 1,
+            vetoThreshold: 0,
+            cancelable: false,
+            editable: false
+        });
 
-        PluginSetupRef memory multisigSetupRef = getPluginSetupRef(multisigRepo);
+        return
+            abi.encode(
+                "dummy spp metadata",
+                stages,
+                new RuledCondition.Rule[](0),
+                IPlugin.TargetConfig({target: address(0), operation: IPlugin.Operation.Call})
+            );
+    }
+
+    /// @notice Installs a plugin on `dao` through the PSP, as a DAO proposal would.
+    function _installPlugin(
+        DAO dao,
+        PluginSetupRef memory ref,
+        bytes memory data
+    ) internal returns (address plugin, address[] memory helpers) {
+        resetPrank(address(dao));
 
         IPluginSetup.PreparedSetupData memory preparedSetupData;
-
         (plugin, preparedSetupData) = psp.prepareInstallation(
             address(dao),
-            PluginSetupProcessor.PrepareInstallationParams(multisigSetupRef, multisigData)
+            PluginSetupProcessor.PrepareInstallationParams(ref, data)
         );
+        helpers = preparedSetupData.helpers;
 
         // grant temporary root permission to psp
         dao.grant(address(dao), address(psp), dao.ROOT_PERMISSION_ID());
 
-        // Apply plugin.
         psp.applyInstallation(
             address(dao),
             PluginSetupProcessor.ApplyInstallationParams(
-                multisigSetupRef,
+                ref,
                 plugin,
                 preparedSetupData.permissions,
-                hashHelpers(preparedSetupData.helpers)
+                hashHelpers(helpers)
             )
         );
 
         // revoke root permission to the psp
         dao.revoke(address(dao), address(psp), dao.ROOT_PERMISSION_ID());
-
-        // revoke execute permission to the plugin
-        dao.revoke(address(dao), plugin, dao.EXECUTE_PERMISSION_ID());
-
         resetPrank(deployer);
+    }
+
+    function _installMultisigAndRevokeRoot(DAO dao) internal returns (address plugin) {
+        return
+            _installMultisigAndRevokeRoot(
+                dao,
+                IPlugin.TargetConfig({
+                    target: address(trustedForwarder),
+                    operation: IPlugin.Operation.Call
+                })
+            );
+    }
+
+    function _installMultisigAndRevokeRoot(
+        DAO dao,
+        IPlugin.TargetConfig memory targetConfig
+    ) internal returns (address plugin) {
+        bytes memory multisigData = abi.encode(
+            members,
+            MultisigSettings({onlyListed: true, minApprovals: 2}),
+            targetConfig,
+            "dummy multisig metadata"
+        );
+        (plugin, ) = _installPlugin(dao, getPluginSetupRef(multisigRepo), multisigData);
+
+        _revokeExecuteOnDao(dao, plugin);
 
         vm.label(plugin, "MultisigPlugin");
+    }
+
+    /// @notice Installs an Admin plugin meant to be an SPP body, not the DAO's admin: it executes
+    ///         by delegatecalling an `Executor`, so its actions reach the SPP from the plugin's own
+    ///         address, and it can not execute on the DAO.
+    /// @dev The Admin executes a proposal as soon as it is created, so the SPP body reports its
+    ///      result from within the SPP's own `createProposal` or `advanceProposal`.
+    function _installAdminBody(DAO dao, address admin) internal returns (address plugin) {
+        bytes memory adminData = abi.encode(
+            admin,
+            IPlugin.TargetConfig({target: address(new Executor()), operation: IPlugin.Operation.DelegateCall})
+        );
+        (plugin, ) = _installPlugin(dao, getPluginSetupRef(adminRepo), adminData);
+
+        _revokeExecuteOnDao(dao, plugin);
+
+        vm.label(plugin, "AdminBody");
     }
 
     function _installSPP(
         DAO dao,
         bytes memory sppData
     ) internal returns (address plugin, address[] memory helpers) {
+        (plugin, helpers) = _installPlugin(dao, sppVersionUnderTest(), sppData);
+
+        assertEq(_proxyImpl(plugin), sppSetup.implementation(), "installed the version under test");
+
         resetPrank(address(dao));
-        PluginSetupRef memory sppSetupRef = getPluginSetupRef(sppRepo);
-
-        IPluginSetup.PreparedSetupData memory preparedSetupData;
-        (plugin, preparedSetupData) = psp.prepareInstallation(
-            address(dao),
-            PluginSetupProcessor.PrepareInstallationParams(sppSetupRef, sppData)
-        );
-
-        helpers = preparedSetupData.helpers;
-
-        // grant temporary root permission to psp
-        dao.grant(address(dao), address(psp), dao.ROOT_PERMISSION_ID());
-
-        // Apply plugin.
-        psp.applyInstallation(
-            address(dao),
-            PluginSetupProcessor.ApplyInstallationParams(
-                sppSetupRef,
-                plugin,
-                preparedSetupData.permissions,
-                hashHelpers(preparedSetupData.helpers)
-            )
-        );
-
-        // set trusted forwarder
         SPP(plugin).setTrustedForwarder(address(trustedForwarder));
-
-        // revoke root permission to the psp
-        dao.revoke(address(dao), address(psp), dao.ROOT_PERMISSION_ID());
         resetPrank(deployer);
 
         vm.label(plugin, "SPPPlugin");
     }
 
+    function _revokeExecuteOnDao(DAO dao, address plugin) internal {
+        resetPrank(address(dao));
+        dao.revoke(address(dao), plugin, dao.EXECUTE_PERMISSION_ID());
+        resetPrank(deployer);
+    }
+
     function _uninstallSPP(DAO dao, address plugin, address[] memory currentHelpers) internal {
         resetPrank(address(dao));
-        PluginSetupRef memory sppSetupRef = getPluginSetupRef(sppRepo);
+        PluginSetupRef memory sppSetupRef = sppVersionUnderTest();
 
         PermissionLib.MultiTargetPermission[] memory permissions = psp.prepareUninstallation(
             address(dao),
@@ -265,6 +334,104 @@ contract ForkBaseTest is Assertions, Constants, Events, Fuzzers, Test {
         // revoke root permission to the psp
         dao.revoke(address(dao), address(psp), dao.ROOT_PERMISSION_ID());
         resetPrank(deployer);
+    }
+
+    /// @dev EIP-1967 impl slot: bytes32(uint256(keccak256("eip1967.proxy.implementation")) - 1).
+    function _proxyImpl(address _proxy) internal view returns (address) {
+        bytes32 slot = 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
+        return address(uint160(uint256(vm.load(_proxy, slot))));
+    }
+
+    /// @notice The actions of a DAO proposal applying a prepared update of `plugin` to the version
+    ///         under test: grant the PSP what it needs, apply, and revoke again.
+    function _updateActions(
+        DAO dao,
+        address plugin,
+        bytes memory initData,
+        IPluginSetup.PreparedSetupData memory prepared
+    ) internal view returns (Action[] memory actions) {
+        actions = new Action[](5);
+        actions[0] = _daoCall(
+            dao,
+            abi.encodeCall(dao.grant, (plugin, address(psp), UPGRADE_PLUGIN_PERMISSION_ID))
+        );
+        actions[1] = _daoCall(
+            dao,
+            abi.encodeCall(dao.grant, (address(dao), address(psp), dao.ROOT_PERMISSION_ID()))
+        );
+        actions[2] = Action({
+            to: address(psp),
+            value: 0,
+            data: abi.encodeCall(
+                psp.applyUpdate,
+                (
+                    address(dao),
+                    PluginSetupProcessor.ApplyUpdateParams({
+                        plugin: plugin,
+                        pluginSetupRef: sppVersionUnderTest(),
+                        initData: initData,
+                        permissions: prepared.permissions,
+                        helpersHash: hashHelpers(prepared.helpers)
+                    })
+                )
+            )
+        });
+        actions[3] = _daoCall(
+            dao,
+            abi.encodeCall(dao.revoke, (address(dao), address(psp), dao.ROOT_PERMISSION_ID()))
+        );
+        actions[4] = _daoCall(
+            dao,
+            abi.encodeCall(dao.revoke, (plugin, address(psp), UPGRADE_PLUGIN_PERMISSION_ID))
+        );
+    }
+
+    function _daoCall(DAO dao, bytes memory data) private pure returns (Action memory) {
+        return Action({to: address(dao), value: 0, data: data});
+    }
+
+    /// @notice Everything an SPP stores that an upgrade must preserve: its configuration, every stage
+    ///         config, and each of `proposalIds` with its sub-proposal ids, results and tallies on
+    ///         every stage it reached.
+    function _sppState(
+        SPP spp,
+        uint256[] memory proposalIds
+    ) internal view returns (bytes memory state) {
+        uint256 configIndex = spp.getCurrentConfigIndex();
+        state = abi.encode(
+            configIndex,
+            spp.getTrustedForwarder(),
+            spp.getTargetConfig(),
+            spp.getMetadata()
+        );
+        for (uint256 i = 1; i <= configIndex; ++i) {
+            state = abi.encode(state, spp.getStages(i));
+        }
+
+        for (uint256 p; p < proposalIds.length; ++p) {
+            SPP.Proposal memory proposal = spp.getProposal(proposalIds[p]);
+            SPP.Stage[] memory stages = spp.getStages(proposal.stageConfigIndex);
+            state = abi.encode(state, proposal, spp.state(proposalIds[p]));
+
+            for (uint16 s; s <= proposal.currentStage; ++s) {
+                (uint256 approvals, uint256 vetoes) = spp.getProposalTally(proposalIds[p], s);
+                state = abi.encode(state, approvals, vetoes);
+
+                for (uint256 b; b < stages[s].bodies.length; ++b) {
+                    address body = stages[s].bodies[b].addr;
+                    state = abi.encode(
+                        state,
+                        spp.getBodyProposalId(proposalIds[p], s, body),
+                        spp.getBodyResult(proposalIds[p], s, body)
+                    );
+                }
+            }
+        }
+    }
+
+    function _asArray(address a) internal pure returns (address[] memory array) {
+        array = new address[](1);
+        array[0] = a;
     }
 
     function getPluginSetupRef(

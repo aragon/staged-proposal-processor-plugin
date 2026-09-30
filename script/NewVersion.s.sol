@@ -10,7 +10,6 @@ import {StagedProposalProcessorSetup as SPPSetup} from "../src/StagedProposalPro
 
 import {PluginRepo} from "@aragon/osx/framework/plugin/repo/PluginRepo.sol";
 import {Action} from "@aragon/osx-commons-contracts/src/executors/IExecutor.sol";
-import {IPluginSetup} from "@aragon/osx-commons-contracts/src/plugin/setup/IPluginSetup.sol";
 
 /// @dev Minimal subset of the management DAO Multisig plugin ABI used by this script.
 /// Mirrors the 7-arg `createProposal` overload (selector `0xfbd56e41`); using this typed
@@ -28,26 +27,39 @@ interface IManagementDaoMultisig {
     ) external returns (uint256 proposalId);
 }
 
-/// @notice Deploys a new SPPSetup implementation and prints both the inner
+/// @notice Deploys a new SPP implementation and its SPPSetup, and prints both the inner
 /// `createVersion` action and the outer management DAO multisig
 /// `createProposal` calldata. Submit the printed multisig calldata from any
 /// listed multisig member to publish this version.
 contract NewVersion is BaseScript {
     function run() external {
         sppRepo = PluginRepo(vm.envAddress("SPP_PLUGIN_REPO_ADDRESS"));
+        address managementDao = vm.envAddress("MANAGEMENT_DAO_ADDRESS");
         address managementDaoMultisig = vm.envAddress("MANAGEMENT_DAO_MULTISIG_ADDRESS");
 
-        // Reuse the previous build's plugin implementation. v1.2's bytecode is identical to v1.1's
-        SPP existingImpl = _readLatestImplementation();
-
         vm.startBroadcast(deployerPrivateKey);
-        sppSetup = new SPPSetup(existingImpl);
+        sppSetup = new SPPSetup(new SPP());
         vm.stopBroadcast();
 
         console.log("- SPP PluginSetup:           ", address(sppSetup));
+        console.log("- Implementation:            ", sppSetup.implementation());
         console.log(
             "- Version:                   ",
             _versionString(PluginSettings.VERSION_RELEASE, PluginSettings.VERSION_BUILD)
+        );
+
+        // Emit the artifacts-hub envelope for the setup we just deployed.
+        // NOTE: the version itself is not published on-chain until the
+        // management DAO multisig approves and executes the proposal printed
+        // below. Only run `just import-plugin` on this file AFTER that has
+        // happened — importing early would record a version that doesn't
+        // exist on-chain yet.
+        _writeArtifact(
+            managementDao,
+            PluginSettings.VERSION_RELEASE,
+            uint16(PluginSettings.VERSION_BUILD),
+            address(sppSetup),
+            sppSetup.implementation()
         );
 
         bytes memory createVersionData = abi.encodeCall(
@@ -122,13 +134,5 @@ contract NewVersion is BaseScript {
         console.log("      --ledger # or --trezor");
         console.log("  # Add --mnemonic-index N to pick a non-default Ledger derivation path.");
         console.log("  # Ledger's Ethereum app must have 'Blind signing / contract data' enabled.");
-    }
-
-    function _readLatestImplementation() internal view returns (SPP) {
-        uint8 latestRelease = sppRepo.latestRelease();
-        uint16 latestBuild = uint16(sppRepo.buildCount(latestRelease));
-        PluginRepo.Tag memory latestTag = PluginRepo.Tag({release: latestRelease, build: latestBuild});
-        address latestSetup = sppRepo.getVersion(latestTag).pluginSetup;
-        return SPP(IPluginSetup(latestSetup).implementation());
     }
 }

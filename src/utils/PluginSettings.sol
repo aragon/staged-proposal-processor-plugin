@@ -14,7 +14,7 @@ library PluginSettings {
     // Specify the version of your plugin that you are currently working on. The first version is v1.1.
     // For more details, visit https://devs.aragon.org/docs/osx/how-it-works/framework/plugin-management/plugin-repo.
     uint8 public constant VERSION_RELEASE = 1;
-    uint8 public constant VERSION_BUILD = 2;
+    uint8 public constant VERSION_BUILD = 3;
 
     // Per-build flow when bumping VERSION_BUILD (or VERSION_RELEASE):
     // 1. Edit the matching JSON file:
@@ -25,14 +25,14 @@ library PluginSettings {
     // 3. Paste the returned `ipfs://<cid>` into the matching constant below.
 
     string public constant BUILD_METADATA =
-        "ipfs://QmaxGSvvnTAZcDLYz2BMtaXmcx3i1GcaKGaxNEpfQe3Vyv";
+        "ipfs://QmaWnznX3wBJnQCgAD1EZiyMs1vku2kAg45aLQVk3vPUh2";
     string public constant RELEASE_METADATA =
         "ipfs://bafkreif23p6yw325rkwwlhgkudiasvq64lonqmfnt7ls5ksfam5hedcb4m";
 
     /// @notice Title/summary/description/resources JSON pinned for this version's management DAO proposal.
     /// @dev Re-pin and update on every VERSION_BUILD bump. Source: `script/new-version-proposal-metadata.json`.
     string public constant PROPOSAL_METADATA =
-        "ipfs://QmTS3Nrjrs8nuMeqUqSRjBxbGUhZB4nW6N1GiK8vFmfDcD";
+        "ipfs://QmVnRTSAWeXDUwvjcKKu6iJvrdEwApaBQGCc8NYFE7crYW";
 
     /// @notice Aragon's canonical empty-schema placeholder build metadata, used when filling skipped builds
     /// on a fresh-network deploy so on-chain build numbers stay aligned across networks.
