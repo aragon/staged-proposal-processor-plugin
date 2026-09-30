@@ -1,0 +1,43 @@
+Reentrancy_SPP_IntegrationTest
+├── when sub body reenters during createProposal
+│   ├── when reporting for a stage that has not become active
+│   │   ├── it should reject the reentrant report.
+│   │   └── it should revert the whole createProposal when the body propagates that failure.
+│   ├── when sub body creates another proposal on SPP
+│   │   ├── it should create the inner proposal with its own sub-proposal ids.
+│   │   └── it should store the outer proposal's sub-proposal ids untouched by the inner one.
+│   └── when stage zero has no time bounds
+│       ├── it should reject the reentrant advance although the tally alone would pass.
+│       └── it should not create the proposal when the body propagates that failure.
+└── when sub body reenters during advance
+    ├── when reporting for the stage being advanced to
+    │   └── it should accept the reentrant report.
+    ├── when sub body reads its own id during advance
+    │   ├── it should read the in progress marker for its own sub-proposal id.
+    │   ├── it should not be asked hasSucceeded at all while its id is not stored.
+    │   ├── it should not look advanceable from inside the window.
+    │   └── it should read its real id once createProposal has returned.
+    ├── when stage has default time bounds
+    │   ├── it should reject the reentrant advance because the stage just started.
+    │   └── it should advance normally once the body no longer reenters.
+    ├── when stage has no time bounds
+    │   ├── it should reject the reentrant advance although the tally alone would pass.
+    │   ├── it should leave the proposal on its current stage when the body propagates that failure.
+    │   └── it should advance normally once the body no longer reenters.
+    ├── when sub body swallows the rejected reentrant advance
+    │   ├── it should reject the reentrant advance.
+    │   └── it should complete the outer advance as if the body had not reentered.
+    ├── when a later body on the stage has an old proposal with id zero
+    │   ├── when sub body reenters
+    │   │   ├── it should reject the reentrant advance.
+    │   │   └── it should not ask the later body about id zero.
+    │   └── when sub body does not reenter
+    │       └── it should not be advanceable, the same setup gives no approval outside the window.
+    └── when stage has no thresholds at all
+        └── it should execute the proposal from inside the advance that creates its last stage.
+└── given the in progress marker
+    ├── when sub body returns the in progress marker as its id
+    │   └── it should revert.
+    └── when sub body returns the legacy failed marker as its id
+        ├── it should store it as an ordinary id.
+        └── it should consult the body about that id like any other.
