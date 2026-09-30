@@ -5,6 +5,8 @@ ReportProposalResult_SPP_UnitTest
 │   │   │   └── it should revert.
 │   │   └── when stageId does not exist // stageId >= proposal.stages.length
 │   │       └── it should revert.
+│   ├── when body of another stage reports
+│   │   └── it should ignore the report, as a body only counts on the stages it is listed in.
 │   └── when stage id is valid
 │       ├── when stageId is currentStage
 │       │   ├── when voteDuration has passed
@@ -62,8 +64,24 @@ ReportProposalResult_SPP_UnitTest
 │       │               ├── it should use the msg.sender that is the plugin.
 │       │               ├── it should record the result.
 │       │               └── it should emit ProposalResultReported event.
-│       └── when stageId lower than currentStage  // past stage can report result
-│           ├── it should record the result.
-│           └── it should emit ProposalResultReported event.
+│       ├── when stageId lower than currentStage  // past stage can report result
+│       │   ├── it should record the result.
+│       │   └── it should emit ProposalResultReported event.
+│       └── given stage with an approver and a vetoer
+│           ├── when approver reports veto
+│           │   └── it should revert.
+│           ├── when vetoer reports approval
+│           │   └── it should revert.
+│           ├── when non body reports
+│           │   ├── it should ignore the report for every result type: no revert, no storage write, no event.
+│           │   ├── it should ignore the report of any address that is not a body of the stage. // fuzz
+│           │   └── when trying to advance
+│           │       └── it should not execute an executable proposal, even with the permission to execute it.
+│           ├── when forwarded sender reports the other type
+│           │   └── it should check the sender stored in the call data, not the trusted forwarder.
+│           ├── when bodies report their configured type
+│           │   └── it should record both results, and re-reporting the same type is allowed.
+│           └── when body retracts its result
+│               └── it should clear the result, so the stage stops counting it.
 └── when non existent proposal
     └── it should revert.
