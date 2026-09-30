@@ -54,13 +54,6 @@ contract Events {
         uint256 bodyProposalId
     );
 
-    event SubProposalNotCreated(
-        uint256 indexed proposalId,
-        uint16 indexed stageId,
-        address indexed body,
-        bytes reason
-    );
-
     // test helpers
     error UnsupportedNetwork(string network);
 

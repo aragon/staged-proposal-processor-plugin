@@ -9,6 +9,7 @@ import {Target} from "./utils/Target.sol";
 import {Fuzzers} from "./utils/Fuzzers.sol";
 import {Constants} from "./utils/Constants.sol";
 import {Assertions} from "./utils/Assertions.sol";
+import {Errors} from "../src/libraries/Errors.sol";
 import {Permissions} from "../src/libraries/Permissions.sol";
 import {TrustedForwarder} from "./utils/TrustedForwarder.sol";
 import {PluginA} from "./utils/dummy-plugins/PluginA/PluginA.sol";
@@ -375,5 +376,19 @@ contract BaseTest is Assertions, Constants, Events, Fuzzers, Test {
 
     function _encodeStateBitmap(SPP.ProposalState _proposalState) internal pure returns (bytes32) {
         return bytes32(1 << uint8(_proposalState));
+    }
+
+    /// @dev Expected revert data when `_body` fails to create its sub-proposal with
+    ///      a `require`/`revert` string, which SPP rethrows as `SubProposalCreationFailed`.
+    function _subProposalCreationFailed(
+        address _body,
+        string memory _reason
+    ) internal pure returns (bytes memory) {
+        return
+            abi.encodeWithSelector(
+                Errors.SubProposalCreationFailed.selector,
+                _body,
+                abi.encodeWithSignature("Error(string)", _reason)
+            );
     }
 }

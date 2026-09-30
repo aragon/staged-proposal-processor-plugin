@@ -99,7 +99,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         _;
     }
 
-    function test_WhenExtraParamsAreNotProvided()
+    function test_RevertWhen_ExtraParamsAreNotProvided()
         external
         givenProposalExists
         whenProposalCanAdvance
@@ -107,9 +107,9 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         whenAllPluginsOnNextStageAreNonManual
         whenSomeSubProposalNeedExtraParams
     {
-        // it should emit ProposalAdvanced event.
-        // it should advance proposal.
-        // it should not create sub proposals since extra param was not provided.
+        // it should revert since the sub-body reverts when the extra param is not provided.
+        // it should not advance the proposal.
+        // it should not create sub proposals.
 
         // create proposal
         Action[] memory actions = _createDummyActions();
@@ -127,18 +127,19 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
 
         vm.warp(VOTE_DURATION + START_DATE);
 
-        // check event emitted
-        vm.expectEmit({emitter: address(sppPlugin)});
-        // users.manager is from which the `advanceProposal` call is made.
-        emit ProposalAdvanced(proposalId, initialStage + 1, users.manager);
+        // the next stage's body reverts, which is rethrown naming that body.
+        address failingBody = sppPlugin
+        .getStages(sppPlugin.getCurrentConfigIndex())[initialStage + 1].bodies[0].addr;
+
+        vm.expectRevert(_subProposalCreationFailed(failingBody, "needExtraParams"));
 
         sppPlugin.advanceProposal(proposalId);
 
         SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
         SPP.Stage[] memory stages = sppPlugin.getStages(sppPlugin.getCurrentConfigIndex());
 
-        // check proposal advanced
-        assertEq(proposal.currentStage, initialStage + 1, "currentStage");
+        // check proposal did not advance
+        assertEq(proposal.currentStage, initialStage, "currentStage");
 
         // check sub proposal was not created
         assertEq(
@@ -282,7 +283,7 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         );
     }
 
-    function test_WhenExtraParamsAreProvidedButNotEnoughParams()
+    function test_RevertWhen_ExtraParamsAreProvidedButNotEnoughParams()
         external
         givenProposalExists
         whenProposalCanAdvance
@@ -290,9 +291,9 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         whenAllPluginsOnNextStageAreNonManual
         whenSomeSubProposalNeedExtraParams
     {
-        // it should emit ProposalAdvanced event.
-        // it should advance proposal.
-        // it should not create sub proposals since extra param was not provided.
+        // it should revert since the sub-body reverts when the extra param is not provided.
+        // it should not advance the proposal.
+        // it should not create sub proposals.
 
         // create custom params
         bytes[][] memory customCreationParam = new bytes[][](2);
@@ -318,16 +319,18 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
 
         vm.warp(VOTE_DURATION + START_DATE);
 
-        // check event emitted
-        vm.expectEmit({emitter: address(sppPlugin)});
-        emit ProposalAdvanced(proposalId, initialStage + 1, users.manager);
+        // the next stage's body reverts, which is rethrown naming that body.
+        address failingBody = sppPlugin
+        .getStages(sppPlugin.getCurrentConfigIndex())[initialStage + 1].bodies[0].addr;
+
+        vm.expectRevert(_subProposalCreationFailed(failingBody, "needExtraParams"));
 
         sppPlugin.advanceProposal(proposalId);
 
         SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
 
-        // check proposal advanced
-        assertEq(proposal.currentStage, initialStage + 1, "currentStage");
+        // check proposal did not advance
+        assertEq(proposal.currentStage, initialStage, "currentStage");
 
         SPP.Stage[] memory stages = sppPlugin.getStages(sppPlugin.getCurrentConfigIndex());
 
@@ -573,6 +576,134 @@ contract AdvanceProposal_SPP_IntegrationTest is BaseTest {
         // check can advance after minAdvance
         vm.warp(sppPlugin.getProposal(proposalId).lastStageTransition + minAdvance);
         assertTrue(sppPlugin.canProposalAdvance(proposalId), "canAdvance");
+    }
+
+    function test_RevertWhen_SubBodyOnNextStageRevertsOnCreateProposal()
+        external
+        givenProposalExists
+        whenProposalCanAdvance
+        whenProposalIsNotInLastStage
+        whenAllPluginsOnNextStageAreNonManual
+    {
+        // it should revert.
+        // it should leave the proposal on its current stage, blocking advancement.
+        // it should advance once the body behaves again.
+
+        // create proposal
+        proposalId = sppPlugin.createProposal({
+            _actions: _createDummyActions(),
+            _allowFailureMap: 0,
+            _metadata: DUMMY_METADATA,
+            _startDate: START_DATE,
+            _proposalParams: defaultCreationParams
+        });
+        uint16 initialStage;
+
+        // execute proposals on first stage
+        _executeStageProposals(initialStage);
+
+        // make the next stage's body revert when the sub proposal is created
+        SPP.Stage[] memory stages = sppPlugin.getStages(sppPlugin.getCurrentConfigIndex());
+        address nextStageBody = stages[initialStage + 1].bodies[0].addr;
+        PluginA(nextStageBody).setRevertOnCreateProposal(true);
+
+        vm.warp(VOTE_DURATION + START_DATE);
+
+        // a single misbehaving body on the next stage blocks the whole advancement
+        vm.expectRevert(_subProposalCreationFailed(nextStageBody, "revertOnCreateProposal"));
+        sppPlugin.advanceProposal(proposalId);
+
+        // the proposal is stuck on its current stage
+        assertEq(sppPlugin.getProposal(proposalId).currentStage, initialStage, "currentStage");
+
+        // once the body behaves again, the proposal can advance
+        PluginA(nextStageBody).setRevertOnCreateProposal(false);
+        sppPlugin.advanceProposal(proposalId);
+
+        assertEq(
+            sppPlugin.getProposal(proposalId).currentStage,
+            initialStage + 1,
+            "currentStage"
+        );
+        assertEq(PluginA(nextStageBody).proposalCount(), 1, "proposalsCount");
+    }
+
+    function test_RevertWhen_StageParamsStoredAtCreationCanNotSatisfyTheNextStage()
+        external
+        givenProposalExists
+        whenProposalCanAdvance
+        whenProposalIsNotInLastStage
+        whenAllPluginsOnNextStageAreNonManual
+        whenSomeSubProposalNeedExtraParams
+    {
+        // it should revert when advancing to the stage whose params are unusable.
+        // it should leave the proposal permanently stuck, the stored params are not fixable.
+
+        // The creator supplies usable params for stage zero but none for stage one. Only
+        // the stage zero params are exercised during creation, so this proposal is created
+        // successfully and the unusable stage one params are written to storage as-is.
+        bytes[][] memory customCreationParam = new bytes[][](2);
+        customCreationParam[0] = new bytes[](2);
+        customCreationParam[0][0] = abi.encodePacked("data1");
+        customCreationParam[0][1] = abi.encodePacked("data2");
+        customCreationParam[1] = new bytes[](0);
+
+        proposalId = sppPlugin.createProposal({
+            _actions: _createDummyActions(),
+            _allowFailureMap: 0,
+            _metadata: DUMMY_METADATA,
+            _startDate: START_DATE,
+            _proposalParams: customCreationParam
+        });
+        uint16 initialStage;
+
+        _executeStageProposals(initialStage);
+
+        vm.warp(VOTE_DURATION + START_DATE);
+
+        SPP.Stage[] memory stages = sppPlugin.getStages(sppPlugin.getCurrentConfigIndex());
+        address nextStageBody = stages[initialStage + 1].bodies[0].addr;
+
+        // the proposal is otherwise ready to advance
+        assertTrue(sppPlugin.canProposalAdvance(proposalId), "canAdvance");
+
+        bytes memory expectedRevert = _subProposalCreationFailed(
+            nextStageBody,
+            "needExtraParams"
+        );
+
+        vm.expectRevert(expectedRevert);
+        sppPlugin.advanceProposal(proposalId);
+
+        // Reconfiguring the stages does not repair it. `updateStages` writes a new config
+        // index and this proposal keeps the one it was created with, so its stored stage
+        // one params are still the unusable ones.
+        SPP.Stage[] memory repairedStages = _createDummyStages(2, false, false, false);
+        sppPlugin.updateStages(repairedStages);
+
+        assertEq(
+            sppPlugin.getCreateProposalParams(proposalId, initialStage + 1, 0),
+            bytes(""),
+            "storedParams"
+        );
+
+        vm.expectRevert(expectedRevert);
+        sppPlugin.advanceProposal(proposalId);
+
+        // the proposal never left the stage it was on
+        assertEq(sppPlugin.getProposal(proposalId).currentStage, initialStage, "currentStage");
+        assertFalse(sppPlugin.getProposal(proposalId).executed, "executed");
+
+        // it is not stuck retryable forever, it simply expires unadvanced once the stage's
+        // `maxAdvance` passes, so the proposal can never be executed
+        vm.warp(sppPlugin.getProposal(proposalId).lastStageTransition + MAX_ADVANCE + 1);
+
+        assertFalse(sppPlugin.canProposalAdvance(proposalId), "canAdvanceAfterExpiry");
+        assertEq(
+            uint8(sppPlugin.state(proposalId)),
+            uint8(SPP.ProposalState.Expired),
+            "state"
+        );
     }
 
     function test_RevertWhen_ProposalCanNotAdvance() external givenProposalExists {

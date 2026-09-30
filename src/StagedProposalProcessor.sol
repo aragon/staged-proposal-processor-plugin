@@ -33,9 +33,6 @@ contract StagedProposalProcessor is
 {
     using ERC165Checker for address;
 
-    /// @notice Used to distinguish proposals where the SPP was not able to create a proposal on a sub-body.
-    uint256 private constant PROPOSAL_WITHOUT_ID = type(uint256).max;
-
     /// @notice The different types that bodies can be registered as.
     /// @param None Used to check if the body reported the result or not.
     /// @param Approval Used to allow a body to report approval result.
@@ -199,18 +196,6 @@ contract StagedProposalProcessor is
         uint256 bodyProposalId
     );
 
-    /// @notice Emitted when this plugin fails in creating a proposal on sub-body.
-    /// @param proposalId The proposal id.
-    /// @param stageId The stage index.
-    /// @param body The sub-body on which sub-proposal failed to be created.
-    /// @param reason The reason why it was failed.
-    event SubProposalNotCreated(
-        uint256 indexed proposalId,
-        uint16 indexed stageId,
-        address indexed body,
-        bytes reason
-    );
-
     /// @notice Emitted when the stage configuration is updated for a proposal process.
     /// @param stages The array of `Stage` structs representing the updated stage configuration.
     event StagesUpdated(Stage[] stages);
@@ -269,10 +254,17 @@ contract StagedProposalProcessor is
     ///      in the stage configuration are used.
     ///      If `_tryAdvance` is true, the proposal will attempt to advance to the next stage if eligible.
     ///      Requires the caller to have the `EXECUTE_PERMISSION_ID` permission to execute the final stage.
+    ///      Reporting the result does not revert when the proposal is simply not eligible to advance,
+    ///      but advancing an eligible proposal can revert, for example when a body on the next stage
+    ///      fails to create its sub-proposal. Since this function is typically called by an action of a
+    ///      sub-body's own proposal, such a revert also reverts that sub-body's execution. Sub-bodies
+    ///      that must not be blocked by a failing next stage should report with `_tryAdvance` set to
+    ///      false and advance the proposal in a separate transaction.
     /// @param _proposalId The ID of the proposal.
     /// @param _stageId The index of the stage, being reported on. Must not exceed the current stage of the proposal.
     /// @param _resultType The result type being reported (`Approval` or `Veto`).
     /// @param _tryAdvance Whether to attempt advancing the proposal to the next stage if conditions are met.
+    ///        Note that a failed advancement reverts this call, see the note above.
     function reportProposalResult(
         uint256 _proposalId,
         uint16 _stageId,
@@ -306,9 +298,11 @@ contract StagedProposalProcessor is
             ? hasExecutePermission(sender)
             : hasAdvancePermission(sender);
 
-        // It's important to not revert and silently succeed even if proposal
-        // can not advance due to permission or state, because as sub-body's
-        // proposals could contain other actions that should still succeed.
+        // Missing permission or a non-advanceable state is not an error here: the
+        // result is still recorded and this call succeeds, so that any other actions
+        // in the reporting sub-body's proposal are not blocked by a skipped advance.
+        // Advancing itself is not shielded that way. If it reverts, this call reverts
+        // with it, which also reverts the reporting sub-body's execution.
         if (hasPermission && state(_proposalId) == ProposalState.Advanceable) {
             _advanceProposal(_proposalId, sender);
         }
@@ -863,6 +857,9 @@ contract StagedProposalProcessor is
 
     /// @notice Creates proposals on the non-manual bodies of the `stageId`.
     /// @dev Assumes that bodies are not duplicated in the same stage. See `_updateStages` function.
+    ///      Each sub-body is called directly, so a body that reverts or returns a value that can not
+    ///      be decoded as a `uint256` reverts the whole transaction. A single misbehaving body
+    ///      therefore blocks proposal creation or advancement for the entire stage.
     /// @param _proposalId The ID of the proposal.
     /// @param _stageId The stage index.
     /// @param _startDate The start date that proposals on sub-bodies will be created with.
@@ -898,52 +895,23 @@ contract StagedProposalProcessor is
                 )
             });
 
-            // Make sure that the `createProposal` call did not fail because
-            // 63/64 of `gasleft()` was insufficient to execute the external call.
-            // In specific scenarios, the sender could force-fail `createProposal`
-            // where 63/64 is insufficient causing it to fail, but where
-            // the remaining 1/64 gas are sufficient to successfully finish the call.
-            // See `InsufficientGas` revert below.
-            uint256 gasBefore = gasleft();
-            // solhint-disable-next-line avoid-low-level-calls
-            (bool success, bytes memory data) = body.addr.call(
-                abi.encodeCall(
-                    IProposal.createProposal,
-                    (
-                        abi.encode(address(this), _proposalId, _stageId),
-                        actions,
-                        _startDate,
-                        _startDate + stage.voteDuration,
-                        _stageProposalParams.length > i ? _stageProposalParams[i] : new bytes(0)
-                    )
+            // A sub-body that fails to create the sub-proposal reverts the outer tx
+            // instead of being recorded and skipped. The failure is rethrown as
+            // `SubProposalCreationFailed` so it names the body that caused it.
+            try
+                IProposal(body.addr).createProposal(
+                    abi.encode(address(this), _proposalId, _stageId),
+                    actions,
+                    _startDate,
+                    _startDate + stage.voteDuration,
+                    _stageProposalParams.length > i ? _stageProposalParams[i] : new bytes(0)
                 )
-            );
-
-            uint256 gasAfter = gasleft();
-
-            // NOTE: Handles the edge case where:
-            // on success: it could return 0.
-            // on failure: default 0 would be used.
-            // In order to differentiate, we store `PROPOSAL_WITHOUT_ID` on failure.
-
-            if (!success) {
-                if (gasAfter < gasBefore / 64) {
-                    revert Errors.InsufficientGas();
-                }
-            }
-
-            if (success && data.length == 32) {
-                uint256 subProposalId = abi.decode(data, (uint256));
+            returns (uint256 subProposalId) {
                 bodyProposalIds[_proposalId][_stageId][body.addr] = subProposalId;
 
                 emit SubProposalCreated(_proposalId, _stageId, body.addr, subProposalId);
-            } else {
-                // sub-proposal was not created on sub-body, emit
-                // the event and try the next sub-body without failing
-                // the main(outer) tx.
-                bodyProposalIds[_proposalId][_stageId][body.addr] = PROPOSAL_WITHOUT_ID;
-
-                emit SubProposalNotCreated(_proposalId, _stageId, body.addr, data);
+            } catch (bytes memory reason) {
+                revert Errors.SubProposalCreationFailed(body.addr, reason);
             }
         }
     }
@@ -952,6 +920,8 @@ contract StagedProposalProcessor is
     /// @dev Assumes the proposal is eligible to advance. If the proposal is not in the final stage,
     ///      it creates proposals for the sub-bodies in the next stage.
     ///      If the proposal is in the final stage, it triggers execution.
+    ///      Reverts if any non-manual body on the next stage fails to create its sub-proposal,
+    ///      which leaves the proposal on its current stage.
     /// @param _proposalId The ID of the proposal.
     /// @param _sender The address that advances the proposal.
     function _advanceProposal(uint256 _proposalId, address _sender) internal virtual {
@@ -1012,7 +982,7 @@ contract StagedProposalProcessor is
             if (resultType != ResultType.None) {
                 // result was already reported
                 resultType == ResultType.Approval ? ++approvals : ++vetoes;
-            } else if (bodyProposalId != PROPOSAL_WITHOUT_ID && !body.isManual) {
+            } else if (!body.isManual) {
                 // result was not reported yet
                 // Use low-level call to ensure that outer tx doesn't revert
                 // which would cause proposal to never be able to advance.

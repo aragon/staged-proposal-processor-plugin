@@ -79,7 +79,7 @@ contract GetProposalTally_SPP_IntegrationTest is BaseTest {
         _;
     }
 
-    function test_WhenStoredProposalIdIsNotValid()
+    function test_WhenTheBodyRevertsOnHasSucceeded()
         external
         whenExistentProposal
         whenSomeResultsAreNotReported
@@ -87,12 +87,7 @@ contract GetProposalTally_SPP_IntegrationTest is BaseTest {
     {
         // it should not count unreported results.
 
-        // make a body revet when creating proposal so the proposal id is not valid
-        address secondBodyAddr = sppPlugin
-        .getStages(sppPlugin.getCurrentConfigIndex())[0].bodies[1].addr;
-        PluginA(secondBodyAddr).setRevertOnCreateProposal(true);
-
-        // create proposal
+        // create proposal, both sub proposals are created normally
         Action[] memory actions = _createDummyActions();
         proposalId = sppPlugin.createProposal({
             _actions: actions,
@@ -102,27 +97,19 @@ contract GetProposalTally_SPP_IntegrationTest is BaseTest {
             _proposalParams: defaultCreationParams
         });
 
-        SPP.Proposal memory proposal = sppPlugin.getProposal(proposalId);
-
-        // check sub proposal id is not valid
-        assertEq(
-            sppPlugin.getBodyProposalId(proposalId, proposal.currentStage, secondBodyAddr),
-            type(uint256).max,
-            "invalid subProposalId"
-        );
+        // make a body revert on `hasSucceeded` so its result can not be read
+        address secondBodyAddr = sppPlugin
+        .getStages(sppPlugin.getCurrentConfigIndex())[0].bodies[1].addr;
+        PluginA(secondBodyAddr).setRevertOnHasSucceeded(true);
 
         (uint256 votes, uint256 vetos) = sppPlugin.getProposalTally(
             proposalId,
             sppPlugin.getProposal(proposalId).currentStage
         );
 
-        // there should be no votes and 1 vetos because one of the sub proposals id not valid
+        // there should be no votes and 1 vetos because one of the sub proposals result can not be read
         assertEq(vetos, 1, "vetos");
         assertEq(votes, 0, "votes");
-    }
-
-    modifier whenStoredProposalIdIsValid() {
-        _;
     }
 
     function test_WhenUnreportedPluginResultCanBeExecuted()
@@ -130,7 +117,6 @@ contract GetProposalTally_SPP_IntegrationTest is BaseTest {
         whenExistentProposal
         whenSomeResultsAreNotReported
         whenUnreportedProposalIsNonManual
-        whenStoredProposalIdIsValid
     {
         // it should count unreported results.
 
@@ -149,7 +135,6 @@ contract GetProposalTally_SPP_IntegrationTest is BaseTest {
         whenExistentProposal
         whenSomeResultsAreNotReported
         whenUnreportedProposalIsNonManual
-        whenStoredProposalIdIsValid
     {
         // it should count unreported results.
 

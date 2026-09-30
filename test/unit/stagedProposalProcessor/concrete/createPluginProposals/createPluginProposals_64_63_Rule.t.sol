@@ -2,7 +2,6 @@
 pragma solidity ^0.8.18;
 
 import {BaseTest} from "../../../../BaseTest.t.sol";
-import {Errors} from "../../../../../src/libraries/Errors.sol";
 import {SppHarness} from "../../../../utils/harness/SppHarness.sol";
 import {PluginA} from "../../../../utils/dummy-plugins/PluginA/PluginA.sol";
 import {TrustedForwarder} from "../../../../utils/TrustedForwarder.sol";
@@ -56,7 +55,8 @@ contract CreatePluginProposals_64_63_Rule is BaseTest {
         setUp();
         // vm.cool(address(this));
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.InsufficientGas.selector));
+        // The sub-body is called directly, so running it out of gas reverts the whole call.
+        vm.expectRevert();
 
         sppHarness.exposed_createBodyProposals{gas: expectedGas - 190000}({
             _proposalId: proposalId,

@@ -70,7 +70,10 @@ library Errors {
     /// @notice Thrown when the metadata is empty.
     error EmptyMetadata();
 
-    error InsufficientGas();
+    /// @notice Thrown when a sub-body fails to create the sub-proposal it was asked to create.
+    /// @param body The sub-body on which the sub-proposal could not be created.
+    /// @param reason The raw revert data returned by the sub-body, empty if it returned none.
+    error SubProposalCreationFailed(address body, bytes reason);
 
     // Trusted Forwarder
     /// @notice Thrown when trusted forwarder can not execute the actions.
