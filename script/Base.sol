@@ -8,6 +8,8 @@ import {StagedProposalProcessorSetup as SPPSetup} from "../src/StagedProposalPro
 import {PluginRepo} from "@aragon/osx/framework/plugin/repo/PluginRepo.sol";
 
 contract BaseScript is Script {
+    error InvalidVersionBuild(uint8 build, uint8 latestBuild);
+
     /// @dev Slug + canonical ENS the artifacts-hub reserves for this plugin.
     ///      Must match the entry in aragon/artifacts-hub/scripts/lib/plugin-catalog.ts.
     string internal constant PLUGIN_SLUG = "spp";

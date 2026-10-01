@@ -3,7 +3,7 @@
   "change": "All existing deployments are strongly recommended to update to build 3. Sub-proposal creation now reverts the outer tx when any automatic sub-body's `createProposal` fails. This version also hardens the stage tally against same-transaction flows where a trusted sub-body could reenter. Installation parameters are unchanged versus build 1 and 2.",
   "pluginSetup": {
     "prepareInstallation": {
-      "description": "The information required for the installation of build 1.",
+      "description": "The information required for the installation of build 3.",
       "inputs": [
         {
           "name": "pluginMetadata",
@@ -156,9 +156,18 @@
         }
       ]
     },
-    "prepareUpdate": {},
+    "prepareUpdate": {
+      "1": {
+        "description": "No input is required for the update. The existing rules are copied to a new condition helper, which replaces the current one.",
+        "inputs": []
+      },
+      "2": {
+        "description": "No input is required for the update.",
+        "inputs": []
+      }
+    },
     "prepareUninstallation": {
-      "description": "The information required for the uninstallation of build 1.",
+      "description": "The information required for the uninstallation of build 3.",
       "inputs": []
     }
   }

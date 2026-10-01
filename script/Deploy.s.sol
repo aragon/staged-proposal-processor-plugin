@@ -18,7 +18,6 @@ import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.s
 
 contract Deploy is BaseScript {
     error InvalidVersionRelease(uint8 release, uint8 latestRelease);
-    error InvalidVersionBuild(uint8 build, uint8 latestBuild);
     error VersionPublishFailed();
 
     PlaceholderSetup public placeholderSetup;

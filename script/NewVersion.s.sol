@@ -37,6 +37,8 @@ contract NewVersion is BaseScript {
         address managementDao = vm.envAddress("MANAGEMENT_DAO_ADDRESS");
         address managementDaoMultisig = vm.envAddress("MANAGEMENT_DAO_MULTISIG_ADDRESS");
 
+        _requireNextBuild(sppRepo);
+
         vm.startBroadcast(deployerPrivateKey);
         sppSetup = new SPPSetup(new SPP());
         vm.stopBroadcast();
@@ -134,5 +136,15 @@ contract NewVersion is BaseScript {
         console.log("      --ledger # or --trezor");
         console.log("  # Add --mnemonic-index N to pick a non-default Ledger derivation path.");
         console.log("  # Ledger's Ethereum app must have 'Blind signing / contract data' enabled.");
+    }
+
+    /// @dev `createVersion` only takes the release: the repo assigns the next build number itself.
+    ///      Unless the repo is exactly one build behind, the version would be published under a
+    ///      different build number than `VERSION_BUILD` and the metadata describe.
+    function _requireNextBuild(PluginRepo _repo) internal view {
+        uint256 latestBuild = _repo.buildCount(PluginSettings.VERSION_RELEASE);
+        if (latestBuild + 1 != PluginSettings.VERSION_BUILD) {
+            revert InvalidVersionBuild(PluginSettings.VERSION_BUILD, uint8(latestBuild));
+        }
     }
 }

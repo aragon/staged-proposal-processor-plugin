@@ -296,7 +296,7 @@ contract StagedProposalProcessor is
 
         address sender = _msgSender();
 
-        // A body of this stage may only report its configured result type or `None` (retracting). 
+        // A body of this stage may only report its configured result type or `None` (retracting).
         // A report from any other address is ignored.
         {
             Body[] storage bodies = stages[proposal.stageConfigIndex][_stageId].bodies;
@@ -871,7 +871,7 @@ contract StagedProposalProcessor is
     /// @dev Assumes that bodies are not duplicated in the same stage. See `_updateStages` function.
     /// @param _proposalId The ID of the proposal.
     /// @param _stageId The stage index.
-    /// @param _resultType The result type being reported (`Approval` or `Veto`).
+    /// @param _resultType The result type being reported (`Approval`, `Veto`, or `None` to retract).
     /// @param _sender The address that reported the result.
     function _processProposalResult(
         uint256 _proposalId,
