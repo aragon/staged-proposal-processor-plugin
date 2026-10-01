@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `script/NewVersion.s.sol` reverts with `InvalidVersionBuild` unless the repo's next build is `VERSION_BUILD`, since `createVersion` assigns the build number on-chain.
+- `script/NewVersion.s.sol` publishes the new setup as many times as needed for it to land on `VERSION_BUILD` (`createVersion` assigns the build number on-chain), and reverts with `InvalidVersionBuild` once that build exists.
 - `prepareUpdate` entries for builds 1 and 2 in `src/build-metadata.json`.
 
 ### Removed

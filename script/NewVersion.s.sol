@@ -37,7 +37,7 @@ contract NewVersion is BaseScript {
         address managementDao = vm.envAddress("MANAGEMENT_DAO_ADDRESS");
         address managementDaoMultisig = vm.envAddress("MANAGEMENT_DAO_MULTISIG_ADDRESS");
 
-        _requireNextBuild(sppRepo);
+        uint256 buildCount = _buildsToPublish(sppRepo);
 
         vm.startBroadcast(deployerPrivateKey);
         sppSetup = new SPPSetup(new SPP());
@@ -64,28 +64,22 @@ contract NewVersion is BaseScript {
             sppSetup.implementation()
         );
 
-        bytes memory createVersionData = abi.encodeCall(
-            sppRepo.createVersion,
-            (
-                PluginSettings.VERSION_RELEASE,
-                address(sppSetup),
-                bytes(PluginSettings.BUILD_METADATA),
-                bytes(PluginSettings.RELEASE_METADATA)
-            )
-        );
+        Action[] memory actions = _createVersionActions(sppRepo, address(sppSetup), buildCount);
 
         console.log("\nDAO action to publish this version:");
         console.log("  to:    ", address(sppRepo));
         console.log("  value: 0");
         console.log("  data:  ");
-        console.logBytes(createVersionData);
+        console.logBytes(actions[0].data);
+        if (buildCount > 1) {
+            console.log("  repeated", buildCount, "times in the proposal below, so the repo");
+            console.log("  catches up to the build number: every new build is this same setup.");
+        }
 
-        // Wrap the action in a management DAO multisig proposal. The 7-arg
+        // Wrap the actions in a management DAO multisig proposal. The 7-arg
         // `createProposal` is the multisig-specific overload; passing
         // `_approveProposal=true` means the submitter also casts their vote
         // in the same transaction.
-        Action[] memory actions = new Action[](1);
-        actions[0] = Action({to: address(sppRepo), value: 0, data: createVersionData});
 
         bytes memory metadata = bytes(PluginSettings.PROPOSAL_METADATA);
         uint64 endDate = uint64(vm.envOr("PROPOSAL_END_DATE", block.timestamp + 30 days));
@@ -139,12 +133,39 @@ contract NewVersion is BaseScript {
     }
 
     /// @dev `createVersion` only takes the release: the repo assigns the next build number itself.
-    ///      Unless the repo is exactly one build behind, the version would be published under a
-    ///      different build number than `VERSION_BUILD` and the metadata describe.
-    function _requireNextBuild(PluginRepo _repo) internal view {
+    ///      Returns how many builds must be published for this version to land on `VERSION_BUILD`.
+    ///      More than one when the repo is behind (e.g. a network that never got the previous
+    ///      build): the gap is filled with this same setup, so existing installations keep a
+    ///      working upgrade path. Reverts if `VERSION_BUILD` is already published.
+    function _buildsToPublish(PluginRepo _repo) internal view returns (uint256) {
         uint256 latestBuild = _repo.buildCount(PluginSettings.VERSION_RELEASE);
-        if (latestBuild + 1 != PluginSettings.VERSION_BUILD) {
+        if (latestBuild >= PluginSettings.VERSION_BUILD) {
             revert InvalidVersionBuild(PluginSettings.VERSION_BUILD, uint8(latestBuild));
+        }
+        return PluginSettings.VERSION_BUILD - latestBuild;
+    }
+
+    /// @dev One identical `createVersion` action per build to publish. The PSP treats an update
+    ///      between two builds of the same setup as a no-op ("UI update"), so the extra builds
+    ///      behave exactly like `VERSION_BUILD`.
+    function _createVersionActions(
+        PluginRepo _repo,
+        address _setup,
+        uint256 _count
+    ) internal pure returns (Action[] memory actions) {
+        bytes memory data = abi.encodeCall(
+            PluginRepo.createVersion,
+            (
+                PluginSettings.VERSION_RELEASE,
+                _setup,
+                bytes(PluginSettings.BUILD_METADATA),
+                bytes(PluginSettings.RELEASE_METADATA)
+            )
+        );
+
+        actions = new Action[](_count);
+        for (uint256 i = 0; i < _count; ++i) {
+            actions[i] = Action({to: address(_repo), value: 0, data: data});
         }
     }
 }
