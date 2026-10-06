@@ -15,6 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `reportProposalResult` reverts with `Errors.ResultTypeNotAllowed` when a body of that stage reports a result type other than its configured one or `None` (retracting), so approving bodies can no longer veto and vetoing bodies can no longer approve.
 - `script/NewVersion.s.sol` deploys a fresh `StagedProposalProcessor` implementation for the new setup instead of reusing the previous build's (which was correct for v1.2, whose bytecode matched v1.1's).
 
+### Added
+
+- `script/NewVersion.s.sol` publishes the new setup as many times as needed for it to land on `VERSION_BUILD` (`createVersion` assigns the build number on-chain), and reverts with `InvalidVersionBuild` once that build exists.
+- `prepareUpdate` entries for builds 1 and 2 in `src/build-metadata.json`.
+
 ### Removed
 
 - `Errors.InsufficientGas` and the `gasleft` / 63-64 guard around the sub-body call. The high-level Solidity call now bubbles up any callee revert (including out-of-gas) as a normal revert, and the wrapping `SubProposalCreationFailed` names the failing body — so the manual gas guard no longer adds signal.
