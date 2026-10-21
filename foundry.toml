@@ -5,6 +5,8 @@ libs = ["lib"]
 solc = "0.8.28"
 fs_permissions = [
     { access = "write", path = "./artifacts" },
+    { access = "read", path = "./src/build-metadata.json" },
+    { access = "read", path = "./out" },
 ]
 
 gas_limit = 50073741824
