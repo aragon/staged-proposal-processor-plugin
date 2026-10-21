@@ -25,7 +25,7 @@ library PluginSettings {
     // 3. Paste the returned `ipfs://<cid>` into the matching constant below.
 
     string public constant BUILD_METADATA =
-        "ipfs://QmUuvtPgqNogyC6pVRJqzyesjQYbTHXsS4iksDHC258uYW";
+        "ipfs://QmPJErCM2FV8YpJGNjNy4U5yDgHwTNczwEfMZ9SHhBTa64";
     string public constant RELEASE_METADATA =
         "ipfs://bafkreif23p6yw325rkwwlhgkudiasvq64lonqmfnt7ls5ksfam5hedcb4m";
 
