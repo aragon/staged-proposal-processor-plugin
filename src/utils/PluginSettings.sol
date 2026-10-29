@@ -12,7 +12,7 @@ library PluginSettings {
     string public constant PLUGIN_REPO_ENS_SUBDOMAIN_NAME = "spp";
 
     // Specify the version of your plugin that you are currently working on. The first version is v1.1.
-    // For more details, visit https://devs.aragon.org/docs/osx/how-it-works/framework/plugin-management/plugin-repo.
+    // For more details, visit https://docs.aragon.org/framework/plugin-repo
     uint8 public constant VERSION_RELEASE = 1;
     uint8 public constant VERSION_BUILD = 3;
 

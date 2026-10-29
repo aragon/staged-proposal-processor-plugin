@@ -19,7 +19,5 @@ node_modules/
 .DS_Store
 src/.DS_Store
 
-npm-artifacts/dist
-npm-artifacts/node_modules
 report/
 lcov.info

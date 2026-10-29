@@ -26,7 +26,7 @@ Start small, pick a subject you care about, are familiar with, or want to learn.
 
 If you're not already familiar with git or Github, here are a couple of friendly tutorials: [First Contributions](https://github.com/firstcontributions/first-contributions), [Open Source Guide](https://opensource.guide/), and [How to Contribute to an Open Source Project on GitHub](https://egghead.io/series/how-to-contribute-to-an-open-source-project-on-github).
 
-Otherwise, you can also contribute through improving our documentation. You can find our documentation within the `docs` folder of each of our repositories. If you see something that could be better explained, or if you want to share better resources for each of the topics, we’d love to hear from you. Feel free to either submit a PR directly to the repo or simply [register here](https://aragonteam.typeform.com/to/QJyKtESU) and we’ll reach out.
+Otherwise, you can also contribute through improving our documentation. You can find our documentation at [docs.aragon.org](https://docs.aragon.org). If you see something that could be better explained, or if you want to share better resources for each of the topics, we’d love to hear from you. Feel free to either submit a PR directly to the repo or simply [register here](https://aragonteam.typeform.com/to/QJyKtESU) and we’ll reach out.
 
 ## How to file an issue or report a bug
 
@@ -96,9 +96,9 @@ Windows users may need to install the [windows-build-tools](https://www.npmjs.co
 
 ### Documentation
 
-The documentation on how to run the code locally will be found within the `docs` folder of every repository.
+The documentation on how to run the code locally is in each repository's `README.md`.
 
-You can also access our [Developer Portal](https://devs.aragon.org) where you’ll learn about our architecture, how it works, and useful tutorials to get you started.
+You can also access [docs.aragon.org](https://docs.aragon.org) where you’ll learn about the protocol architecture and how it works.
 
 ### Style guide and development processes
 
