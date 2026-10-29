@@ -1,2 +1,0 @@
-* xref:index.adoc[Overview]
-* xref:compatible-plugins.adoc[SPP Plugin Compatibility]

@@ -5,11 +5,6 @@ import 'lib/just-foundry/justfile'
 DEPLOY_SCRIPT := "script/Deploy.s.sol:Deploy"
 NEW_VERSION_SCRIPT := "script/NewVersion.s.sol:NewVersion"
 
-# Generate Solidity documentation (requires bun)
-[group('docs')]
-docs:
-    cd docs-gen && bun install && bash prepare-docs.sh && bun prepare-docs.js
-
 # Dry-run the new-version script (no broadcast) — eyeball the printed multisig calldata
 [group('upgrade')]
 pre-new-version:
