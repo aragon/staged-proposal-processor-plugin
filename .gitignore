@@ -16,11 +16,8 @@ foundry-docs/
 
 # Node modules
 node_modules/
-docs-gen/bun.lock
 .DS_Store
 src/.DS_Store
 
-npm-artifacts/dist
-npm-artifacts/node_modules
 report/
 lcov.info

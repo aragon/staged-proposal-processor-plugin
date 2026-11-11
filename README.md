@@ -34,7 +34,7 @@
 
 ## ABI and artifacts
 
-Check out the [npm-artifacts folder](./npm-artifacts/README.md) to get the deployed addresses and the contract ABIs.
+The deployed addresses and the contract ABIs live in [aragon/artifacts-hub](https://github.com/aragon/artifacts-hub).
 
 ## Setup
 
@@ -173,3 +173,7 @@ ZkSync networks are also supported:
 just setup-zksync          # installs forge-zksync alongside standard Foundry
 just switch zksync-sepolia
 ```
+
+## Deprecated networks
+
+Addresses on networks that are no longer supported remain available in [`npm-artifacts/src/addresses.json` at `a1d84e05`](https://github.com/aragon/staged-proposal-processor-plugin/blob/a1d84e0542cf2db0a542f0159878457dbb7e3515/npm-artifacts/src/addresses.json).
